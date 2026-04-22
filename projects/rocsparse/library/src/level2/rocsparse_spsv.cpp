@@ -109,6 +109,44 @@ namespace rocsparse
                                  void*                       temp_buffer)
     {
         ROCSPARSE_ROUTINE_TRACE;
+
+        // CSC is equivalent to a transposed CSR:
+        //   none -> transpose
+        //   transpose -> none
+        //   conjugate_transpose -> conjugate
+        if(mat->format == rocsparse_format_csc)
+        {
+            // Internal-only: conjugate values without transposing structure.
+            static constexpr rocsparse_operation operation_conjugate = static_cast<rocsparse_operation>(114);
+
+            const rocsparse_operation trans_csr = (trans == rocsparse_operation_none) ? rocsparse_operation_transpose : (trans == rocsparse_operation_transpose ? rocsparse_operation_none : operation_conjugate);
+            const rocsparse_fill_mode fill_mode_csr = (trans_csr == operation_conjugate) ? mat->descr->fill_mode : ((mat->descr->fill_mode == rocsparse_fill_mode_lower) ? rocsparse_fill_mode_upper : rocsparse_fill_mode_lower);
+            rocsparse_mat_descr descr_csr = nullptr;
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_create_mat_descr(&descr_csr));
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_set_mat_fill_mode(descr_csr, fill_mode_csr));
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_set_mat_diag_type(descr_csr, mat->descr->diag_type));
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_set_mat_index_base(descr_csr, mat->descr->base));
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_set_mat_type(descr_csr_view, mat->descr->type));
+
+            _rocsparse_spmat_descr mat_csr = *mat;
+            mat_csr.rows                   = mat->cols;
+            mat_csr.cols                   = mat->rows;
+            mat_csr.row_data               = mat->col_data;
+            mat_csr.col_data               = mat->row_data;
+            mat_csr.const_row_data         = mat->const_col_data;
+            mat_csr.const_col_data         = mat->const_row_data;
+            mat_csr.row_type               = mat->col_type;
+            mat_csr.col_type               = mat->row_type;
+            mat_csr.format                 = rocsparse_format_csr;
+            mat_csr.descr                  = descr_csr_view;
+
+            const rocsparse_status status_csc = rocsparse::spsv(handle, trans_csr, alpha, &mat_csr, x, y, alg, stage, buffer_size, temp_buffer);
+            mat->analysed = mat_csr.analysed;
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_destroy_mat_descr(descr_csr));
+            RETURN_IF_ROCSPARSE_ERROR(status_csc);
+            return rocsparse_status_success;
+        }
+
         const rocsparse_format format = mat->format;
         switch(format)
         {

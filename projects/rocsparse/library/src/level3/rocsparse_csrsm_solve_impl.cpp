@@ -129,10 +129,11 @@ namespace rocsparse
             ptr += ((sizeof(T) * m * nrhs - 1) / 256 + 1) * 256;
         }
 
-        // Temporary array to store transpose of A
+        // Temporary array to store transpose/conjugate of A
         T* At = nullptr;
         if(trans_A == rocsparse_operation_transpose
-           || trans_A == rocsparse_operation_conjugate_transpose)
+           || trans_A == rocsparse_operation_conjugate_transpose
+           || trans_A == rocsparse::operation_conjugate)
         {
             At = reinterpret_cast<T*>(ptr);
         }
@@ -140,7 +141,11 @@ namespace rocsparse
         // Initialize buffers
         RETURN_IF_HIP_ERROR(hipMemsetAsync(done_array, 0, sizeof(int) * m * narrays, stream));
 
-        const rocsparse::trm_info_t* trm_info = csrsm_info->get(trans_A, descr->fill_mode);
+        // For conjugate: analysis was run with operation_none (same structure), look up that slot.
+        const rocsparse_operation trans_A_for_lookup = (trans_A == rocsparse::operation_conjugate)
+                                                           ? rocsparse_operation_none
+                                                           : trans_A;
+        const rocsparse::trm_info_t* trm_info = csrsm_info->get(trans_A_for_lookup, descr->fill_mode);
 
         // If diag type is unit, re-initialize zero pivot to remove structural zeros
         if(descr->diag_type == rocsparse_diag_type_unit)
@@ -197,6 +202,16 @@ namespace rocsparse
 
             fill_mode = (fill_mode == rocsparse_fill_mode_lower) ? rocsparse_fill_mode_upper
                                                                  : rocsparse_fill_mode_lower;
+        }
+        else if(trans_A == rocsparse::operation_conjugate)
+        {
+            // Conjugate: structure unchanged, only values are conjugated.
+            T* conj_val = At;
+            RETURN_IF_HIP_ERROR(hipMemcpyAsync(
+                conj_val, csr_val, sizeof(T) * nnz, hipMemcpyDeviceToDevice, stream));
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse::conjugate(handle, nnz, conj_val));
+            local_csr_val = conj_val;
+            // row/col pointers and fill_mode are unchanged (no transpose of structure)
         }
         {
             const dim3 csrsm_blocks(((nrhs - 1) / blockdim + 1) * m);

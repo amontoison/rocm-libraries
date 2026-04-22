@@ -26,6 +26,7 @@
 #include "csrsv_device.h"
 #include "rocsparse_assign_async.hpp"
 #include "rocsparse_common.h"
+#include "rocsparse_conjugate.hpp"
 #include "rocsparse_control.hpp"
 #include "rocsparse_csrsv.hpp"
 #include "rocsparse_csrsv_solve_kernel.hpp"
@@ -85,7 +86,8 @@ rocsparse_status rocsparse::csrsv_solve(rocsparse_handle            handle,
     // Initialize buffers
     RETURN_IF_HIP_ERROR(hipMemsetAsync(done_array, 0, done_array_size_in_bytes, stream));
 
-    const rocsparse::trm_info_t* csrsv = csrsv_info->get(trans, descr->fill_mode);
+    const rocsparse_operation internal_trans = (trans == rocsparse_operation_conjugate) ? rocsparse_operation_none : trans;
+    const rocsparse::trm_info_t* csrsv = csrsv_info->get(internal_trans, descr->fill_mode);
     if(csrsv == nullptr)
     {
         RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_invalid_pointer);
@@ -184,6 +186,24 @@ rocsparse_status rocsparse::csrsv_solve(rocsparse_handle            handle,
         local_val_data_stride = (A->batch_count > 1) ? A->nnz : 0;
         fill_mode             = (fill_mode == rocsparse_fill_mode_lower) ? rocsparse_fill_mode_upper
                                                                          : rocsparse_fill_mode_lower;
+    }
+    else if(trans == rocsparse_operation_conjugate)
+    {
+        void*          conj_val        = ptr;
+        const int64_t  conj_val_stride = A->nnz;
+        const size_t   sizeof_T        = rocsparse::datatype_sizeof(A->data_type);
+
+        RETURN_IF_HIP_ERROR(hipMemcpyAsync(conj_val,
+                                           A->const_val_data,
+                                           sizeof_T * A->nnz * A->batch_count,
+                                           hipMemcpyDeviceToDevice,
+                                           stream));
+
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::conjugate_strided_batched(
+            handle, A->batch_count, A->nnz, A->data_type, conj_val, conj_val_stride)));
+
+        local_val_data        = conj_val;
+        local_val_data_stride = (A->batch_count > 1) ? A->nnz : 0;
     }
 
     const std::string gcn_arch_name = rocsparse::handle_get_arch_name(handle);

@@ -317,10 +317,9 @@ rocsparse_status rocsparse::gtrm_analysis(rocsparse_handle          handle,
         info->set_m(m);
         info->set_nnz(nnz);
         info->set_descr(descr);
-        info->set_row_ptr((trans == rocsparse_operation_none) ? csr_row_ptr
-                                                              : info->get_transposed_row_ptr());
-        info->set_col_ind((trans == rocsparse_operation_none) ? csr_col_ind
-                                                              : info->get_transposed_col_ind());
+        const bool use_original = (trans == rocsparse_operation_none || trans == rocsparse_operation_conjugate);
+        info->set_row_ptr(use_original ? csr_row_ptr : info->get_transposed_row_ptr());
+        info->set_col_ind(use_original ? csr_col_ind : info->get_transposed_col_ind());
         info->set_offset_indextype(csr_row_ptr_indextype);
         info->set_index_indextype(csr_col_ind_indextype);
     }

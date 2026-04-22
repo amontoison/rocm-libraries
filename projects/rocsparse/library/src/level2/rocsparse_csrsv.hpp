@@ -36,6 +36,11 @@
 
 namespace rocsparse
 {
+    // Internal-only operation: conjugate values without transposing structure.
+    // Used for CSC -> CSR mapping in spsv. Not part of the public API;
+    // intentionally out-of-range of rocsparse_operation enum to avoid clashes.
+    static constexpr rocsparse_operation operation_conjugate
+        = static_cast<rocsparse_operation>(114);
 
     rocsparse_status csrsv_zero_pivot(rocsparse_handle     handle,
                                       rocsparse_csrsv_info info,

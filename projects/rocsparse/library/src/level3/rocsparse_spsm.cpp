@@ -241,8 +241,8 @@ namespace rocsparse
             break;
         }
 
-        case rocsparse_format_coo_aos:
         case rocsparse_format_csc:
+        case rocsparse_format_coo_aos:
         case rocsparse_format_bsr:
         case rocsparse_format_ell:
         case rocsparse_format_bell:
@@ -360,8 +360,8 @@ namespace rocsparse
             break;
         }
 
-        case rocsparse_format_coo_aos:
         case rocsparse_format_csc:
+        case rocsparse_format_coo_aos:
         case rocsparse_format_bsr:
         case rocsparse_format_ell:
         case rocsparse_format_bell:
@@ -504,8 +504,8 @@ namespace rocsparse
             break;
         }
 
-        case rocsparse_format_coo_aos:
         case rocsparse_format_csc:
+        case rocsparse_format_coo_aos:
         case rocsparse_format_bsr:
         case rocsparse_format_ell:
         case rocsparse_format_bell:
@@ -626,8 +626,8 @@ namespace rocsparse
             break;
         }
 
-        case rocsparse_format_coo_aos:
         case rocsparse_format_csc:
+        case rocsparse_format_coo_aos:
         case rocsparse_format_bsr:
         case rocsparse_format_ell:
         case rocsparse_format_bell:
@@ -682,6 +682,74 @@ namespace rocsparse
     {
         ROCSPARSE_ROUTINE_TRACE;
         const rocsparse_datatype alpha_datatype = matA->data_type;
+
+        // CSC is handled by remapping to an equivalent CSR problem and recursing.
+        // A_csc viewed as CSR is A_csr^T, so op(A_csc) = op'(A_csr^T):
+        //   none       -> transpose
+        //   transpose  -> none
+        //   conj_trans -> operation_conjugate (conjugate values; structure already transposed)
+        // operation_conjugate is an internal-only value (114), out-of-range of the public enum,
+        // so for buffer_size/preprocess stages (which validate the enum), pass none instead.
+        if(matA->format == rocsparse_format_csc)
+        {
+            // Internal-only: conjugate values without transposing structure.
+            static constexpr rocsparse_operation operation_conjugate
+                = static_cast<rocsparse_operation>(114);
+
+            const rocsparse_operation trans_A_csr
+                = (trans_A == rocsparse_operation_none)
+                      ? rocsparse_operation_transpose
+                      : (trans_A == rocsparse_operation_transpose ? rocsparse_operation_none
+                                                                  : operation_conjugate);
+
+            // For buffer_size/preprocess: map operation_conjugate -> none (same analysis slot).
+            const rocsparse_operation trans_A_for_stage
+                = (stage == rocsparse_spsm_stage_compute || trans_A_csr != operation_conjugate)
+                      ? trans_A_csr
+                      : rocsparse_operation_none;
+
+            // Fill mode is inverted (lower<->upper) except when structure is not transposed
+            // (operation_conjugate case).
+            const rocsparse_fill_mode fill_mode_csr_view
+                = (trans_A_csr == operation_conjugate)
+                      ? matA->descr->fill_mode
+                      : ((matA->descr->fill_mode == rocsparse_fill_mode_lower)
+                             ? rocsparse_fill_mode_upper
+                             : rocsparse_fill_mode_lower);
+
+            rocsparse_mat_descr descr_csr_view = nullptr;
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_create_mat_descr(&descr_csr_view));
+            RETURN_IF_ROCSPARSE_ERROR(
+                rocsparse_set_mat_fill_mode(descr_csr_view, fill_mode_csr_view));
+            RETURN_IF_ROCSPARSE_ERROR(
+                rocsparse_set_mat_diag_type(descr_csr_view, matA->descr->diag_type));
+            RETURN_IF_ROCSPARSE_ERROR(
+                rocsparse_set_mat_index_base(descr_csr_view, matA->descr->base));
+            RETURN_IF_ROCSPARSE_ERROR(
+                rocsparse_set_mat_type(descr_csr_view, matA->descr->type));
+
+            _rocsparse_spmat_descr matA_csr_view    = *matA;
+            matA_csr_view.rows                      = matA->cols;
+            matA_csr_view.cols                      = matA->rows;
+            matA_csr_view.row_data                  = matA->col_data;
+            matA_csr_view.col_data                  = matA->row_data;
+            matA_csr_view.const_row_data            = matA->const_col_data;
+            matA_csr_view.const_col_data            = matA->const_row_data;
+            matA_csr_view.row_type                  = matA->col_type;
+            matA_csr_view.col_type                  = matA->row_type;
+            matA_csr_view.format                    = rocsparse_format_csr;
+            matA_csr_view.descr                     = descr_csr_view;
+
+            const rocsparse_status status_csc = rocsparse::spsm(
+                handle, trans_A_for_stage, trans_B, alpha, &matA_csr_view, matB, matC, alg, stage,
+                buffer_size, temp_buffer);
+
+            // Propagate analysed flag back to the original CSC matrix.
+            matA->analysed = matA_csr_view.analysed;
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_destroy_mat_descr(descr_csr_view));
+            RETURN_IF_ROCSPARSE_ERROR(status_csc);
+            return rocsparse_status_success;
+        }
 
         rocsparse::spsm_case spsm_case = spsm_get_case(trans_B, matB->order, matC->order);
 
@@ -761,8 +829,8 @@ namespace rocsparse
                 return rocsparse_status_success;
             }
 
-            case rocsparse_format_coo_aos:
             case rocsparse_format_csc:
+            case rocsparse_format_coo_aos:
             case rocsparse_format_bsr:
             case rocsparse_format_ell:
             case rocsparse_format_bell:
@@ -857,8 +925,8 @@ namespace rocsparse
                 return rocsparse_status_success;
             }
 
-            case rocsparse_format_coo_aos:
             case rocsparse_format_csc:
+            case rocsparse_format_coo_aos:
             case rocsparse_format_bsr:
             case rocsparse_format_ell:
             case rocsparse_format_bell:
