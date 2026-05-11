@@ -1154,25 +1154,7 @@ struct rocsparse::csritilu0x_driver_t<rocsparse_itilu0_alg_sync_split_fusion>
                             }
                         }
 
-                        {
-                            //
-                            // To avoid some stagnation.
-                            // - if enough iteration
-                            // - if rate is slowing down
-                            // - if the correction is small enough
-                            //
-                            static constexpr floating_data_t<T> tol_increment
-                                = (sizeof(floating_data_t<T>) == sizeof(float)) ? 1.0e-5 : 1.0e-15;
-                            if((iter > 3)
-                               && (std::abs(nrm_indicator - nrm_indicator_previous)
-                                   <= tol_increment * nrm_indicator)
-                               && nrm_indicator <= tol_ * 10)
-                            {
-                                nmaxiter_[0] = iter + 1;
-                                converged    = true;
-                                break;
-                            }
-                        }
+
                     }
                     nrm_indicator_previous = nrm_indicator;
                 }
