@@ -25,6 +25,7 @@
 #include "testing_csritilu0.hpp"
 
 #include "rocsparse.hpp"
+#include <type_traits>
 #include "rocsparse_enum.hpp"
 #include "testing.hpp"
 #include <hip/hip_runtime.h>
@@ -259,6 +260,29 @@ void testing_csritilu0(const Arguments& arg)
     //
     host_csr_matrix<T> hA;
     matrix_factory.init_csr(hA);
+
+    //
+    // Dump matrix values to stdout for reproducibility debugging (f32_r_187_0b_3_rand).
+    //
+    if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero && arg.nmaxiter == 3
+       && std::is_same<T, float>::value)
+    {
+        std::cout << "=== MATRIX DUMP (m=" << hA.m << ", nnz=" << hA.nnz << ") ===" << std::endl;
+        std::cout << std::setprecision(17);
+        std::cout << "ptr:";
+        for(rocsparse_int i = 0; i <= hA.m; ++i)
+            std::cout << " " << hA.ptr[i];
+        std::cout << std::endl;
+        std::cout << "ind:";
+        for(rocsparse_int i = 0; i < hA.nnz; ++i)
+            std::cout << " " << hA.ind[i];
+        std::cout << std::endl;
+        std::cout << "val:";
+        for(rocsparse_int i = 0; i < hA.nnz; ++i)
+            std::cout << " " << hA.val[i];
+        std::cout << std::endl;
+        std::cout << "=== END MATRIX DUMP ===" << std::endl;
+    }
 
     //
     // Transfer matrix A to device.
