@@ -273,7 +273,7 @@ void testing_csritilu0(const Arguments& arg)
         std::cerr << "DEBUG M=" << hA.m << " nnz=" << hA.nnz
                   << " val_cs=" << val_cs
                   << " ptr[187]=" << hA.ptr[hA.m]
-                  << " ind[0]=" << hA.ind[0]
+                  << " ind[0]=" << (hA.nnz > 0 ? (int)hA.ind[0] : -1)
                   << "\n";
     }
 
