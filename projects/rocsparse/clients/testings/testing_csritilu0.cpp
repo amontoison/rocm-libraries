@@ -260,21 +260,18 @@ void testing_csritilu0(const Arguments& arg)
     host_csr_matrix<T> hA;
     matrix_factory.init_csr(hA);
 
-    // DEBUG: dump matrix for f32_r_187_0b_3_rand
+    // DEBUG: dump matrix checksum for f32_r_187_0b_3_rand
     if(hA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
        && sizeof(T) == sizeof(float) && hA.base == rocsparse_index_base_zero)
     {
-        std::cerr << "DEBUG MATRIX M=" << hA.m << " nnz=" << hA.nnz << "\n";
-        std::cerr << "row_ptr:";
-        for(rocsparse_int i = 0; i <= hA.m; i++)
-            std::cerr << " " << hA.ptr[i];
-        std::cerr << "\ncol_ind:";
+        double sum = 0;
         for(rocsparse_int i = 0; i < hA.nnz; i++)
-            std::cerr << " " << hA.ind[i];
-        std::cerr << "\nval:";
-        for(rocsparse_int i = 0; i < hA.nnz; i++)
-            std::cerr << " " << hA.val[i];
-        std::cerr << "\n";
+            sum += std::abs((double)hA.val[i]);
+        std::cerr << "DEBUG M=" << hA.m << " nnz=" << hA.nnz
+                  << " val_sum=" << sum
+                  << " ptr[187]=" << hA.ptr[hA.m]
+                  << " ind[0]=" << hA.ind[0]
+                  << "\n";
     }
 
     //
@@ -473,6 +470,18 @@ void testing_csritilu0(const Arguments& arg)
             }
         }
 
+        // DEBUG: dump Gaussian result checksum
+        if(dA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
+           && sizeof(T) == sizeof(float) && dA.base == rocsparse_index_base_zero)
+        {
+            host_dense_vector<T> hilu0_gauss(dA_csrilu0.val);
+            double               sum = 0;
+            for(rocsparse_int i = 0; i < dA.nnz; i++)
+                sum += std::abs((double)hilu0_gauss[i]);
+            std::cerr << "DEBUG GAUSSIAN maxiter_used=" << p.maxiter
+                      << " ilu0_gauss_sum=" << sum << "\n";
+        }
+
         //
         // Compute solution.
         //
@@ -500,6 +509,18 @@ void testing_csritilu0(const Arguments& arg)
         if(status == rocsparse_status_zero_pivot)
         {
             std::cout << "rocsparse_csritilu0_compute divergence " << std::endl;
+        }
+
+        // DEBUG: dump iterative result checksum
+        if(dA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
+           && sizeof(T) == sizeof(float) && dA.base == rocsparse_index_base_zero)
+        {
+            host_dense_vector<T> hilu0_iter(ilu0);
+            double               sum = 0;
+            for(rocsparse_int i = 0; i < dA.nnz; i++)
+                sum += std::abs((double)hilu0_iter[i]);
+            std::cerr << "DEBUG ITERATIVE maxiter_used=" << p.maxiter
+                      << " ilu0_iter_sum=" << sum << "\n";
         }
 
         EXPECT_ROCSPARSE_STATUS(status_csrilu0, status);
