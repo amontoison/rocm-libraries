@@ -26,6 +26,7 @@
 
 #include "rocsparse.hpp"
 #include "rocsparse_enum.hpp"
+#include "rocsparse_random.hpp"
 #include "testing.hpp"
 #include <hip/hip_runtime.h>
 
@@ -274,6 +275,8 @@ void testing_csritilu0_ex(const Arguments& arg)
     // Create rocsparse handle
     rocsparse_local_handle handle;
     rocsparse_status       status;
+
+    rocsparse_seedrand();
 
     //
     // Initialize csr matrix.
