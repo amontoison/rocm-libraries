@@ -33,6 +33,9 @@
 rocsparse_rng_t rocsparse_rng(69069);
 rocsparse_rng_t rocsparse_rng_nan(69069);
 
+// Forward-declared here; initialized after cache generation below.
+extern rocsparse_rng_t rocsparse_seed;
+
 void rocsparse_seedrand()
 {
     rocsparse_rng_set(rocsparse_seed_get());
