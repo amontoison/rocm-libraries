@@ -32,7 +32,6 @@
 // argument, and print the seed on output, to ensure repeatability.
 rocsparse_rng_t rocsparse_rng(69069);
 rocsparse_rng_t rocsparse_rng_nan(69069);
-rocsparse_rng_t rocsparse_seed(rocsparse_rng);
 
 void rocsparse_seedrand()
 {
@@ -96,8 +95,6 @@ void generate_random_cache()
                 = std::uniform_real_distribution<double>(0.0, 1.0)(rocsparse_rng_get());
         }
         s_rand_uniform_init = 1;
-        if(rocsparse_reproducibility_t::instance().is_enabled())
-            rocsparse_seedrand();
     }
 
     if(!s_rand_normal_init)
@@ -108,10 +105,15 @@ void generate_random_cache()
                 = std::normal_distribution<double>(0.0, 1.0)(rocsparse_rng_get());
         }
         s_rand_normal_init = 1;
-        if(rocsparse_reproducibility_t::instance().is_enabled())
-            rocsparse_seedrand();
     }
 }
+
+// Generate cache eagerly at static init time, before rocsparse_seed is saved,
+// so that rocsparse_seed always captures the post-cache mt19937 state.
+// This makes rocsparse_seedrand() deterministic regardless of test ordering.
+static const int s_force_cache_init = (generate_random_cache(), 0);
+
+rocsparse_rng_t rocsparse_seed(rocsparse_rng);
 
 float rocsparse_uniform_float(float a, float b)
 {
