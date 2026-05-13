@@ -85,6 +85,7 @@ void testing_cscsort(const Arguments& arg)
 
     // Sample matrix
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsc_col_ptr, hcsc_row_ind, hcsc_val, N, M, nnz, base);
 
     // Unsort CSR matrix

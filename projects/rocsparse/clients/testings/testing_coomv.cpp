@@ -109,6 +109,7 @@ void testing_coomv(const Arguments& arg)
 
     host_coo_matrix<T> hA;
 
+    rocsparse_seedrand();
     matrix_factory.init_coo(hA, M, N);
 
     host_dense_matrix<T> hx((trans == rocsparse_operation_none) ? N : M, 1);

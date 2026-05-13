@@ -140,6 +140,7 @@ void testing_spsm_csr(const Arguments& arg)
 
     // Sample matrix
     I nnz_A;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr_row_ptr, hcsr_col_ind, hcsr_val, M, N, nnz_A, base);
 
     //

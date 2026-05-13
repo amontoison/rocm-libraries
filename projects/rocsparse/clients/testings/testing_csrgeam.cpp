@@ -149,6 +149,7 @@ void testing_csrgeam(const Arguments& arg)
     rocsparse_int hnnz_C_2;
 
     // Sample A
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr_row_ptr_A, hcsr_col_ind_A, hcsr_val_A, M, N, nnz_A, baseA);
 
     // Sample B

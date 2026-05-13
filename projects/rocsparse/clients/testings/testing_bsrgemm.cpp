@@ -497,6 +497,7 @@ void testing_bsrgemm(const Arguments& arg)
     rocsparse_matrix_factory<T>        matrix_factory(arg, arg.timing ? false : true, full_rank);
     rocsparse_matrix_factory_random<T> rf(full_rank);
 
+    rocsparse_seedrand();
     matrix_factory.init_bsr(h_A, d_A, Mb, Kb, baseA);
 
     M = Mb * d_A.row_block_dim;

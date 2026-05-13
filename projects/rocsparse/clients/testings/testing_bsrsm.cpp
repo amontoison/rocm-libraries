@@ -285,6 +285,7 @@ void testing_bsrsm(const Arguments& arg)
     host_gebsr_matrix<T>   hA;
     device_gebsr_matrix<T> dA;
 
+    rocsparse_seedrand();
     matrix_factory.init_bsr(hA, dA, mb, mb, base);
 
     m = mb * dA.row_block_dim;

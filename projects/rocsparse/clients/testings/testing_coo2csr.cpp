@@ -63,6 +63,7 @@ void testing_coo2csr(const Arguments& arg)
 
     // Sample matrix
     int64_t coo_nnz;
+    rocsparse_seedrand();
     matrix_factory.init_coo(hcoo_row_ind, hcoo_col_ind, hcoo_val, M, N, coo_nnz, base);
 
     rocsparse_int nnz = rocsparse_convert_to_int(coo_nnz);

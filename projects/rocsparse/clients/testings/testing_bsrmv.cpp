@@ -206,6 +206,7 @@ void testing_bsrmv(const Arguments& arg)
     //
     host_gebsr_matrix<T>   hA(dir, mb, nb, 0, block_dim, block_dim, base);
     device_gebsr_matrix<T> dA;
+    rocsparse_seedrand();
     if(strcmp(arg.category, "stress"))
     {
         matrix_factory.init_bsr(hA, dA, mb, nb, base);

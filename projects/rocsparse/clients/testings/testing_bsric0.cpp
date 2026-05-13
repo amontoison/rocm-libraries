@@ -190,6 +190,7 @@ void testing_bsric0(const Arguments& arg)
 
     // Generate BSR matrix on host (or read from file)
     rocsparse_int nnzb;
+    rocsparse_seedrand();
     matrix_factory.init_bsr(
         hbsr_row_ptr, hbsr_col_ind, hbsr_val_1, direction, Mb, Nb, nnzb, block_dim, base);
     M = Mb * block_dim;

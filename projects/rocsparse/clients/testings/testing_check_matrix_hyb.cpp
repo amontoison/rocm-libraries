@@ -89,6 +89,7 @@ void testing_check_matrix_hyb(const Arguments& arg)
     // Generate (or load from file) HYB matrix
     bool          conform;
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_hyb(hyb, m, n, nnz, base, conform);
     if(!conform)
     {

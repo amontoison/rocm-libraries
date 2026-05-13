@@ -158,6 +158,7 @@ void testing_csrsm(const Arguments& arg)
     CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_index_base(descr, base));
 
     host_csr_matrix<T> hcsr;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr);
 
     //

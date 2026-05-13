@@ -318,6 +318,7 @@ void testing_spgemm_bsr(const Arguments& arg)
     rocsparse_matrix_factory_random<T, I, J> rf(full_rank);
 
     hA.define(dir, Mb, Kb, 0, block_dim, block_dim, base_A);
+    rocsparse_seedrand();
     matrix_factory.init_gebsr(hA, Mb, Kb, block_dim, block_dim, base_A);
 
     M = Mb * hA.row_block_dim;

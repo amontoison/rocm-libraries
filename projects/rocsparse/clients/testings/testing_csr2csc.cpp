@@ -71,6 +71,7 @@ void testing_csr2csc(const Arguments& arg)
 
     // Sample matrix
     host_csr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hA, M, N);
     rocsparse_int nnz = hA.nnz;
 

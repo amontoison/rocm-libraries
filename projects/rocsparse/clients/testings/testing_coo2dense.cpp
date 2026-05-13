@@ -81,6 +81,7 @@ void testing_coo2dense(const Arguments& arg)
     host_vector<T>             h_coo_val;
 
     int64_t coo_nnz = 0;
+    rocsparse_seedrand();
     matrix_factory.init_coo(h_coo_row_ind, h_coo_col_ind, h_coo_val, M, N, coo_nnz, arg.baseA);
 
     rocsparse_int nnz = rocsparse_convert_to_int(coo_nnz);

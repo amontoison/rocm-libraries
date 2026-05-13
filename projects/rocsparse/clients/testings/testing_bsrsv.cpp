@@ -229,6 +229,7 @@ void testing_bsrsv(const Arguments& arg)
     device_gebsr_matrix<T> dA;
 
     // Sample matrix
+    rocsparse_seedrand();
     matrix_factory.init_bsr(hA, dA, mb, nb, base);
 
     M = dA.mb * dA.row_block_dim;

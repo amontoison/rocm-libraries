@@ -161,6 +161,7 @@ void testing_csrcolor(const Arguments& arg)
     host_csr_matrix<T> hA;
     {
         host_csr_matrix<T> nonsymA;
+        rocsparse_seedrand();
         matrix_factory.init_csr(nonsymA, M, M, csr_base);
         CHECK_ROCSPARSE_ERROR(rocsparse_matrix_utils::host_csrsym(nonsymA, hA));
     }

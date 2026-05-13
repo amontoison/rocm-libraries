@@ -161,6 +161,7 @@ void testing_csrmv(const Arguments& arg)
     rocsparse_matrix_factory<T> matrix_factory(arg, arg.unit_check ? to_int : false, full_rank);
 
     host_csr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hA, M, N);
 
     // normalize

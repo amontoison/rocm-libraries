@@ -183,6 +183,7 @@ void testing_spmm_batched_coo(const Arguments& arg)
     host_vector<A> hcoo_val_temp;
 
     int64_t nnz_A;
+    rocsparse_seedrand();
     matrix_factory.init_coo(hcoo_row_ind_temp,
                             hcoo_col_ind_temp,
                             hcoo_val_temp,

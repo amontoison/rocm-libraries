@@ -114,6 +114,7 @@ void testing_spmm_bell(const Arguments& arg)
     host_ell_matrix<A, I> hA;
     I                     hA_m = (trans_A == rocsparse_operation_none) ? M : K;
     I                     hA_n = (trans_A == rocsparse_operation_none) ? K : M;
+    rocsparse_seedrand();
     matrix_factory.init_ell(hA, hA_m, hA_n, base);
 
     Mb = hA_m;

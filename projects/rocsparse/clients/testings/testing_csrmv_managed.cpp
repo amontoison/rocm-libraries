@@ -156,6 +156,7 @@ void testing_csrmv_managed(const Arguments& arg)
 
     // Sample matrix
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_csr(trow_ptr, tcol_ind, tval, M, N, nnz, base);
 
     // Allocate host memory for vectors

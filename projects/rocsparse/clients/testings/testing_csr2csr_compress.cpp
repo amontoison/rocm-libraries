@@ -182,6 +182,7 @@ void testing_csr2csr_compress(const Arguments& arg)
 
     // Sample matrix
     rocsparse_int nnz_A;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr_row_ptr_A, hcsr_col_ind_A, hcsr_val_A, M, N, nnz_A, base);
 
     // Allocate host memory for nnz_per_row array

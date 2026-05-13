@@ -339,6 +339,7 @@ void testing_spgemm_csr(const Arguments& arg)
 
     {
         rocsparse_matrix_factory<T, I, J> matrix_factory(arg, to_int, full_rank);
+        rocsparse_seedrand();
         matrix_factory.init_csr(hA, M, K, arg.baseA);
     }
     //

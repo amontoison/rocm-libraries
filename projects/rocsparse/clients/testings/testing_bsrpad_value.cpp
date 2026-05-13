@@ -111,6 +111,7 @@ void testing_bsrpad_value(const Arguments& arg)
 
         // Generate a temporary sorted csr matrix to get the correct dimensions
         hcsrA.define(M, M, 0, base);
+        rocsparse_seedrand();
         matrix_factory.init_csr(hcsrA.ptr,
                                 hcsrA.ind,
                                 hcsrA.val,

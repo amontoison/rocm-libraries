@@ -177,6 +177,7 @@ void testing_gebsrmv(const Arguments& arg)
         static constexpr bool full_rank = false;
         rocsparse_matrix_factory<T> matrix_factory(arg, type, full_rank);
 
+        rocsparse_seedrand();
         matrix_factory.init_gebsr(hA);
     }
 

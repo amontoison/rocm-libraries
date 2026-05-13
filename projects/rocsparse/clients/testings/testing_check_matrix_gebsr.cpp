@@ -120,6 +120,7 @@ void testing_check_matrix_gebsr(const Arguments& arg)
 
     // Generate (or load from file) BSR matrix
     rocsparse_int nnzb;
+    rocsparse_seedrand();
     matrix_factory.init_gebsr(hbsr_row_ptr,
                               hbsr_col_ind,
                               hbsr_val,
@@ -208,8 +209,6 @@ void testing_check_matrix_gebsr(const Arguments& arg)
         rocsparse_int temp;
         T             temp_val;
         rocsparse_int rng;
-
-        rocsparse_seedrand();
 
         rng  = random_generator_exact<rocsparse_int>(1, mb - 1);
         temp = hbsr_row_ptr[rng];

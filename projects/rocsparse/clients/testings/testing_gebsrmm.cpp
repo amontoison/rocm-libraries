@@ -333,6 +333,7 @@ void testing_gebsrmm(const Arguments& arg)
 
     host_gebsr_matrix<T>        hA;
     rocsparse_matrix_factory<T> matrix_factory(arg);
+    rocsparse_seedrand();
     matrix_factory.init_gebsr(hA, Mb, Kb, row_block_dim, col_block_dim, base);
 
     M = hA.mb * hA.row_block_dim;

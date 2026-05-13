@@ -142,6 +142,7 @@ void testing_ell2csr(const Arguments& arg)
     // Sample matrix
     {
         rocsparse_int csr_nnz_gold;
+        rocsparse_seedrand();
         matrix_factory.init_csr(
             hcsr_row_ptr_gold, hcsr_col_ind_gold, hcsr_val_gold, M, N, csr_nnz_gold, baseB);
     }

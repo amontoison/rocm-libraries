@@ -247,6 +247,7 @@ void testing_csrmm(const Arguments& arg)
     rocsparse_matrix_factory<T> matrix_factory(arg);
 
     host_csr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hA, M, K);
 
     CHECK_ROCSPARSE_ERROR(hA.scale());

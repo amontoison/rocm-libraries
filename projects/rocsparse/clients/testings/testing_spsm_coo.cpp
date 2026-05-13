@@ -141,6 +141,7 @@ void testing_spsm_coo(const Arguments& arg)
 
     // Sample matrix
     int64_t nnz_A;
+    rocsparse_seedrand();
     matrix_factory.init_coo(hcoo_row_ind, hcoo_col_ind, hcoo_val, M, N, nnz_A, base);
 
     //

@@ -95,6 +95,7 @@ void testing_hyb2csr(const Arguments& arg)
 
     // Sample matrix
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr_row_ptr_gold, hcsr_col_ind_gold, hcsr_val_gold, M, N, nnz, base);
 
     // Allocate device memory and convert to HYB

@@ -117,6 +117,7 @@ void testing_csr2bsr(const Arguments& arg)
     CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_index_base(bsr_descr, bsr_base));
 
     host_csr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hA, M, N);
 
     // M and N can be modified in rocsparse_init_csr_matrix

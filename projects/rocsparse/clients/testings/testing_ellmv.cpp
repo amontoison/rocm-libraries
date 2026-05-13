@@ -104,6 +104,7 @@ void testing_ellmv(const Arguments& arg)
 
     host_ell_matrix<T> hA;
 
+    rocsparse_seedrand();
     matrix_factory.init_ell(hA, M, N, base);
 
     host_dense_matrix<T> hx((trans == rocsparse_operation_none) ? N : M, 1);

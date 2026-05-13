@@ -143,6 +143,7 @@ void testing_copy_info(const Arguments& arg)
     rocsparse_matrix_factory<T> matrix_factory(arg);
 
     host_csr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hA, M, N);
     device_csr_matrix<T> dA(hA);
 

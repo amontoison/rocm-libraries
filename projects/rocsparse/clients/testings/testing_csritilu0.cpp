@@ -267,8 +267,8 @@ void testing_csritilu0(const Arguments& arg)
     //
     // Dump matrix values to stdout for reproducibility debugging (f32_r_187_0b_3_rand).
     //
-    if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero && arg.nmaxiter == 3
-       && std::is_same<T, float>::value)
+    if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero
+       && arg.itilu0_alg == rocsparse_itilu0_alg_sync_split && std::is_same<T, float>::value)
     {
         std::cout << "=== MATRIX DUMP (m=" << hA.m << ", nnz=" << hA.nnz << ") ===" << std::endl;
         std::cout << std::setprecision(17);
@@ -436,6 +436,13 @@ void testing_csritilu0(const Arguments& arg)
                                                     buffer_size,
                                                     buffer);
             CHECK_ROCSPARSE_ERROR(status);
+            if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero
+               && arg.itilu0_alg == rocsparse_itilu0_alg_sync_split
+               && std::is_same<T, float>::value)
+            {
+                std::cout << "=== FIRST COMPUTE (from Gauss): maxiter=" << p.maxiter
+                          << ", status=" << status << " ===" << std::endl;
+            }
             if(dA.m == 0 || dA.nnz == 0)
             {
                 unit_check_scalar((rocsparse_int)0, p.maxiter);
@@ -510,6 +517,20 @@ void testing_csritilu0(const Arguments& arg)
         if(status == rocsparse_status_zero_pivot)
         {
             std::cout << "rocsparse_csritilu0_compute divergence " << std::endl;
+        }
+
+        if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero
+           && arg.itilu0_alg == rocsparse_itilu0_alg_sync_split && std::is_same<T, float>::value)
+        {
+            std::cout << "=== SECOND COMPUTE: maxiter=" << p.maxiter << ", status=" << status
+                      << " ===" << std::endl;
+            host_dense_vector<T> hilu0(ilu0);
+            std::cout << std::setprecision(17);
+            std::cout << "ilu0[0..4]:";
+            for(rocsparse_int i = 0; i < std::min((rocsparse_int)5, (rocsparse_int)hilu0.size());
+                ++i)
+                std::cout << " " << hilu0[i];
+            std::cout << std::endl;
         }
 
         EXPECT_ROCSPARSE_STATUS(status_csrilu0, status);

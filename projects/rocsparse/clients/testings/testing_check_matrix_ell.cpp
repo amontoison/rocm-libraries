@@ -79,6 +79,7 @@ void testing_check_matrix_ell(const Arguments& arg)
 
     // Generate (or load from file) ELL matrix
     host_ell_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_ell(hA, m, n, base);
 
     device_ell_matrix<T> dA(hA);
@@ -112,8 +113,6 @@ void testing_check_matrix_ell(const Arguments& arg)
         rocsparse_int temp2;
         T             temp_val;
         rocsparse_int row;
-
-        rocsparse_seedrand();
 
         row      = random_generator_exact<rocsparse_int>(0, m - 1);
         temp1    = hA.ind[row];

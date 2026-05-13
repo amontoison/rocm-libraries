@@ -106,6 +106,7 @@ void testing_gemmi(const Arguments& arg)
     CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_storage_mode(descr, storage));
 
     host_csr_matrix<T> hB;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hB,
                             (transB == rocsparse_operation_none) ? K : N,
                             (transB == rocsparse_operation_none) ? N : K);

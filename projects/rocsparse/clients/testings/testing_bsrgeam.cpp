@@ -168,6 +168,7 @@ void testing_bsrgeam(const Arguments& arg)
     rocsparse_int hnnzb_C_2;
 
     // Sample A
+    rocsparse_seedrand();
     matrix_factory.init_bsr(
         hbsr_row_ptr_A, hbsr_col_ind_A, hbsr_val_A, dir, Mb, Nb, nnzb_A, block_dim, baseA);
 

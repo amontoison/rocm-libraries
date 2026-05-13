@@ -120,6 +120,7 @@ void testing_gebsr2csr(const Arguments& arg)
 
     // Declare and initialize matrices.
     host_gebsr_matrix<T> hA;
+    rocsparse_seedrand();
     matrix_factory.init_gebsr(hA);
 
     device_gebsr_matrix<T> dA(hA);

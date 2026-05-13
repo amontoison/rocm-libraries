@@ -128,6 +128,7 @@ void testing_hybmv(const Arguments& arg)
 
     bool          conform;
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_hyb(hyb, M, N, nnz, base, conform);
     if(!conform)
     {

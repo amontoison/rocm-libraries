@@ -65,6 +65,7 @@ void testing_csr2coo(const Arguments& arg)
 
     // Sample matrix
     rocsparse_int nnz;
+    rocsparse_seedrand();
     matrix_factory.init_csr(hcsr_row_ptr, hcsr_col_ind, hcsr_val, M, N, nnz, base);
 
     // Allocate host memory for COO matrix
