@@ -260,6 +260,23 @@ void testing_csritilu0(const Arguments& arg)
     host_csr_matrix<T> hA;
     matrix_factory.init_csr(hA);
 
+    // DEBUG: dump matrix for f32_r_187_0b_3_rand
+    if(hA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
+       && sizeof(T) == sizeof(float) && hA.base == rocsparse_index_base_zero)
+    {
+        std::cerr << "DEBUG MATRIX M=" << hA.m << " nnz=" << hA.nnz << "\n";
+        std::cerr << "row_ptr:";
+        for(rocsparse_int i = 0; i <= hA.m; i++)
+            std::cerr << " " << hA.ptr[i];
+        std::cerr << "\ncol_ind:";
+        for(rocsparse_int i = 0; i < hA.nnz; i++)
+            std::cerr << " " << hA.ind[i];
+        std::cerr << "\nval:";
+        for(rocsparse_int i = 0; i < hA.nnz; i++)
+            std::cerr << " " << hA.val[i];
+        std::cerr << "\n";
+    }
+
     //
     // Transfer matrix A to device.
     //
