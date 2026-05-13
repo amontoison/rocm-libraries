@@ -406,6 +406,20 @@ void testing_csritilu0(const Arguments& arg)
         //
         if(status_csrilu0 != rocsparse_status_zero_pivot)
         {
+            // DEBUG: checksum of csrilu0 result (initial guess for first csritilu0_compute)
+            if(dA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
+               && sizeof(T) == sizeof(float) && dA.base == rocsparse_index_base_zero)
+            {
+                host_dense_vector<T> hcsrilu0(dA_csrilu0.val);
+                int64_t              cs = 0;
+                {
+                    const auto* bytes = reinterpret_cast<const uint8_t*>(hcsrilu0.data());
+                    for(size_t i = 0; i < (size_t)dA.nnz * sizeof(T); i++)
+                        cs += bytes[i];
+                }
+                std::cerr << "DEBUG CSRILU0_INIT cs=" << cs << "\n";
+            }
+
             p.maxiter = arg.nmaxiter;
             CHECK_ROCSPARSE_ERROR(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_host));
             status = rocsparse_csritilu0_compute<T>(handle,
