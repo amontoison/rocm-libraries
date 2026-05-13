@@ -264,11 +264,14 @@ void testing_csritilu0(const Arguments& arg)
     if(hA.m == 187 && p.alg == rocsparse_itilu0_alg_sync_split
        && sizeof(T) == sizeof(float) && hA.base == rocsparse_index_base_zero)
     {
-        double sum = 0;
-        for(rocsparse_int i = 0; i < hA.nnz; i++)
-            sum += std::abs((double)hA.val[i]);
+        int64_t val_cs = 0;
+        {
+            const auto* bytes = reinterpret_cast<const uint8_t*>(hA.val.data());
+            for(size_t i = 0; i < (size_t)hA.nnz * sizeof(T); i++)
+                val_cs += bytes[i];
+        }
         std::cerr << "DEBUG M=" << hA.m << " nnz=" << hA.nnz
-                  << " val_sum=" << sum
+                  << " val_cs=" << val_cs
                   << " ptr[187]=" << hA.ptr[hA.m]
                   << " ind[0]=" << hA.ind[0]
                   << "\n";
@@ -475,11 +478,14 @@ void testing_csritilu0(const Arguments& arg)
            && sizeof(T) == sizeof(float) && dA.base == rocsparse_index_base_zero)
         {
             host_dense_vector<T> hilu0_gauss(dA_csrilu0.val);
-            double               sum = 0;
-            for(rocsparse_int i = 0; i < dA.nnz; i++)
-                sum += std::abs((double)hilu0_gauss[i]);
+            int64_t              gauss_cs = 0;
+            {
+                const auto* bytes = reinterpret_cast<const uint8_t*>(hilu0_gauss.data());
+                for(size_t i = 0; i < (size_t)dA.nnz * sizeof(T); i++)
+                    gauss_cs += bytes[i];
+            }
             std::cerr << "DEBUG GAUSSIAN maxiter_used=" << p.maxiter
-                      << " ilu0_gauss_sum=" << sum << "\n";
+                      << " ilu0_gauss_cs=" << gauss_cs << "\n";
         }
 
         //
@@ -516,11 +522,14 @@ void testing_csritilu0(const Arguments& arg)
            && sizeof(T) == sizeof(float) && dA.base == rocsparse_index_base_zero)
         {
             host_dense_vector<T> hilu0_iter(ilu0);
-            double               sum = 0;
-            for(rocsparse_int i = 0; i < dA.nnz; i++)
-                sum += std::abs((double)hilu0_iter[i]);
+            int64_t              iter_cs = 0;
+            {
+                const auto* bytes = reinterpret_cast<const uint8_t*>(hilu0_iter.data());
+                for(size_t i = 0; i < (size_t)dA.nnz * sizeof(T); i++)
+                    iter_cs += bytes[i];
+            }
             std::cerr << "DEBUG ITERATIVE maxiter_used=" << p.maxiter
-                      << " ilu0_iter_sum=" << sum << "\n";
+                      << " ilu0_iter_cs=" << iter_cs << "\n";
         }
 
         EXPECT_ROCSPARSE_STATUS(status_csrilu0, status);
