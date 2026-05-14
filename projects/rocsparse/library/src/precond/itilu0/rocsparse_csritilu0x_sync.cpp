@@ -1,6 +1,6 @@
 /*! \file */
 /* ************************************************************************
- * Copyright (C) 2022-2025 Advanced Micro Devices, Inc.
+ * Copyright (C) 2022-2026 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -731,6 +731,13 @@ public:
 
             const I nmaxiter = nmaxiter_[0];
 
+            //
+            // Zero the entire scratch buffer so that convergence_info counters and
+            // the layout_x_next initial iterate start from a clean state regardless
+            // of what a previous test left in the HIP memory pool.
+            //
+            RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, buffer_size_, stream));
+
             void*   buffer = buffer_;
             const I mean   = rocsparse::max(nnz_ / m_, static_cast<I>(1));
 
@@ -760,7 +767,6 @@ public:
             //
             // Init layout next.
             //
-
             rocsparse::itilu0x_layout_t<T, I, J> layout_x_next;
             layout_x_next.init(m_, ldiag_type_, lnnz_, udiag_type_, unnz_, buffer);
 
