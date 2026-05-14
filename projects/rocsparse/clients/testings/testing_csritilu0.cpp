@@ -270,21 +270,22 @@ void testing_csritilu0(const Arguments& arg)
     if(arg.M == 187 && arg.baseA == rocsparse_index_base_zero
        && arg.itilu0_alg == rocsparse_itilu0_alg_sync_split && std::is_same<T, float>::value)
     {
-        std::cout << "=== MATRIX DUMP (m=" << hA.m << ", nnz=" << hA.nnz << ") ===" << std::endl;
-        std::cout << std::setprecision(17);
-        std::cout << "ptr:";
-        for(rocsparse_int i = 0; i <= hA.m; ++i)
-            std::cout << " " << hA.ptr[i];
-        std::cout << std::endl;
-        std::cout << "ind:";
-        for(rocsparse_int i = 0; i < hA.nnz; ++i)
-            std::cout << " " << hA.ind[i];
-        std::cout << std::endl;
-        std::cout << "val:";
-        for(rocsparse_int i = 0; i < hA.nnz; ++i)
-            std::cout << " " << hA.val[i];
-        std::cout << std::endl;
-        std::cout << "=== END MATRIX DUMP ===" << std::endl;
+        {
+            // Compute simple checksums to verify reproducibility across runs.
+            rocsparse_int ptr_sum = 0;
+            rocsparse_int ind_sum = 0;
+            double        val_sum = 0.0;
+            for(rocsparse_int i = 0; i <= hA.m; ++i)
+                ptr_sum += hA.ptr[i];
+            for(rocsparse_int i = 0; i < hA.nnz; ++i)
+                ind_sum += hA.ind[i];
+            for(rocsparse_int i = 0; i < hA.nnz; ++i)
+                val_sum += static_cast<double>(hA.val[i]);
+            std::cout << std::setprecision(17);
+            std::cout << "=== MATRIX CHECKSUM (m=" << hA.m << ", nnz=" << hA.nnz << ")"
+                      << " ptr_sum=" << ptr_sum << " ind_sum=" << ind_sum
+                      << " val_sum=" << val_sum << " ===" << std::endl;
+        }
     }
 
     //
