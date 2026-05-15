@@ -739,6 +739,20 @@ public:
             //
             rocsparse::itilu0x_convergence_info_t<floating_data_t<T>, J> setup;
 
+            //
+            // Zero only the convergence_info section so that counters and norms
+            // start from a clean state regardless of what a previous call left in
+            // the HIP memory pool.  We intentionally leave layout_x_next intact
+            // so that state built up by a preceding compute call (e.g. the
+            // Gauss-Seidel warm-up) is preserved as the initial iterate.
+            //
+            {
+                const size_t size_convergence_info
+                    = rocsparse::itilu0x_convergence_info_t<floating_data_t<T>, J>::size(
+                        nmaxiter_[0], options_);
+                RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, size_convergence_info, stream));
+            }
+
             buffer = setup.init(handle_, buffer, nmaxiter, options_);
 
             floating_data_t<T>* p_nrm_matrix
