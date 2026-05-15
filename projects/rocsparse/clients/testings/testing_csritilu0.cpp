@@ -280,7 +280,8 @@ void testing_csritilu0(const Arguments& arg)
             for(rocsparse_int i = 0; i < hA.nnz; ++i)
                 ind_sum += hA.ind[i];
             for(rocsparse_int i = 0; i < hA.nnz; ++i)
-                val_sum += static_cast<double>(hA.val[i]);
+                val_sum += static_cast<double>(
+                    static_cast<std::complex<floating_data_t<T>>>(hA.val[i]).real());
             std::cout << std::setprecision(17);
             std::cout << "=== MATRIX CHECKSUM (m=" << hA.m << ", nnz=" << hA.nnz << ")"
                       << " ptr_sum=" << ptr_sum << " ind_sum=" << ind_sum
