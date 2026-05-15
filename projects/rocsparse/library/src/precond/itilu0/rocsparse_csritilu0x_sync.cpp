@@ -614,6 +614,17 @@ public:
                                     size_t               buffer_size_,
                                     void* __restrict__ buffer_)
         {
+            //
+            // Zero the entire scratch buffer once before any compute calls.
+            // This prevents stale values left in the HIP memory pool by a
+            // previous test from corrupting layout_x_next (the scratch
+            // iterate) or the convergence_info counters.
+            //
+            if(buffer_ != nullptr && buffer_size_ > 0)
+            {
+                hipStream_t stream = handle_->stream;
+                RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, buffer_size_, stream));
+            }
             return rocsparse_status_success;
         };
     };
