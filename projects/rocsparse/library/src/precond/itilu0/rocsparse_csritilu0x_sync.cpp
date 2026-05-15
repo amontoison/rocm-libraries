@@ -279,15 +279,6 @@ namespace rocsparse
                         //
                         // Assign.
                         //
-                        // For L entries the division by dval0_[col] already makes s=inf
-                        // when the column's diagonal is zero, and the guard below catches
-                        // it.  Apply the same symmetric check to U and D so that the
-                        // warm-start values stored in layout_x_next are preserved when
-                        // the current iterate (p_x) has a zero diagonal -- i.e. when the
-                        // second compute starts from an all-zeros initial guess.
-                        const auto dval0_col_abs = std::abs(dval0_[col]);
-                        const bool dval0_col_is_zero
-                            = std::isinf(static_cast<floating_data_t<T>>(1) / dval0_col_abs);
                         auto ss = std::abs(s);
                         if(!std::isinf(ss) && !std::isnan(ss))
                         {
@@ -304,24 +295,18 @@ namespace rocsparse
                             }
                             else if(in_U)
                             {
-                                if(!dval0_col_is_zero)
+                                for(J h = j; h < nu; ++h)
                                 {
-                                    for(J h = j; h < nu; ++h)
+                                    if((uind_[ushift + h] - ubase_) == row)
                                     {
-                                        if((uind_[ushift + h] - ubase_) == row)
-                                        {
-                                            uval_[ushift + h] = s;
-                                            break;
-                                        }
+                                        uval_[ushift + h] = s;
+                                        break;
                                     }
                                 }
                             }
                             else
                             {
-                                if(!dval0_col_is_zero)
-                                {
-                                    dval_[col] = s;
-                                }
+                                dval_[col] = s;
                             }
                         }
                     }
@@ -766,18 +751,19 @@ public:
             rocsparse::itilu0x_convergence_info_t<floating_data_t<T>, J> setup;
 
             //
-            // Zero only the convergence_info section so that counters and norms
-            // start from a clean state regardless of what a previous call left in
-            // the HIP memory pool.  We intentionally leave layout_x_next intact
-            // so that state built up by a preceding compute call (e.g. the
-            // Gauss-Seidel warm-up) is preserved as the initial iterate.
+            // Zero the entire inner buffer so that both the convergence_info
+            // counters/norms and the layout_x_next iterate buffers start from a
+            // clean state.  Zeroing layout_x_next ensures that the second compute
+            // call (which starts from an all-zeros initial guess after the user
+            // zeroes ilu0) sees the same starting state as a standalone run where
+            // the HIP memory pool gives freshly-zeroed memory.  Without this,
+            // stale iter-k values left by a previous compute call in layout_x_next
+            // interfere with the L/U/D warm-start logic (U and D sections get
+            // overwritten by raw matrix values in iter 0, while L is accidentally
+            // preserved by the isinf guard -- causing an inconsistent starting
+            // point that prevents convergence in the full test suite).
             //
-            {
-                const size_t size_convergence_info
-                    = rocsparse::itilu0x_convergence_info_t<floating_data_t<T>, J>::size(
-                        nmaxiter_[0], options_);
-                RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, size_convergence_info, stream));
-            }
+            RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, buffer_size_, stream));
 
             buffer = setup.init(handle_, buffer, nmaxiter, options_);
 
