@@ -279,6 +279,15 @@ namespace rocsparse
                         //
                         // Assign.
                         //
+                        // For L entries the division by dval0_[col] already makes s=inf
+                        // when the column's diagonal is zero, and the guard below catches
+                        // it.  Apply the same symmetric check to U and D so that the
+                        // warm-start values stored in layout_x_next are preserved when
+                        // the current iterate (p_x) has a zero diagonal -- i.e. when the
+                        // second compute starts from an all-zeros initial guess.
+                        const auto dval0_col_abs = std::abs(dval0_[col]);
+                        const bool dval0_col_is_zero
+                            = std::isinf(static_cast<floating_data_t<T>>(1) / dval0_col_abs);
                         auto ss = std::abs(s);
                         if(!std::isinf(ss) && !std::isnan(ss))
                         {
@@ -295,18 +304,24 @@ namespace rocsparse
                             }
                             else if(in_U)
                             {
-                                for(J h = j; h < nu; ++h)
+                                if(!dval0_col_is_zero)
                                 {
-                                    if((uind_[ushift + h] - ubase_) == row)
+                                    for(J h = j; h < nu; ++h)
                                     {
-                                        uval_[ushift + h] = s;
-                                        break;
+                                        if((uind_[ushift + h] - ubase_) == row)
+                                        {
+                                            uval_[ushift + h] = s;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                             else
                             {
-                                dval_[col] = s;
+                                if(!dval0_col_is_zero)
+                                {
+                                    dval_[col] = s;
+                                }
                             }
                         }
                     }
