@@ -750,22 +750,17 @@ public:
             //
             rocsparse::itilu0x_convergence_info_t<floating_data_t<T>, J> setup;
 
-            //
-            // Zero the entire inner buffer so that both the convergence_info
-            // counters/norms and the layout_x_next iterate buffers start from a
-            // clean state.  Zeroing layout_x_next ensures that the second compute
-            // call (which starts from an all-zeros initial guess after the user
-            // zeroes ilu0) sees the same starting state as a standalone run where
-            // the HIP memory pool gives freshly-zeroed memory.  Without this,
-            // stale iter-k values left by a previous compute call in layout_x_next
-            // interfere with the L/U/D warm-start logic (U and D sections get
-            // overwritten by raw matrix values in iter 0, while L is accidentally
-            // preserved by the isinf guard -- causing an inconsistent starting
-            // point that prevents convergence in the full test suite).
-            //
-            RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, buffer_size_, stream));
-
             buffer = setup.init(handle_, buffer, nmaxiter, options_);
+
+            //
+            // Zero only the convergence_info section (header) of the inner buffer.
+            // layout_x_next is intentionally left as-is so that the warm-start
+            // from a previous compute call can be reused.
+            //
+            const size_t size_convergence_info
+                = static_cast<const char*>(static_cast<const void*>(buffer))
+                  - static_cast<const char*>(static_cast<const void*>(buffer_));
+            RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, size_convergence_info, stream));
 
             floating_data_t<T>* p_nrm_matrix
                 = (compute_nrm_residual || compute_nrm_corr) ? setup.info.nrm_matrix : nullptr;
@@ -789,6 +784,66 @@ public:
 
             rocsparse::itilu0x_layout_t<T, I, J> layout_x_next;
             layout_x_next.init(m_, ldiag_type_, lnnz_, udiag_type_, unnz_, buffer);
+
+            // DEBUG: always print m_/nnz_ so we know the function is called and what params it has
+            fprintf(stderr, "DBG csritilu0x_sync compute::run m_=%d nnz_=%d is_float=%d\n",
+                    (int)m_, (int)nnz_, (int)std::is_same<T, float>::value);
+            fflush(stderr);
+
+            // DEBUG: detailed warm-start print only for m_==187 float
+            if(m_ == 187 && std::is_same<T, float>::value)
+            {
+                hipStreamSynchronize(stream);
+                constexpr int dbg_n = 5;
+                float         dbg_xnext_dval[dbg_n] = {};
+                float         dbg_xnext_lval[dbg_n] = {};
+                float         dbg_xnext_uval[dbg_n] = {};
+                float         dbg_lval[dbg_n]        = {};
+                float         dbg_uval[dbg_n]        = {};
+                float         dbg_dval[dbg_n]        = {};
+                hipMemcpy(dbg_xnext_dval,
+                          layout_x_next.dval,
+                          std::min((I)dbg_n, m_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                hipMemcpy(dbg_xnext_lval,
+                          layout_x_next.lval,
+                          std::min((I)dbg_n, lnnz_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                hipMemcpy(dbg_xnext_uval,
+                          layout_x_next.uval,
+                          std::min((I)dbg_n, unnz_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                hipMemcpy(dbg_lval,
+                          lval_,
+                          std::min((I)dbg_n, lnnz_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                hipMemcpy(dbg_uval,
+                          uval_,
+                          std::min((I)dbg_n, unnz_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                hipMemcpy(dbg_dval,
+                          dval_,
+                          std::min((I)dbg_n, m_) * sizeof(float),
+                          hipMemcpyDeviceToHost);
+                fprintf(stderr, "DBG detail (m=187,nnz=%d): lval_ptr=%p xnext_lval_ptr=%p\n",
+                        (int)nnz_, (void*)lval_, (void*)layout_x_next.lval);
+                fprintf(stderr, "  lval_[0..4]: %g %g %g %g %g\n",
+                        dbg_lval[0], dbg_lval[1], dbg_lval[2], dbg_lval[3], dbg_lval[4]);
+                fprintf(stderr, "  uval_[0..4]: %g %g %g %g %g\n",
+                        dbg_uval[0], dbg_uval[1], dbg_uval[2], dbg_uval[3], dbg_uval[4]);
+                fprintf(stderr, "  dval_[0..4]: %g %g %g %g %g\n",
+                        dbg_dval[0], dbg_dval[1], dbg_dval[2], dbg_dval[3], dbg_dval[4]);
+                fprintf(stderr, "  x_next.lval[0..4]: %g %g %g %g %g\n",
+                        dbg_xnext_lval[0], dbg_xnext_lval[1], dbg_xnext_lval[2],
+                        dbg_xnext_lval[3], dbg_xnext_lval[4]);
+                fprintf(stderr, "  x_next.uval[0..4]: %g %g %g %g %g\n",
+                        dbg_xnext_uval[0], dbg_xnext_uval[1], dbg_xnext_uval[2],
+                        dbg_xnext_uval[3], dbg_xnext_uval[4]);
+                fprintf(stderr, "  x_next.dval[0..4]: %g %g %g %g %g\n",
+                        dbg_xnext_dval[0], dbg_xnext_dval[1], dbg_xnext_dval[2],
+                        dbg_xnext_dval[3], dbg_xnext_dval[4]);
+                fflush(stderr);
+            }
 
             //
             // Loop over.
