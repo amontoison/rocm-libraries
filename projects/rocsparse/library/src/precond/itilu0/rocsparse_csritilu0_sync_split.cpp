@@ -196,6 +196,8 @@ struct rocsparse::csritilu0_driver_t<rocsparse_itilu0_alg_sync_split>
 
             using layout_t             = LAYOUT_IMPL;
             void* __restrict__ buffer_ = buffer__;
+            RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer__, 0, buffer_size_, handle_->stream));
+            RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
             layout_t layout;
             layout.init(m_, nnz_, datatype_, buffer_size_, buffer_);
 
