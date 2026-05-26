@@ -481,7 +481,25 @@ struct rocsparse::csritilu0_driver_t<rocsparse_itilu0_alg_sync_split>
             //
             // Move factorization to matrix.
             //
+            RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
+            {
+                constexpr int dbg_n = 5;
+                T             dbg_px[dbg_n] = {};
+                hipMemcpy(dbg_px, p_x, std::min((I)dbg_n, nnz_) * sizeof(T), hipMemcpyDeviceToHost);
+                std::cerr << "[DEBUG set_perm pre] m=" << m_ << " p_x[0..4]:";
+                for(int _i = 0; _i < dbg_n; ++_i) std::cerr << " " << (float)dbg_px[_i];
+                std::cerr << std::endl;
+            }
             rocsparse::set_permuted_array<BLOCKSIZE_PERM>(handle_, nnz_, sol_, p_x, p_perm);
+            RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
+            {
+                constexpr int dbg_n = 5;
+                T             dbg_sol[dbg_n] = {};
+                hipMemcpy(dbg_sol, sol_, std::min((I)dbg_n, nnz_) * sizeof(T), hipMemcpyDeviceToHost);
+                std::cerr << "[DEBUG set_perm post] sol_[0..4]:";
+                for(int _i = 0; _i < dbg_n; ++_i) std::cerr << " " << (float)dbg_sol[_i];
+                std::cerr << std::endl;
+            }
             return rocsparse_status_success;
         }
     };
