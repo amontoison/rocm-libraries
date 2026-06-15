@@ -338,6 +338,9 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             void* buffer_conversion;
             RETURN_IF_HIP_ERROR(
                 rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
+            // [TEMP DIAGNOSTIC] zero recycled pool scratch before csr2csc
+            RETURN_IF_HIP_ERROR(
+                hipMemsetAsync(buffer_conversion, 0, buffer_size, handle_->stream));
 
             J* tmp_ind;
             RETURN_IF_HIP_ERROR(
@@ -411,6 +414,9 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             void* buffer_conversion;
             RETURN_IF_HIP_ERROR(
                 rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
+            // [TEMP DIAGNOSTIC] zero recycled pool scratch before csr2csc
+            RETURN_IF_HIP_ERROR(
+                hipMemsetAsync(buffer_conversion, 0, buffer_size, handle_->stream));
 
             J* tmp_ind;
             RETURN_IF_HIP_ERROR(
