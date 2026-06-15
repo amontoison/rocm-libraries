@@ -354,32 +354,43 @@ struct rocsparse::csritilu0_driver_t<rocsparse_itilu0_alg_sync_split>
                                                    hipMemcpyDeviceToHost,
                                                    handle_->stream));
                 RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
-                std::vector<char> seen(nnz_, 0);
-                bool              ok = true;
+                auto part = [&](I i) -> const char* {
+                    if(i < host_lnnz)
+                        return "L";
+                    if(i < host_lnnz + host_unnz)
+                        return "U";
+                    return "D";
+                };
+                std::vector<I> first(nnz_, -1);
+                bool           ok = true;
                 for(I i = 0; i < nnz_; ++i)
                 {
                     const I v = h_perm[i];
                     if(v < 0 || v >= nnz_)
                     {
-                        std::cerr << "[csritilu0 sync_split] perm[" << i << "] = " << v
-                                  << " OUT OF RANGE [0," << nnz_ << ")" << std::endl;
+                        std::cerr << "[csritilu0 sync_split] perm[" << i << "] (" << part(i)
+                                  << ") = " << v << " OUT OF RANGE [0," << nnz_ << ")"
+                                  << " | lnnz=" << host_lnnz << " unnz=" << host_unnz
+                                  << " m=" << m_ << std::endl;
                         ok = false;
                         break;
                     }
-                    if(seen[v])
+                    if(first[v] != -1)
                     {
-                        std::cerr << "[csritilu0 sync_split] perm value " << v
-                                  << " appears more than once (perm[" << i << "])" << std::endl;
+                        std::cerr << "[csritilu0 sync_split] DUP value " << v << ": first at perm["
+                                  << first[v] << "] (" << part(first[v]) << "), again at perm[" << i
+                                  << "] (" << part(i) << ") | lnnz=" << host_lnnz
+                                  << " unnz=" << host_unnz << " m=" << m_ << std::endl;
                         ok = false;
                         break;
                     }
-                    seen[v] = 1;
+                    first[v] = i;
                 }
                 if(ok)
                 {
                     for(I v = 0; v < nnz_; ++v)
                     {
-                        if(!seen[v])
+                        if(first[v] == -1)
                         {
                             std::cerr << "[csritilu0 sync_split] perm MISSING value " << v
                                       << " (not a bijection)" << std::endl;
