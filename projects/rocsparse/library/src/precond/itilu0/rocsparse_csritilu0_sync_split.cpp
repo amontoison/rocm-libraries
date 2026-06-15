@@ -25,6 +25,7 @@
 #include "../conversion/rocsparse_csxsldu.hpp"
 #include "../conversion/rocsparse_identity.hpp"
 #include "common.hpp"
+#include <vector> // [TEMP DIAGNOSTIC]
 #include "rocsparse_common.hpp"
 #include "rocsparse_csritilu0_driver.hpp"
 #include "rocsparse_csritilu0x_buffer_size.hpp"
@@ -338,6 +339,61 @@ struct rocsparse::csritilu0_driver_t<rocsparse_itilu0_alg_sync_split>
                                                            datatype_,
                                                            p_buffer_size,
                                                            p_buffer)));
+
+            //
+            // [TEMP DIAGNOSTIC] Validate that perm is a bijection over [0, nnz_).
+            // A garbage/out-of-range entry here explains the order-dependent
+            // "exact 0" failures (set_permuted_array leaves output slots unwritten,
+            // get_permuted_array reads out of bounds).
+            //
+            {
+                std::vector<I> h_perm(nnz_);
+                RETURN_IF_HIP_ERROR(hipMemcpyAsync(h_perm.data(),
+                                                   p_perm,
+                                                   sizeof(I) * nnz_,
+                                                   hipMemcpyDeviceToHost,
+                                                   handle_->stream));
+                RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
+                std::vector<char> seen(nnz_, 0);
+                bool              ok = true;
+                for(I i = 0; i < nnz_; ++i)
+                {
+                    const I v = h_perm[i];
+                    if(v < 0 || v >= nnz_)
+                    {
+                        std::cerr << "[csritilu0 sync_split] perm[" << i << "] = " << v
+                                  << " OUT OF RANGE [0," << nnz_ << ")" << std::endl;
+                        ok = false;
+                        break;
+                    }
+                    if(seen[v])
+                    {
+                        std::cerr << "[csritilu0 sync_split] perm value " << v
+                                  << " appears more than once (perm[" << i << "])" << std::endl;
+                        ok = false;
+                        break;
+                    }
+                    seen[v] = 1;
+                }
+                if(ok)
+                {
+                    for(I v = 0; v < nnz_; ++v)
+                    {
+                        if(!seen[v])
+                        {
+                            std::cerr << "[csritilu0 sync_split] perm MISSING value " << v
+                                      << " (not a bijection)" << std::endl;
+                            ok = false;
+                            break;
+                        }
+                    }
+                }
+                if(ok)
+                {
+                    std::cerr << "[csritilu0 sync_split] perm OK (valid bijection, nnz=" << nnz_
+                              << ")" << std::endl;
+                }
+            }
 
             //
             // Copy the struct to device.
