@@ -357,7 +357,7 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             I* tmp_uptr = uptr;
             RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
             // [TEMP DIAGNOSTIC] inspect U values before/after csr2csc transpose
-            if(std::is_same<T, rocsparse_int>::value)
+            if constexpr(std::is_same<T, rocsparse_int>::value)
             {
                 auto count_zeros = [&](const char* tag) {
                     std::vector<T> h(unnz_);
