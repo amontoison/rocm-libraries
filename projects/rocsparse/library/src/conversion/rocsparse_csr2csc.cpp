@@ -141,7 +141,15 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::primitives::radix_sort_pairs(
             handle, keys, vals, nnz, startbit, endbit, size, tmp_rocprim));
 
-        // [TEMP DIAGNOSTIC] inspect sorted permutation (map) range
+        // Create column pointers
+        RETURN_IF_ROCSPARSE_ERROR(
+            rocsparse::coo2csr_core(handle, keys.current(), nnz, n, csc_col_ptr, idx_base));
+
+        // Create row indices
+        RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2coo_core(
+            handle, csr_row_ptr_begin, csr_row_ptr_end, nnz, m, tmp_work1, idx_base));
+
+        // [TEMP DIAGNOSTIC] inspect map + csr_val RIGHT BEFORE the permute kernel
         if constexpr(std::is_same<T, rocsparse_int>::value)
         {
             std::vector<I> hmap(nnz);
@@ -160,7 +168,6 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
                     mx = v;
             }
             const bool cur_is_perm = (vals.current() == tmp_perm);
-            // also inspect the input values csr_val (in2 of the permute kernel)
             std::vector<T> hval(nnz);
             (void)hipMemcpyAsync(
                 hval.data(), csr_val, sizeof(T) * nnz, hipMemcpyDeviceToHost, stream);
@@ -176,19 +183,10 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
                 if(v > vmx)
                     vmx = v;
             }
-            std::cerr << "[csr2csc map] nnz=" << nnz << " startbit=" << startbit
-                      << " endbit=" << endbit << " oob=" << oob << " min=" << mn << " max=" << mx
-                      << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2")
+            std::cerr << "[csr2csc pre-permute] nnz=" << nnz << " map_oob=" << oob << " map_min=" << mn
+                      << " map_max=" << mx << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2")
                       << " | csr_val zeros=" << vz << " min=" << vmn << " max=" << vmx << std::endl;
         }
-
-        // Create column pointers
-        RETURN_IF_ROCSPARSE_ERROR(
-            rocsparse::coo2csr_core(handle, keys.current(), nnz, n, csc_col_ptr, idx_base));
-
-        // Create row indices
-        RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2coo_core(
-            handle, csr_row_ptr_begin, csr_row_ptr_end, nnz, m, tmp_work1, idx_base));
 
 // Permute row indices and values
 #define CSR2CSC_DIM 512
