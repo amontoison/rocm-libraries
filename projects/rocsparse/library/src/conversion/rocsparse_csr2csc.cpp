@@ -127,6 +127,25 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
         // rocprim buffer
         void* tmp_rocprim = reinterpret_cast<void*>(ptr);
 
+        // [TEMP DIAGNOSTIC] dump pointer ranges to detect overlap
+        if constexpr(std::is_same<T, rocsparse_int>::value)
+        {
+            auto R = [](const char* nm, const void* p, size_t bytes) {
+                const char* b = reinterpret_cast<const char*>(p);
+                std::cerr << "  " << nm << " [" << (const void*)b << " .. "
+                          << (const void*)(b + bytes) << ")" << std::endl;
+            };
+            std::cerr << "[csr2csc ptrs] nnz=" << nnz << " m=" << m << " n=" << n << std::endl;
+            R("csr_val   ", csr_val, sizeof(T) * nnz);
+            R("csc_val   ", csc_val, sizeof(T) * nnz);
+            R("csc_row_in", csc_row_ind, sizeof(J) * nnz);
+            R("csc_col_pt", csc_col_ptr, sizeof(I) * (n + 1));
+            R("temp_buf  ", temp_buffer, (size_t)(ptr - reinterpret_cast<char*>(temp_buffer)));
+            R("tmp_work1 ", tmp_work1, sizeof(J) * nnz);
+            R("tmp_work2 ", tmp_work2, sizeof(I) * nnz);
+            R("tmp_perm  ", tmp_perm, sizeof(I) * nnz);
+        }
+
         // Create identitiy permutation
         RETURN_IF_ROCSPARSE_ERROR(
             rocsparse::create_identity_permutation_core(handle, nnz, tmp_perm));
