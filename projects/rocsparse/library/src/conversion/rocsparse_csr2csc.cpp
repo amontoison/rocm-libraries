@@ -34,6 +34,8 @@
 #include "rocsparse_csr2coo.hpp"
 #include "rocsparse_identity.hpp"
 #include "rocsparse_primitives.hpp"
+#include <type_traits> // [TEMP DIAGNOSTIC]
+#include <vector> // [TEMP DIAGNOSTIC]
 
 template <typename I, typename J, typename T>
 rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
@@ -138,6 +140,30 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
             handle, nnz, startbit, endbit, &size)));
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::primitives::radix_sort_pairs(
             handle, keys, vals, nnz, startbit, endbit, size, tmp_rocprim));
+
+        // [TEMP DIAGNOSTIC] inspect sorted permutation (map) range
+        if constexpr(std::is_same<T, rocsparse_int>::value)
+        {
+            std::vector<I> hmap(nnz);
+            (void)hipMemcpyAsync(
+                hmap.data(), vals.current(), sizeof(I) * nnz, hipMemcpyDeviceToHost, stream);
+            (void)hipStreamSynchronize(stream);
+            long oob = 0, mn = (long)1e18, mx = -1;
+            for(I i = 0; i < nnz; ++i)
+            {
+                const long v = (long)hmap[i];
+                if(v < 0 || v >= (long)nnz)
+                    ++oob;
+                if(v < mn)
+                    mn = v;
+                if(v > mx)
+                    mx = v;
+            }
+            const bool cur_is_perm = (vals.current() == tmp_perm);
+            std::cerr << "[csr2csc map] nnz=" << nnz << " startbit=" << startbit
+                      << " endbit=" << endbit << " oob=" << oob << " min=" << mn << " max=" << mx
+                      << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2") << std::endl;
+        }
 
         // Create column pointers
         RETURN_IF_ROCSPARSE_ERROR(
