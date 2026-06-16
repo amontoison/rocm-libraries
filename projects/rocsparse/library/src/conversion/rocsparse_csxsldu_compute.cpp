@@ -335,18 +335,21 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             RETURN_IF_ROCSPARSE_ERROR(rocsparse_csr2csc_buffer_size(
                 handle_, m_, n_, unnz_, uptr, uind_, rocsparse_action_numeric, &buffer_size));
 
+            // WORKAROUND (rocm-23624): on gfx950 with the ROCm 7.14/UB26 runtime,
+            // hipMallocAsync (stream-ordered pool) hands back memory that gets
+            // corrupted during the csr2csc call (a disjoint write zeroes these
+            // live buffers), producing a non-bijective permutation. Using plain
+            // hipMalloc/hipFree (no pool) avoids it. Remove once the runtime pool
+            // defect is fixed.
             void* buffer_conversion;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&buffer_conversion, buffer_size));
 
             J* tmp_ind;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&tmp_ind, sizeof(J) * unnz_, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&tmp_ind, sizeof(J) * unnz_));
             RETURN_IF_HIP_ERROR(hipMemcpyAsync(
                 tmp_ind, uind_, sizeof(J) * (unnz_), hipMemcpyDeviceToDevice, handle_->stream));
             T* tmp_val;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&tmp_val, sizeof(T) * unnz_, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&tmp_val, sizeof(T) * unnz_));
             RETURN_IF_HIP_ERROR(hipMemcpyAsync(
                 tmp_val, uval_, sizeof(T) * (unnz_), hipMemcpyDeviceToDevice, handle_->stream));
             I* tmp_uptr = uptr;
@@ -364,9 +367,10 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
                                                                   rocsparse_action_numeric,
                                                                   ubase_,
                                                                   buffer_conversion));
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(buffer_conversion, handle_->stream));
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_val, handle_->stream));
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_ind, handle_->stream));
+            RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(buffer_conversion));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(tmp_val));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(tmp_ind));
         }
     }
 
@@ -408,19 +412,20 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             RETURN_IF_ROCSPARSE_ERROR(rocsparse_csr2csc_buffer_size(
                 handle_, n_, m_, lnnz_, lptr, lind_, rocsparse_action_numeric, &buffer_size));
 
+            // WORKAROUND (rocm-23624): see the U-transpose above. Plain
+            // hipMalloc/hipFree (no stream-ordered pool) to dodge the gfx950 /
+            // ROCm 7.14-UB26 hipMallocAsync corruption. Remove once the runtime
+            // pool defect is fixed.
             void* buffer_conversion;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&buffer_conversion, buffer_size));
 
             J* tmp_ind;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&tmp_ind, sizeof(J) * lnnz_, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&tmp_ind, sizeof(J) * lnnz_));
             RETURN_IF_HIP_ERROR(hipMemcpyAsync(
                 tmp_ind, lind_, sizeof(J) * (lnnz_), hipMemcpyDeviceToDevice, handle_->stream));
 
             T* tmp_val;
-            RETURN_IF_HIP_ERROR(
-                rocsparse_hipMallocAsync(&tmp_val, sizeof(T) * lnnz_, handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipMalloc(&tmp_val, sizeof(T) * lnnz_));
             RETURN_IF_HIP_ERROR(hipMemcpyAsync(
                 tmp_val, lval_, sizeof(T) * (lnnz_), hipMemcpyDeviceToDevice, handle_->stream));
 
@@ -440,9 +445,10 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
                                                                   lbase_,
                                                                   buffer_conversion));
 
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(buffer_conversion, handle_->stream));
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_val, handle_->stream));
-            RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_ind, handle_->stream));
+            RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(buffer_conversion));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(tmp_val));
+            RETURN_IF_HIP_ERROR(rocsparse_hipFree(tmp_ind));
         }
     }
 
