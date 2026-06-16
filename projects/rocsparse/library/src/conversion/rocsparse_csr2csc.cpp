@@ -141,13 +141,40 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::primitives::radix_sort_pairs(
             handle, keys, vals, nnz, startbit, endbit, size, tmp_rocprim));
 
+        // [TEMP DIAGNOSTIC] checkpoint helper
+        auto dbg = [&](const char* tag) {
+            if constexpr(std::is_same<T, rocsparse_int>::value)
+            {
+                std::vector<I> hm(nnz);
+                std::vector<T> hv(nnz);
+                (void)hipMemcpyAsync(
+                    hm.data(), vals.current(), sizeof(I) * nnz, hipMemcpyDeviceToHost, stream);
+                (void)hipMemcpyAsync(
+                    hv.data(), csr_val, sizeof(T) * nnz, hipMemcpyDeviceToHost, stream);
+                (void)hipStreamSynchronize(stream);
+                long moob = 0, vz = 0;
+                for(I i = 0; i < nnz; ++i)
+                {
+                    if((long)hm[i] < 0 || (long)hm[i] >= (long)nnz)
+                        ++moob;
+                    if((long)hv[i] == 0)
+                        ++vz;
+                }
+                std::cerr << "[csr2csc " << tag << "] nnz=" << nnz << " map_oob=" << moob
+                          << " csr_val_zeros=" << vz << std::endl;
+            }
+        };
+        dbg("after-sort");
+
         // Create column pointers
         RETURN_IF_ROCSPARSE_ERROR(
             rocsparse::coo2csr_core(handle, keys.current(), nnz, n, csc_col_ptr, idx_base));
+        dbg("after-coo2csr");
 
         // Create row indices
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2coo_core(
             handle, csr_row_ptr_begin, csr_row_ptr_end, nnz, m, tmp_work1, idx_base));
+        dbg("after-csr2coo");
 
         // [TEMP DIAGNOSTIC] inspect map + csr_val RIGHT BEFORE the permute kernel
         if constexpr(std::is_same<T, rocsparse_int>::value)
