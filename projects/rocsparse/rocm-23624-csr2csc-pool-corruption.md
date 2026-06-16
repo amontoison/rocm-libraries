@@ -147,10 +147,11 @@ Remaining:
 2. **File against the HIP runtime / `hipMallocAsync` stream-ordered pool** (gfx950) with: the
    reproducer (`USE_POOL=1` corrupts / `USE_POOL=0` clean), the pointer-range dump (a write to
    `0x71ab…` zeroing a disjoint allocation at `0x71a2…`), and the order/size-dependence.
-3. Optional rocSPARSE mitigation while the runtime is fixed: in the `csxsldu` U/L transpose,
-   allocate the `csr2csc` temporaries (`buffer_conversion`, `tmp_ind`, `tmp_val`) with plain
-   `hipMalloc`/`hipFree` instead of `rocsparse_hipMallocAsync` — confirmed to avoid the
-   corruption. (Workaround only; the real fix belongs in the runtime.)
+3. rocSPARSE mitigation while the runtime is fixed (**APPLIED + CONFIRMED**): in the `csxsldu`
+   U/L transpose, the `csr2csc` temporaries (`buffer_conversion`, `tmp_ind`, `tmp_val`) now use
+   plain `rocsparse_hipMalloc`/`rocsparse_hipFree` instead of `rocsparse_hipMallocAsync`. With
+   this change the full rocSPARSE test suite passes on galena (gfx950 / ROCm 7.14-UB26).
+   (Workaround only; the real fix belongs in the runtime — remove once fixed.)
 
 ---
 
