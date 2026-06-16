@@ -160,9 +160,26 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
                     mx = v;
             }
             const bool cur_is_perm = (vals.current() == tmp_perm);
+            // also inspect the input values csr_val (in2 of the permute kernel)
+            std::vector<T> hval(nnz);
+            (void)hipMemcpyAsync(
+                hval.data(), csr_val, sizeof(T) * nnz, hipMemcpyDeviceToHost, stream);
+            (void)hipStreamSynchronize(stream);
+            long vz = 0, vmn = (long)1e18, vmx = -1;
+            for(I i = 0; i < nnz; ++i)
+            {
+                const long v = (long)hval[i];
+                if(v == 0)
+                    ++vz;
+                if(v < vmn)
+                    vmn = v;
+                if(v > vmx)
+                    vmx = v;
+            }
             std::cerr << "[csr2csc map] nnz=" << nnz << " startbit=" << startbit
                       << " endbit=" << endbit << " oob=" << oob << " min=" << mn << " max=" << mx
-                      << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2") << std::endl;
+                      << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2")
+                      << " | csr_val zeros=" << vz << " min=" << vmn << " max=" << vmx << std::endl;
         }
 
         // Create column pointers
