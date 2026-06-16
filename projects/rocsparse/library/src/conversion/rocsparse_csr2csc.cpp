@@ -34,8 +34,6 @@
 #include "rocsparse_csr2coo.hpp"
 #include "rocsparse_identity.hpp"
 #include "rocsparse_primitives.hpp"
-#include <type_traits> // [TEMP DIAGNOSTIC]
-#include <vector> // [TEMP DIAGNOSTIC]
 
 template <typename I, typename J, typename T>
 rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
@@ -127,25 +125,6 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
         // rocprim buffer
         void* tmp_rocprim = reinterpret_cast<void*>(ptr);
 
-        // [TEMP DIAGNOSTIC] dump pointer ranges to detect overlap
-        if constexpr(std::is_same<T, rocsparse_int>::value)
-        {
-            auto R = [](const char* nm, const void* p, size_t bytes) {
-                const char* b = reinterpret_cast<const char*>(p);
-                std::cerr << "  " << nm << " [" << (const void*)b << " .. "
-                          << (const void*)(b + bytes) << ")" << std::endl;
-            };
-            std::cerr << "[csr2csc ptrs] nnz=" << nnz << " m=" << m << " n=" << n << std::endl;
-            R("csr_val   ", csr_val, sizeof(T) * nnz);
-            R("csc_val   ", csc_val, sizeof(T) * nnz);
-            R("csc_row_in", csc_row_ind, sizeof(J) * nnz);
-            R("csc_col_pt", csc_col_ptr, sizeof(I) * (n + 1));
-            R("temp_buf  ", temp_buffer, (size_t)(ptr - reinterpret_cast<char*>(temp_buffer)));
-            R("tmp_work1 ", tmp_work1, sizeof(J) * nnz);
-            R("tmp_work2 ", tmp_work2, sizeof(I) * nnz);
-            R("tmp_perm  ", tmp_perm, sizeof(I) * nnz);
-        }
-
         // Create identitiy permutation
         RETURN_IF_ROCSPARSE_ERROR(
             rocsparse::create_identity_permutation_core(handle, nnz, tmp_perm));
@@ -160,79 +139,13 @@ rocsparse_status rocsparse::csr2csc_core(rocsparse_handle     handle,
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::primitives::radix_sort_pairs(
             handle, keys, vals, nnz, startbit, endbit, size, tmp_rocprim));
 
-        // [TEMP DIAGNOSTIC] checkpoint helper
-        auto dbg = [&](const char* tag) {
-            if constexpr(std::is_same<T, rocsparse_int>::value)
-            {
-                std::vector<I> hm(nnz);
-                std::vector<T> hv(nnz);
-                (void)hipMemcpyAsync(
-                    hm.data(), vals.current(), sizeof(I) * nnz, hipMemcpyDeviceToHost, stream);
-                (void)hipMemcpyAsync(
-                    hv.data(), csr_val, sizeof(T) * nnz, hipMemcpyDeviceToHost, stream);
-                (void)hipStreamSynchronize(stream);
-                long moob = 0, vz = 0;
-                for(I i = 0; i < nnz; ++i)
-                {
-                    if((long)hm[i] < 0 || (long)hm[i] >= (long)nnz)
-                        ++moob;
-                    if((long)hv[i] == 0)
-                        ++vz;
-                }
-                std::cerr << "[csr2csc " << tag << "] nnz=" << nnz << " map_oob=" << moob
-                          << " csr_val_zeros=" << vz << std::endl;
-            }
-        };
-        dbg("after-sort");
-
         // Create column pointers
         RETURN_IF_ROCSPARSE_ERROR(
             rocsparse::coo2csr_core(handle, keys.current(), nnz, n, csc_col_ptr, idx_base));
-        dbg("after-coo2csr");
 
         // Create row indices
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2coo_core(
             handle, csr_row_ptr_begin, csr_row_ptr_end, nnz, m, tmp_work1, idx_base));
-        dbg("after-csr2coo");
-
-        // [TEMP DIAGNOSTIC] inspect map + csr_val RIGHT BEFORE the permute kernel
-        if constexpr(std::is_same<T, rocsparse_int>::value)
-        {
-            std::vector<I> hmap(nnz);
-            (void)hipMemcpyAsync(
-                hmap.data(), vals.current(), sizeof(I) * nnz, hipMemcpyDeviceToHost, stream);
-            (void)hipStreamSynchronize(stream);
-            long oob = 0, mn = (long)1e18, mx = -1;
-            for(I i = 0; i < nnz; ++i)
-            {
-                const long v = (long)hmap[i];
-                if(v < 0 || v >= (long)nnz)
-                    ++oob;
-                if(v < mn)
-                    mn = v;
-                if(v > mx)
-                    mx = v;
-            }
-            const bool cur_is_perm = (vals.current() == tmp_perm);
-            std::vector<T> hval(nnz);
-            (void)hipMemcpyAsync(
-                hval.data(), csr_val, sizeof(T) * nnz, hipMemcpyDeviceToHost, stream);
-            (void)hipStreamSynchronize(stream);
-            long vz = 0, vmn = (long)1e18, vmx = -1;
-            for(I i = 0; i < nnz; ++i)
-            {
-                const long v = (long)hval[i];
-                if(v == 0)
-                    ++vz;
-                if(v < vmn)
-                    vmn = v;
-                if(v > vmx)
-                    vmx = v;
-            }
-            std::cerr << "[csr2csc pre-permute] nnz=" << nnz << " map_oob=" << oob << " map_min=" << mn
-                      << " map_max=" << mx << " current=" << (cur_is_perm ? "tmp_perm" : "tmp_work2")
-                      << " | csr_val zeros=" << vz << " min=" << vmn << " max=" << vmx << std::endl;
-        }
 
 // Permute row indices and values
 #define CSR2CSC_DIM 512

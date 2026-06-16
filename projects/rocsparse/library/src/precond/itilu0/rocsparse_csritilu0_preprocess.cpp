@@ -95,15 +95,6 @@ rocsparse_status rocsparse::csritilu0_preprocess_template(rocsparse_handle     h
         RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_zero_pivot);
     }
 
-    //
-    // Force the (possibly recycled) working buffer to zero before anything is
-    // written into it. With UB26, clang does not zero out recycled buffers,
-    // which can lead to non-deterministic results in the csritilu0 algorithms
-    // that assume freshly allocated (zeroed) scratch memory.
-    //
-    RETURN_IF_HIP_ERROR(hipMemsetAsync(buffer_, 0, buffer_size_, handle_->stream));
-    RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
-
     RETURN_IF_ROCSPARSE_ERROR((rocsparse::preprocess_dispatch<I, J>(alg_,
                                                                     handle_,
                                                                     alg_,

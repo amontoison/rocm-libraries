@@ -40,6 +40,25 @@
 // Run:
 //   LD_LIBRARY_PATH=<rocsparse_install>/lib ./csr2csc_pool_repro
 //
+// Discriminator toggle:
+//   -DUSE_POOL=1 (default): inputs + temp_buffer from the stream-ordered async
+//                 pool (hipMallocAsync) + a dirty-pool step. Reproduces the bug.
+//   -DUSE_POOL=0: everything from plain hipMalloc, no pool, no dirty step.
+//                 If the corruption DISAPPEARS -> fault is the async pool /
+//                 runtime (below rocSPARSE). If it PERSISTS -> csr2csc writes
+//                 out of bounds (a rocSPARSE bug).
+//
+#ifndef USE_POOL
+#define USE_POOL 1
+#endif
+
+#if USE_POOL
+#define DEV_ALLOC(p, bytes) hipMallocAsync((p), (bytes), stream)
+#define DEV_FREE(p) hipFreeAsync((p), stream)
+#else
+#define DEV_ALLOC(p, bytes) hipMalloc((p), (bytes))
+#define DEV_FREE(p) hipFree((p))
+#endif
 #include <hip/hip_runtime.h>
 #include <rocsparse/rocsparse.h>
 
@@ -123,6 +142,7 @@ static int run_once(rocsparse_handle handle, hipStream_t stream, int n, int rep,
     // 1) Dirty the stream-ordered pool: allocate, fill with a nonzero pattern,
     //    free. Subsequent pool allocations are then served from recycled,
     //    non-zeroed memory -- the condition under which the bug appears.
+#if USE_POOL
     {
         void*        d     = nullptr;
         const size_t bytes = (size_t)64 << 20;
@@ -130,14 +150,15 @@ static int run_once(rocsparse_handle handle, hipStream_t stream, int n, int rep,
         HIP_CHECK(hipMemsetAsync(d, 0xCD, bytes, stream));
         HIP_CHECK(hipFreeAsync(d, stream));
     }
+#endif
 
     // 2) csr2csc INPUTS from the async pool (mimics csxsldu's tmp_* temporaries).
     int*    dptr = nullptr;
     int*    dind = nullptr;
     double* dval = nullptr;
-    HIP_CHECK(hipMallocAsync((void**)&dptr, sizeof(int) * (m + 1), stream));
-    HIP_CHECK(hipMallocAsync((void**)&dind, sizeof(int) * nnz, stream));
-    HIP_CHECK(hipMallocAsync((void**)&dval, sizeof(double) * nnz, stream));
+    HIP_CHECK(DEV_ALLOC((void**)&dptr, sizeof(int) * (m + 1)));
+    HIP_CHECK(DEV_ALLOC((void**)&dind, sizeof(int) * nnz));
+    HIP_CHECK(DEV_ALLOC((void**)&dval, sizeof(double) * nnz));
     HIP_CHECK(hipMemcpyAsync(dptr, hptr.data(), sizeof(int) * (m + 1), hipMemcpyHostToDevice, stream));
     HIP_CHECK(hipMemcpyAsync(dind, hind.data(), sizeof(int) * nnz, hipMemcpyHostToDevice, stream));
     HIP_CHECK(hipMemcpyAsync(dval, hval.data(), sizeof(double) * nnz, hipMemcpyHostToDevice, stream));
@@ -147,7 +168,7 @@ static int run_once(rocsparse_handle handle, hipStream_t stream, int n, int rep,
     ROC_CHECK(rocsparse_csr2csc_buffer_size(
         handle, m, n, nnz, dptr, dind, rocsparse_action_numeric, &bufsz));
     void* dtmp = nullptr;
-    HIP_CHECK(hipMallocAsync(&dtmp, bufsz, stream));
+    HIP_CHECK(DEV_ALLOC(&dtmp, bufsz));
 
     // 3) OUTPUTS in a separate, regular (non-pool) allocation -- disjoint, like
     //    the user-provided csritilu0 working buffer in the original failure.
@@ -203,10 +224,10 @@ static int run_once(rocsparse_handle handle, hipStream_t stream, int n, int rep,
     if(changed)
         bug = 1;
 
-    HIP_CHECK(hipFreeAsync(dptr, stream));
-    HIP_CHECK(hipFreeAsync(dind, stream));
-    HIP_CHECK(hipFreeAsync(dval, stream));
-    HIP_CHECK(hipFreeAsync(dtmp, stream));
+    HIP_CHECK(DEV_FREE(dptr));
+    HIP_CHECK(DEV_FREE(dind));
+    HIP_CHECK(DEV_FREE(dval));
+    HIP_CHECK(DEV_FREE(dtmp));
     HIP_CHECK(hipFree(cptr));
     HIP_CHECK(hipFree(cind));
     HIP_CHECK(hipFree(cval));
@@ -220,7 +241,10 @@ int main()
     HIP_CHECK(hipSetDevice(devId));
     hipDeviceProp_t prop;
     HIP_CHECK(hipGetDeviceProperties(&prop, devId));
-    printf("Device: %s\n", prop.name);
+    printf("Device: %s | USE_POOL=%d (%s)\n",
+           prop.name,
+           USE_POOL,
+           USE_POOL ? "hipMallocAsync + dirty pool" : "plain hipMalloc, no pool");
 
     hipStream_t stream;
     HIP_CHECK(hipStreamCreate(&stream));

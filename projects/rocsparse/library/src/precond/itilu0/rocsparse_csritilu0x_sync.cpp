@@ -771,23 +771,6 @@ public:
             layout_x_next.init(m_, ldiag_type_, lnnz_, udiag_type_, unnz_, buffer);
 
             //
-            // Initialize the next iterate with the current one. The correction
-            // kernel skips writing entries whose update is non-finite
-            // (isinf/isnan), so those entries must already hold a valid value;
-            // otherwise they would read uninitialized (recycled, non-zeroed
-            // under UB26) scratch memory and produce non-deterministic results.
-            //
-            RETURN_IF_HIP_ERROR(hipMemcpyAsync(
-                layout_x_next.lval, lval_, sizeof(T) * lnnz_, hipMemcpyDeviceToDevice, stream));
-            RETURN_IF_HIP_ERROR(hipMemcpyAsync(
-                layout_x_next.uval, uval_, sizeof(T) * unnz_, hipMemcpyDeviceToDevice, stream));
-            if(layout_x_next.dval != nullptr)
-            {
-                RETURN_IF_HIP_ERROR(hipMemcpyAsync(
-                    layout_x_next.dval, dval_, sizeof(T) * m_, hipMemcpyDeviceToDevice, stream));
-            }
-
-            //
             // Loop over.
             //
             floating_data_t<T> nrm_indicator_previous = static_cast<floating_data_t<T>>(0);

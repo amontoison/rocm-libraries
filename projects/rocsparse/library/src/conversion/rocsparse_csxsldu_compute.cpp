@@ -31,8 +31,6 @@
 #include "rocsparse_utility.hpp"
 
 #include "csr2csc_device.h"
-#include <type_traits> // [TEMP DIAGNOSTIC]
-#include <vector> // [TEMP DIAGNOSTIC]
 
 namespace rocsparse
 {
@@ -340,9 +338,6 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             void* buffer_conversion;
             RETURN_IF_HIP_ERROR(
                 rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
-            // [TEMP DIAGNOSTIC] zero recycled pool scratch before csr2csc
-            RETURN_IF_HIP_ERROR(
-                hipMemsetAsync(buffer_conversion, 0, buffer_size, handle_->stream));
 
             J* tmp_ind;
             RETURN_IF_HIP_ERROR(
@@ -356,63 +351,19 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
                 tmp_val, uval_, sizeof(T) * (unnz_), hipMemcpyDeviceToDevice, handle_->stream));
             I* tmp_uptr = uptr;
             RETURN_IF_HIP_ERROR(hipStreamSynchronize(handle_->stream));
-            // [TEMP DIAGNOSTIC] inspect U values before/after csr2csc transpose
-            if constexpr(std::is_same<T, rocsparse_int>::value)
-            {
-                auto count_zeros = [&](const char* tag) {
-                    std::vector<T> h(unnz_);
-                    (void)hipMemcpyAsync(h.data(),
-                                         uval_,
-                                         sizeof(T) * unnz_,
-                                         hipMemcpyDeviceToHost,
-                                         handle_->stream);
-                    (void)hipStreamSynchronize(handle_->stream);
-                    long nz = 0, mn = (long)1e18, mx = -1;
-                    for(I i = 0; i < unnz_; ++i)
-                    {
-                        const long v = (long)h[i];
-                        if(v == 0)
-                            ++nz;
-                        if(v < mn)
-                            mn = v;
-                        if(v > mx)
-                            mx = v;
-                    }
-                    std::cerr << "[csxsldu U " << tag << "] unnz=" << unnz_ << " zeros=" << nz
-                              << " min=" << mn << " max=" << mx << std::endl;
-                };
-                count_zeros("pre-csr2csc");
-                RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2csc_template(handle_,
-                                                                      m_,
-                                                                      n_,
-                                                                      unnz_,
-                                                                      tmp_val,
-                                                                      tmp_uptr,
-                                                                      tmp_ind,
-                                                                      uval_,
-                                                                      uind_,
-                                                                      uptr_,
-                                                                      rocsparse_action_numeric,
-                                                                      ubase_,
-                                                                      buffer_conversion));
-                count_zeros("post-csr2csc");
-            }
-            else
-            {
-                RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2csc_template(handle_,
-                                                                      m_,
-                                                                      n_,
-                                                                      unnz_,
-                                                                      tmp_val,
-                                                                      tmp_uptr,
-                                                                      tmp_ind,
-                                                                      uval_,
-                                                                      uind_,
-                                                                      uptr_,
-                                                                      rocsparse_action_numeric,
-                                                                      ubase_,
-                                                                      buffer_conversion));
-            }
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse::csr2csc_template(handle_,
+                                                                  m_,
+                                                                  n_,
+                                                                  unnz_,
+                                                                  tmp_val,
+                                                                  tmp_uptr,
+                                                                  tmp_ind,
+                                                                  uval_,
+                                                                  uind_,
+                                                                  uptr_,
+                                                                  rocsparse_action_numeric,
+                                                                  ubase_,
+                                                                  buffer_conversion));
             RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(buffer_conversion, handle_->stream));
             RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_val, handle_->stream));
             RETURN_IF_HIP_ERROR(rocsparse_hipFreeAsync(tmp_ind, handle_->stream));
@@ -460,9 +411,6 @@ rocsparse_status rocsparse::csxsldu_compute_template(rocsparse_handle handle_,
             void* buffer_conversion;
             RETURN_IF_HIP_ERROR(
                 rocsparse_hipMallocAsync(&buffer_conversion, buffer_size, handle_->stream));
-            // [TEMP DIAGNOSTIC] zero recycled pool scratch before csr2csc
-            RETURN_IF_HIP_ERROR(
-                hipMemsetAsync(buffer_conversion, 0, buffer_size, handle_->stream));
 
             J* tmp_ind;
             RETURN_IF_HIP_ERROR(
