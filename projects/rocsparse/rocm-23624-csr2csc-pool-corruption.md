@@ -1,8 +1,16 @@
-# rocm-23624 — `csritilu0` (sync_split) failure → `csr2csc` / `hipMallocAsync` pool memory corruption
+# rocm-23624 — `csritilu0` (sync_split) failure → `hipMallocAsync` pool memory corruption
 
-**Status:** Root cause is **below rocSPARSE** (HIP runtime / `hipMallocAsync` stream-ordered
-pool / codegen) on the UB26 toolchain (ROCm 7.14.0, gfx950 / MI350). Reproduced with the
-**public** `rocsparse_dcsr2csc` API, no `csritilu0` involved.
+**Status: CONFIRMED below rocSPARSE — `hipMallocAsync` stream-ordered pool / HIP runtime**
+(ROCm 7.14.0 / UB26, gfx950 / MI350). Reproduced with the **public** `rocsparse_dcsr2csc` API,
+no `csritilu0` involved. The discriminator settles it:
+
+| Allocator (repro `USE_POOL`) | Result |
+|------------------------------|--------|
+| `hipMallocAsync` (`USE_POOL=1`) | **CORRUPTS** at n=187 once the pool is recycled |
+| `hipMalloc`      (`USE_POOL=0`) | **clean, every size, every rep** |
+
+Same `csr2csc` code, only the allocator differs ⇒ rocSPARSE is correct; the pool/runtime is the
+defect.
 
 ---
 
@@ -112,14 +120,22 @@ hipcc -O3 -DUSE_POOL=0 csr2csc_pool_repro.cpp -o csr2csc_pool_repro_nopool \
 
 ---
 
-## 5. Recommended next actions
+## 5. Discriminator result (DONE) and next actions
 
-1. Run the `-DUSE_POOL=0` variant to formally separate "async-pool/runtime" from "rocSPARSE OOB".
-2. Run the reproducer on a **non-UB26 / stock ROCm** toolchain. If clean there, it nails the
-   regression to the UB26 toolchain/runtime.
-3. File against the appropriate lower layer (HIP runtime / `hipMallocAsync` pool / compiler for
-   gfx950) with: the reproducer, the pointer-range dump (write to `0x71ab…` zeroing `0x71a2…`),
-   and the order/size-dependence.
+`-DUSE_POOL=0` (plain `hipMalloc`, no pool, no dirty step) → **no corruption across all sizes /
+reps**. `-DUSE_POOL=1` (async pool) → corrupts at n=187. This **confirms the fault is the
+`hipMallocAsync` pool / HIP runtime**, not a `csr2csc` out-of-bounds write.
+
+Remaining:
+1. Run the reproducer on a **non-UB26 / stock ROCm** toolchain. If clean there, it nails the
+   regression to the UB26 runtime.
+2. **File against the HIP runtime / `hipMallocAsync` stream-ordered pool** (gfx950) with: the
+   reproducer (`USE_POOL=1` corrupts / `USE_POOL=0` clean), the pointer-range dump (a write to
+   `0x71ab…` zeroing a disjoint allocation at `0x71a2…`), and the order/size-dependence.
+3. Optional rocSPARSE mitigation while the runtime is fixed: in the `csxsldu` U/L transpose,
+   allocate the `csr2csc` temporaries (`buffer_conversion`, `tmp_ind`, `tmp_val`) with plain
+   `hipMalloc`/`hipFree` instead of `rocsparse_hipMallocAsync` — confirmed to avoid the
+   corruption. (Workaround only; the real fix belongs in the runtime.)
 
 ---
 
