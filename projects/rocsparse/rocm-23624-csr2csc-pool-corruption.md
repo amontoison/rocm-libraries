@@ -12,6 +12,16 @@ no `csritilu0` involved. The discriminator settles it:
 Same `csr2csc` code, only the allocator differs ⇒ rocSPARSE is correct; the pool/runtime is the
 defect.
 
+Cross-environment confirmation (same reproducer binary):
+
+| Machine | GPU / arch | ROCm | `USE_POOL=1` | `USE_POOL=0` |
+|---------|------------|------|--------------|--------------|
+| galena   | MI350P / gfx950 | 7.14.0 (UB26) | **CORRUPTS** (n=187) | clean |
+| machoke3 | Radeon VII / gfx906 | (stock) | **clean** | clean |
+
+A rocSPARSE logic bug would fail everywhere; this fails only on gfx950 + UB26 ⇒ environment-
+specific runtime defect.
+
 ---
 
 ## 1. Symptom
