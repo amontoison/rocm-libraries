@@ -149,8 +149,10 @@ static void host_csrildlt0_ref(J M,
                                      : std::min(*numeric_pivot, int64_t(ai + base));
             }
 
-            diag[ai]   = d_i;
-            csr_val[j] = static_cast<T>(0); // unit diagonal stored as 0
+            diag[ai] = d_i;
+            // L has an implicit unit diagonal; store D on the CSR diagonal too so
+            // the factor can be reused for the diagonal back-solve.
+            csr_val[j] = static_cast<T>(d_i);
         }
 
         for(j = row_begin; j < row_end; ++j)

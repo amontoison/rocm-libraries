@@ -112,6 +112,11 @@ namespace rocsparse
                            descr,
                            (descr->type != rocsparse_matrix_type_general),
                            rocsparse_status_not_implemented);
+        // The diagonal fill mode is only supported by the CSR triangular solves
+        ROCSPARSE_CHECKARG(7,
+                           descr,
+                           (descr->fill_mode == rocsparse_fill_mode_diagonal),
+                           rocsparse_status_not_implemented);
         ROCSPARSE_CHECKARG(7,
                            descr,
                            (descr->storage_mode != rocsparse_storage_mode_sorted),

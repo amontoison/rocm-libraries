@@ -94,6 +94,12 @@ rocsparse_status rocsparse::bsrsv_analysis_template(rocsparse_handle          ha
     ROCSPARSE_CHECKARG(
         5, descr, (descr->type != rocsparse_matrix_type_general), rocsparse_status_not_implemented);
 
+    // The diagonal fill mode is only supported by the CSR triangular solves
+    ROCSPARSE_CHECKARG(5,
+                       descr,
+                       (descr->fill_mode == rocsparse_fill_mode_diagonal),
+                       rocsparse_status_not_implemented);
+
     // Check matrix sorting mode
 
     ROCSPARSE_CHECKARG(5,

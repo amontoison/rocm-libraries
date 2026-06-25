@@ -681,6 +681,20 @@ namespace rocsparse
         ROCSPARSE_ROUTINE_TRACE;
         const rocsparse_datatype alpha_datatype = matA->data_type;
 
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(4,
+                           matA,
+                           (matA->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && matA->format != rocsparse_format_csr),
+                           rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(4,
+                           matA,
+                           (matA->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && matA->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
+
         rocsparse::spsm_case spsm_case = spsm_get_case(trans_B, matB->order, matC->order);
 
         switch(stage)

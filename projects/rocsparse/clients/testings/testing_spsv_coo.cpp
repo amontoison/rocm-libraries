@@ -81,6 +81,17 @@ void testing_spsv_coo_bad_arg(const Arguments& arg)
     stage = rocsparse_spsv_stage_compute;
     select_bad_arg_analysis(rocsparse_spsv, nargs_to_exclude, args_to_exclude, PARAMS_SOLVE);
 
+    // The diagonal fill mode is only supported by the CSR format. Setting it on a
+    // COO matrix must return rocsparse_status_not_implemented.
+    {
+        const rocsparse_fill_mode diagonal = rocsparse_fill_mode_diagonal;
+        CHECK_ROCSPARSE_ERROR(rocsparse_spmat_set_attribute(
+            mat, rocsparse_spmat_fill_mode, &diagonal, sizeof(diagonal)));
+        stage = rocsparse_spsv_stage_buffer_size;
+        EXPECT_ROCSPARSE_STATUS(rocsparse_spsv(PARAMS_BUFFER_SIZE),
+                                rocsparse_status_not_implemented);
+    }
+
 #undef PARAMS_BUFFER_SIZE
 #undef PARAMS_ANALYSIS
 #undef PARAMS_SOLVE

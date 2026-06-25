@@ -59,6 +59,7 @@ module rocsparse_enums
     enum, bind(c)
         enumerator :: rocsparse_fill_mode_lower = 0
         enumerator :: rocsparse_fill_mode_upper = 1
+        enumerator :: rocsparse_fill_mode_diagonal = 2
     end enum
 
 !   rocsparse_storage_mode

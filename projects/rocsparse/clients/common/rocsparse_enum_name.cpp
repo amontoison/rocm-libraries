@@ -107,6 +107,7 @@ const char* rocsparse_fill_mode_name(rocsparse_fill_mode value)
     {
         CASE(rocsparse_fill_mode_lower);
         CASE(rocsparse_fill_mode_upper);
+        CASE(rocsparse_fill_mode_diagonal);
     }
     RETURN_INVALID;
 }

@@ -198,6 +198,8 @@ constexpr auto rocsparse_fillmode2string(rocsparse_fill_mode uplo)
         return "L";
     case rocsparse_fill_mode_upper:
         return "U";
+    case rocsparse_fill_mode_diagonal:
+        return "D";
     }
     return "invalid";
 }

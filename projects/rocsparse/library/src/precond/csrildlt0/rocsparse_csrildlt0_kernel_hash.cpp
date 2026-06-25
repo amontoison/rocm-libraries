@@ -239,9 +239,11 @@ namespace rocsparse
                     d_i = boost_val;
                 }
 
-                // Store D_i (real scalar); zero the diagonal slot in csr_val (unit diagonal)
+                // Store D_i (real scalar) in diag[]. L has an implicit unit
+                // diagonal; store D on the CSR diagonal too so the factor can be
+                // reused for the diagonal back-solve (rocsparse_fill_mode_diagonal).
                 diag[row]         = d_i;
-                csr_val[row_diag] = static_cast<T>(0);
+                csr_val[row_diag] = static_cast<T>(d_i);
 
                 if(d_i == static_cast<floating_data_t<T>>(0))
                 {

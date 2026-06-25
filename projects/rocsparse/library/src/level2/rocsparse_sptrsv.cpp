@@ -370,6 +370,21 @@ namespace rocsparse
         ROCSPARSE_ROUTINE_TRACE;
         const rocsparse_format    format    = A->format;
         const rocsparse_operation operation = sptrsv_descr->get_operation();
+
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(
+            2,
+            A,
+            (A->descr->fill_mode == rocsparse_fill_mode_diagonal && format != rocsparse_format_csr),
+            rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(2,
+                           A,
+                           (A->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && A->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
+
         switch(sptrsv_stage)
         {
         case rocsparse_sptrsv_stage_analysis:
@@ -501,6 +516,20 @@ namespace rocsparse
         const rocsparse_operation    operation      = sptrsv_descr->get_operation();
         const rocsparse_sptrsv_stage previous_stage = sptrsv_descr->get_stage();
         const rocsparse_sptrsv_alg   alg            = sptrsv_descr->get_alg();
+
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(
+            2,
+            A,
+            (A->descr->fill_mode == rocsparse_fill_mode_diagonal && format != rocsparse_format_csr),
+            rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(2,
+                           A,
+                           (A->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && A->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
 
         ROCSPARSE_CHECKARG(1,
                            sptrsv_descr,

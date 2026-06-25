@@ -388,6 +388,7 @@ bool rocsparse::enum_utils::is_invalid(rocsparse_fill_mode value_)
     {
     case rocsparse_fill_mode_lower:
     case rocsparse_fill_mode_upper:
+    case rocsparse_fill_mode_diagonal:
     {
         return false;
     }

@@ -328,8 +328,11 @@ namespace rocsparse
             return;
         }
 
-        // Get the row this warp will operate on
-        const J row = map[idx + offset];
+        // Get the row this warp will operate on. The diagonal solve has no
+        // inter-row dependencies, so it does not require (and is not given) a
+        // row map; rows are processed in their natural order.
+        const J row = (fill_mode == rocsparse_fill_mode_diagonal) ? static_cast<J>(idx + offset)
+                                                                  : map[idx + offset];
 
         // Current row entry point and exit point
         const I row_begin = csr_row_ptr[row] - idx_base;
@@ -363,7 +366,19 @@ namespace rocsparse
             }
 
             // Differentiate upper and lower triangular mode
-            if(fill_mode == rocsparse_fill_mode_upper)
+            if(fill_mode == rocsparse_fill_mode_diagonal)
+            {
+                // Diagonal-only solve: only the diagonal entry contributes and
+                // no off-diagonal dependency has to be resolved. Capture the
+                // diagonal and skip every entry (no spin-wait, no fma).
+                if(local_col == row && diag_type == rocsparse_diag_type_non_unit)
+                {
+                    diagonal[wid] = static_cast<T>(1) / local_val;
+                }
+
+                continue;
+            }
+            else if(fill_mode == rocsparse_fill_mode_upper)
             {
                 // Processing upper triangular
 

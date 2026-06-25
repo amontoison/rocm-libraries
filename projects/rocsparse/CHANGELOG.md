@@ -7,6 +7,7 @@ Documentation for rocSPARSE is available at
 
 ### Added
 * Added the `rocsparse_spildlt0` routine for incomplete LDL' factorization with zero fill-in (ILDLT(0)) for symmetric (real) or hermitian (complex) sparse matrices in CSR format, with strided batched computations enabled.
+* Added the `rocsparse_fill_mode_diagonal` fill mode. When set on the matrix descriptor of a CSR triangular solve (`rocsparse_spsv`, `rocsparse_spsm`, `csrsv`, `csrsm`, including strided batched `spsv`), the solve is performed with the diagonal only (`x_i = alpha * b_i / a_ii`). This is intended for the diagonal step of an incomplete LDL' solve, where the same factor matrix can be reused for the L, D and L' stages. The `rocsparse_spildlt0` factor now also stores D on the CSR diagonal so it can be reused directly for this step.
 
 ### Upcoming changes
 * Deprecated the `rocsparse_indextype_u16` index type. It is  no longer supported and will be removed in a future release. Users should use `rocsparse_indextype_i32` or `rocsparse_indextype_i64` going forward.

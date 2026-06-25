@@ -122,6 +122,12 @@ void testing_bsrsv_bad_arg(const Arguments& arg)
                             rocsparse_status_requires_sorted_storage);
     CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_storage_mode(descr, rocsparse_storage_mode_sorted));
 
+    // The diagonal fill mode is only supported by the CSR triangular solves
+    CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_fill_mode(descr, rocsparse_fill_mode_diagonal));
+    EXPECT_ROCSPARSE_STATUS(rocsparse_bsrsv_analysis<T>(PARAMS_ANALYSIS),
+                            rocsparse_status_not_implemented);
+    CHECK_ROCSPARSE_ERROR(rocsparse_set_mat_fill_mode(descr, rocsparse_fill_mode_lower));
+
     // block_dim == 0
     block_dim = 0;
     EXPECT_ROCSPARSE_STATUS(rocsparse_bsrsv_analysis<T>(PARAMS_ANALYSIS),

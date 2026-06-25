@@ -386,11 +386,21 @@ typedef enum rocsparse_diag_type_
  *  \ref rocsparse_fill_mode can be set using rocsparse_set_mat_fill_mode(). The current
  *  \ref rocsparse_fill_mode of a matrix can be obtained by
  *  rocsparse_get_mat_fill_mode().
+ *
+ *  The additional \ref rocsparse_fill_mode_diagonal mode instructs the sparse triangular
+ *  solve routines (\ref rocsparse_spsv "spsv", \ref rocsparse_spsm "spsm" and the CSR
+ *  back-ends \p csrsv / \p csrsm) to solve with the diagonal of the matrix only, i.e.
+ *  \f$x_i = \alpha \, b_i / a_{ii}\f$. This is intended for the diagonal step of an
+ *  incomplete \f$LDL^T\f$ solve, where the same factor matrix can be reused for the
+ *  \f$L\f$, \f$D\f$ and \f$L^T\f$ stages. Only the CSR format supports this mode, and it
+ *  requires a non-unit \ref rocsparse_diag_type (a unit diagonal would reduce the solve
+ *  to an identity scaling).
  */
 typedef enum rocsparse_fill_mode_
 {
-    rocsparse_fill_mode_lower = 0, /**< Lower triangular part is stored. */
-    rocsparse_fill_mode_upper = 1 /**< Upper triangular part is stored. */
+    rocsparse_fill_mode_lower    = 0, /**< Lower triangular part is stored. */
+    rocsparse_fill_mode_upper    = 1, /**< Upper triangular part is stored. */
+    rocsparse_fill_mode_diagonal = 2 /**< Diagonal-only solve (CSR triangular solves). */
 } rocsparse_fill_mode;
 
 /*! \ingroup types_module

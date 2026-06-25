@@ -108,6 +108,20 @@ namespace rocsparse
     {
         ROCSPARSE_ROUTINE_TRACE;
         const rocsparse_format format = mat->format;
+
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(3,
+                           mat,
+                           (mat->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && format != rocsparse_format_csr),
+                           rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(3,
+                           mat,
+                           (mat->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && mat->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
         switch(format)
         {
         case rocsparse_format_csr:

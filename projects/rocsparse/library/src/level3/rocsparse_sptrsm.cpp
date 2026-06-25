@@ -878,6 +878,20 @@ namespace rocsparse
         const int64_t             nrhs           = sptrsm_descr->get_nrhs();
         const int64_t             n              = A->rows;
 
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(
+            2,
+            A,
+            (A->descr->fill_mode == rocsparse_fill_mode_diagonal && format != rocsparse_format_csr),
+            rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(2,
+                           A,
+                           (A->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && A->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
+
         switch(format)
         {
         case rocsparse_format_csr:
@@ -1041,6 +1055,20 @@ namespace rocsparse
 
         const rocsparse::sptrsm_case sptrsm_case = sptrsm_get_case(X_operation, X->order, Y->order);
         const rocsparse_sptrsm_stage previous_stage = sptrsm_descr->get_stage();
+
+        // The diagonal fill mode is only supported by the CSR format, and it
+        // requires a non-unit diagonal (a unit diagonal would reduce the solve to
+        // an identity scaling).
+        ROCSPARSE_CHECKARG(2,
+                           A,
+                           (A->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && A->format != rocsparse_format_csr),
+                           rocsparse_status_not_implemented);
+        ROCSPARSE_CHECKARG(2,
+                           A,
+                           (A->descr->fill_mode == rocsparse_fill_mode_diagonal
+                            && A->descr->diag_type == rocsparse_diag_type_unit),
+                           rocsparse_status_not_implemented);
 
         switch(sptrsm_stage)
         {
