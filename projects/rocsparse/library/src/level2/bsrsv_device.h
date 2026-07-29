@@ -29,22 +29,21 @@
 namespace rocsparse
 {
 
-    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, bool SLEEP, typename T>
-    ROCSPARSE_DEVICE_ILF void
-        bsrsv_lower_general_device(rocsparse_int mb,
-                                   T             alpha,
-                                   const rocsparse_int* __restrict__ bsr_row_ptr,
-                                   const rocsparse_int* __restrict__ bsr_col_ind,
-                                   const T* __restrict__ bsr_val,
-                                   rocsparse_int block_dim,
-                                   const T* __restrict__ x,
-                                   T* y,
-                                   int* __restrict__ done_array,
-                                   rocsparse_int* __restrict__ map,
-                                   rocsparse_int*       zero_pivot,
-                                   rocsparse_index_base idx_base,
-                                   rocsparse_diag_type  diag_type,
-                                   rocsparse_direction  dir)
+    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, bool SLEEP, typename I, typename J, typename T>
+    ROCSPARSE_DEVICE_ILF void bsrsv_lower_general_device(J mb,
+                                                         T alpha,
+                                                         const I* __restrict__ bsr_row_ptr,
+                                                         const J* __restrict__ bsr_col_ind,
+                                                         const T* __restrict__ bsr_val,
+                                                         rocsparse_int block_dim,
+                                                         const T* __restrict__ x,
+                                                         T* y,
+                                                         int* __restrict__ done_array,
+                                                         J* __restrict__ map,
+                                                         J*                   zero_pivot,
+                                                         rocsparse_index_base idx_base,
+                                                         rocsparse_diag_type  diag_type,
+                                                         rocsparse_direction  dir)
     {
         static_assert(WFSIZE > 0 && (WFSIZE & (WFSIZE - 1)) == 0, "WFSIZE must be a power of two.");
         static_assert(BLOCKSIZE > 0, "BLOCKSIZE must be positive.");
@@ -54,7 +53,7 @@ namespace rocsparse
         const int wid = hipThreadIdx_x / WFSIZE;
 
         // Index into the row map
-        const rocsparse_int idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
+        const J idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
 
         // Do not run out of bounds
         if(idx >= mb)
@@ -63,14 +62,14 @@ namespace rocsparse
         }
 
         // Get the BSR row this wavefront will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Initialize y with alpha and x
         for(rocsparse_int bi = lid; bi < block_dim; bi += WFSIZE)
@@ -79,7 +78,7 @@ namespace rocsparse
         }
 
         // Loop over the current row
-        rocsparse_int j;
+        I j;
         for(j = row_begin; j < row_end; ++j)
         {
             // Current column index
@@ -161,22 +160,21 @@ namespace rocsparse
         }
     }
 
-    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, bool SLEEP, typename T>
-    ROCSPARSE_DEVICE_ILF void
-        bsrsv_upper_general_device(rocsparse_int mb,
-                                   T             alpha,
-                                   const rocsparse_int* __restrict__ bsr_row_ptr,
-                                   const rocsparse_int* __restrict__ bsr_col_ind,
-                                   const T* __restrict__ bsr_val,
-                                   rocsparse_int block_dim,
-                                   const T* __restrict__ x,
-                                   T* y,
-                                   int* __restrict__ done_array,
-                                   rocsparse_int* __restrict__ map,
-                                   rocsparse_int*       zero_pivot,
-                                   rocsparse_index_base idx_base,
-                                   rocsparse_diag_type  diag_type,
-                                   rocsparse_direction  dir)
+    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, bool SLEEP, typename I, typename J, typename T>
+    ROCSPARSE_DEVICE_ILF void bsrsv_upper_general_device(J mb,
+                                                         T alpha,
+                                                         const I* __restrict__ bsr_row_ptr,
+                                                         const J* __restrict__ bsr_col_ind,
+                                                         const T* __restrict__ bsr_val,
+                                                         rocsparse_int block_dim,
+                                                         const T* __restrict__ x,
+                                                         T* y,
+                                                         int* __restrict__ done_array,
+                                                         J* __restrict__ map,
+                                                         J*                   zero_pivot,
+                                                         rocsparse_index_base idx_base,
+                                                         rocsparse_diag_type  diag_type,
+                                                         rocsparse_direction  dir)
     {
         static_assert(WFSIZE > 0 && (WFSIZE & (WFSIZE - 1)) == 0, "WFSIZE must be a power of two.");
         static_assert(BLOCKSIZE > 0, "BLOCKSIZE must be positive.");
@@ -186,7 +184,7 @@ namespace rocsparse
         const int wid = hipThreadIdx_x / WFSIZE;
 
         // Index into the row map
-        const rocsparse_int idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
+        const J idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
 
         // Do not run out of bounds
         if(idx >= mb)
@@ -195,14 +193,14 @@ namespace rocsparse
         }
 
         // Get the BSR row this wavefront will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Initialize y with alpha and x
         for(rocsparse_int bi = lid; bi < block_dim; bi += WFSIZE)
@@ -211,7 +209,7 @@ namespace rocsparse
         }
 
         // Loop over the current row
-        rocsparse_int j;
+        I j;
         for(j = row_end - 1; j >= row_begin; --j)
         {
             // Current column index
@@ -294,22 +292,27 @@ namespace rocsparse
         }
     }
 
-    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, rocsparse_int BSRDIM, bool SLEEP, typename T>
-    ROCSPARSE_DEVICE_ILF void
-        bsrsv_lower_shared_device(rocsparse_int mb,
-                                  T             alpha,
-                                  const rocsparse_int* __restrict__ bsr_row_ptr,
-                                  const rocsparse_int* __restrict__ bsr_col_ind,
-                                  const T* __restrict__ bsr_val,
-                                  rocsparse_int block_dim,
-                                  const T* __restrict__ x,
-                                  T* y,
-                                  int* __restrict__ done_array,
-                                  rocsparse_int* __restrict__ map,
-                                  rocsparse_int*       zero_pivot,
-                                  rocsparse_index_base idx_base,
-                                  rocsparse_diag_type  diag_type,
-                                  rocsparse_direction  dir)
+    template <uint32_t      BLOCKSIZE,
+              uint32_t      WFSIZE,
+              rocsparse_int BSRDIM,
+              bool          SLEEP,
+              typename I,
+              typename J,
+              typename T>
+    ROCSPARSE_DEVICE_ILF void bsrsv_lower_shared_device(J mb,
+                                                        T alpha,
+                                                        const I* __restrict__ bsr_row_ptr,
+                                                        const J* __restrict__ bsr_col_ind,
+                                                        const T* __restrict__ bsr_val,
+                                                        rocsparse_int block_dim,
+                                                        const T* __restrict__ x,
+                                                        T* y,
+                                                        int* __restrict__ done_array,
+                                                        J* __restrict__ map,
+                                                        J*                   zero_pivot,
+                                                        rocsparse_index_base idx_base,
+                                                        rocsparse_diag_type  diag_type,
+                                                        rocsparse_direction  dir)
     {
         static_assert(WFSIZE > 0 && (WFSIZE & (WFSIZE - 1)) == 0, "WFSIZE must be a power of two.");
         static_assert(BLOCKSIZE > 0, "BLOCKSIZE must be positive.");
@@ -320,7 +323,7 @@ namespace rocsparse
         const int wid = hipThreadIdx_x / WFSIZE;
 
         // Index into the row map
-        const rocsparse_int idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
+        const J idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
 
         // Do not run out of bounds
         if(idx >= mb)
@@ -329,14 +332,14 @@ namespace rocsparse
         }
 
         // Get the BSR row this wavefront will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Initialize local summation variable with alpha and x
         T local_sum = alpha * ((lid < block_dim) ? x[row * block_dim + lid] : static_cast<T>(0));
@@ -349,7 +352,7 @@ namespace rocsparse
         T* bsr_updates = &sdata2[wid * BSRDIM];
 
         // Loop over the current row
-        rocsparse_int j;
+        I j;
         for(j = row_begin; j < row_end; ++j)
         {
             // Current column index
@@ -463,22 +466,27 @@ namespace rocsparse
         }
     }
 
-    template <uint32_t BLOCKSIZE, uint32_t WFSIZE, rocsparse_int BSRDIM, bool SLEEP, typename T>
-    ROCSPARSE_DEVICE_ILF void
-        bsrsv_upper_shared_device(rocsparse_int mb,
-                                  T             alpha,
-                                  const rocsparse_int* __restrict__ bsr_row_ptr,
-                                  const rocsparse_int* __restrict__ bsr_col_ind,
-                                  const T* __restrict__ bsr_val,
-                                  rocsparse_int block_dim,
-                                  const T* __restrict__ x,
-                                  T* y,
-                                  int* __restrict__ done_array,
-                                  rocsparse_int* __restrict__ map,
-                                  rocsparse_int*       zero_pivot,
-                                  rocsparse_index_base idx_base,
-                                  rocsparse_diag_type  diag_type,
-                                  rocsparse_direction  dir)
+    template <uint32_t      BLOCKSIZE,
+              uint32_t      WFSIZE,
+              rocsparse_int BSRDIM,
+              bool          SLEEP,
+              typename I,
+              typename J,
+              typename T>
+    ROCSPARSE_DEVICE_ILF void bsrsv_upper_shared_device(J mb,
+                                                        T alpha,
+                                                        const I* __restrict__ bsr_row_ptr,
+                                                        const J* __restrict__ bsr_col_ind,
+                                                        const T* __restrict__ bsr_val,
+                                                        rocsparse_int block_dim,
+                                                        const T* __restrict__ x,
+                                                        T* y,
+                                                        int* __restrict__ done_array,
+                                                        J* __restrict__ map,
+                                                        J*                   zero_pivot,
+                                                        rocsparse_index_base idx_base,
+                                                        rocsparse_diag_type  diag_type,
+                                                        rocsparse_direction  dir)
     {
         static_assert(WFSIZE > 0 && (WFSIZE & (WFSIZE - 1)) == 0, "WFSIZE must be a power of two.");
         static_assert(BLOCKSIZE > 0, "BLOCKSIZE must be positive.");
@@ -489,7 +497,7 @@ namespace rocsparse
         const int wid = hipThreadIdx_x / WFSIZE;
 
         // Index into the row map
-        const rocsparse_int idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
+        const J idx = hipBlockIdx_x * BLOCKSIZE / WFSIZE + wid;
 
         // Do not run out of bounds
         if(idx >= mb)
@@ -498,14 +506,14 @@ namespace rocsparse
         }
 
         // Get the BSR row this wavefront will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Initialize local summation variable with alpha and x
         T local_sum = alpha * ((lid < block_dim) ? x[row * block_dim + lid] : static_cast<T>(0));
@@ -518,7 +526,7 @@ namespace rocsparse
         T* bsr_updates = &sdata2[wid * BSRDIM];
 
         // Loop over the current row
-        rocsparse_int j;
+        I j;
         for(j = row_end - 1; j >= row_begin; --j)
         {
             // Current column index

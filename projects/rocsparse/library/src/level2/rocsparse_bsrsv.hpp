@@ -28,37 +28,63 @@
 
 namespace rocsparse
 {
-    template <typename T>
+    template <typename I, typename J, typename T>
     rocsparse_status bsrsv_analysis_template(rocsparse_handle          handle,
                                              rocsparse_direction       dir,
                                              rocsparse_operation       trans,
-                                             rocsparse_int             mb,
-                                             rocsparse_int             nnzb,
+                                             J                         mb,
+                                             I                         nnzb,
                                              const rocsparse_mat_descr descr,
                                              const T*                  bsr_val,
-                                             const rocsparse_int*      bsr_row_ptr,
-                                             const rocsparse_int*      bsr_col_ind,
+                                             const I*                  bsr_row_ptr,
+                                             const J*                  bsr_col_ind,
                                              rocsparse_int             block_dim,
                                              rocsparse_mat_info        info,
                                              rocsparse_analysis_policy analysis,
                                              rocsparse_solve_policy    solve,
                                              void*                     temp_buffer);
 
-    template <typename T>
+    template <typename I, typename J, typename T>
     rocsparse_status bsrsv_solve_template(rocsparse_handle          handle,
                                           rocsparse_direction       dir,
                                           rocsparse_operation       trans,
-                                          rocsparse_int             mb,
-                                          rocsparse_int             nnzb,
+                                          J                         mb,
+                                          I                         nnzb,
                                           const T*                  alpha,
                                           const rocsparse_mat_descr descr,
                                           const T*                  bsr_val,
-                                          const rocsparse_int*      bsr_row_ptr,
-                                          const rocsparse_int*      bsr_col_ind,
+                                          const I*                  bsr_row_ptr,
+                                          const J*                  bsr_col_ind,
                                           rocsparse_int             block_dim,
                                           rocsparse_mat_info        info,
                                           const T*                  x,
                                           T*                        y,
                                           rocsparse_solve_policy    policy,
                                           void*                     temp_buffer);
+
+    //
+    // Generic (spmat-descriptor based) entry points used by rocsparse_sptrsv.
+    // They dispatch on the spmat index (i32/i64) and value types.
+    //
+    rocsparse_status bsrsv_buffer_size(rocsparse_handle            handle,
+                                       rocsparse_operation         trans,
+                                       rocsparse_const_spmat_descr A,
+                                       size_t*                     buffer_size);
+
+    rocsparse_status bsrsv_analysis(rocsparse_handle            handle,
+                                    rocsparse_operation         trans,
+                                    rocsparse_const_spmat_descr A,
+                                    rocsparse_analysis_policy   analysis_policy,
+                                    rocsparse_solve_policy      solve_policy,
+                                    void*                       temp_buffer);
+
+    rocsparse_status bsrsv_solve(rocsparse_handle            handle,
+                                 rocsparse_operation         trans,
+                                 rocsparse_datatype          alpha_datatype,
+                                 const void*                 alpha,
+                                 rocsparse_const_spmat_descr A,
+                                 rocsparse_const_dnvec_descr x,
+                                 rocsparse_dnvec_descr       y,
+                                 rocsparse_solve_policy      policy,
+                                 void*                       temp_buffer);
 }

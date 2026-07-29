@@ -30,16 +30,16 @@
 
 namespace rocsparse
 {
-    template <typename T>
+    template <typename I, typename J, typename T>
     static rocsparse_status bsrsv_buffer_size_impl(rocsparse_handle          handle,
                                                    rocsparse_direction       dir,
                                                    rocsparse_operation       trans,
-                                                   rocsparse_int             mb,
-                                                   rocsparse_int             nnzb,
+                                                   J                         mb,
+                                                   I                         nnzb,
                                                    const rocsparse_mat_descr descr,
                                                    const T*                  bsr_val,
-                                                   const rocsparse_int*      bsr_row_ptr,
-                                                   const rocsparse_int*      bsr_col_ind,
+                                                   const I*                  bsr_row_ptr,
+                                                   const J*                  bsr_col_ind,
                                                    rocsparse_int             block_dim,
                                                    rocsparse_mat_info        info,
                                                    size_t*                   buffer_size)
@@ -96,11 +96,11 @@ namespace rocsparse
                                    bsr_val,
                                    nullptr,
                                    static_cast<int64_t>(0),
-                                   rocsparse::get_indextype<rocsparse_int>(),
+                                   rocsparse::get_indextype<I>(),
                                    bsr_row_ptr,
                                    nullptr,
                                    static_cast<int64_t>(0),
-                                   rocsparse::get_indextype<rocsparse_int>(),
+                                   rocsparse::get_indextype<J>(),
                                    bsr_col_ind,
                                    nullptr,
                                    static_cast<int64_t>(0),
@@ -125,6 +125,85 @@ namespace rocsparse
 
         return rocsparse_status_success;
     }
+
+    template <typename I, typename J, typename T>
+    static rocsparse_status bsrsv_buffer_size_dispatch(rocsparse_handle            handle,
+                                                       rocsparse_operation         trans,
+                                                       rocsparse_const_spmat_descr A,
+                                                       size_t*                     buffer_size)
+    {
+        return rocsparse::bsrsv_buffer_size_impl<I, J, T>(handle,
+                                                          A->block_dir,
+                                                          trans,
+                                                          static_cast<J>(A->rows),
+                                                          static_cast<I>(A->nnz),
+                                                          A->descr,
+                                                          static_cast<const T*>(A->const_val_data),
+                                                          static_cast<const I*>(A->const_row_data),
+                                                          static_cast<const J*>(A->const_col_data),
+                                                          static_cast<rocsparse_int>(A->block_dim),
+                                                          A->info,
+                                                          buffer_size);
+    }
+
+    template <typename I, typename J>
+    static rocsparse_status bsrsv_buffer_size_dispatch_t(rocsparse_handle            handle,
+                                                         rocsparse_operation         trans,
+                                                         rocsparse_const_spmat_descr A,
+                                                         size_t*                     buffer_size)
+    {
+        switch(A->data_type)
+        {
+        case rocsparse_datatype_f32_r:
+            return rocsparse::bsrsv_buffer_size_dispatch<I, J, float>(
+                handle, trans, A, buffer_size);
+        case rocsparse_datatype_f64_r:
+            return rocsparse::bsrsv_buffer_size_dispatch<I, J, double>(
+                handle, trans, A, buffer_size);
+        case rocsparse_datatype_f32_c:
+            return rocsparse::bsrsv_buffer_size_dispatch<I, J, rocsparse_float_complex>(
+                handle, trans, A, buffer_size);
+        case rocsparse_datatype_f64_c:
+            return rocsparse::bsrsv_buffer_size_dispatch<I, J, rocsparse_double_complex>(
+                handle, trans, A, buffer_size);
+        default:
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+        }
+        // LCOV_EXCL_START
+        return rocsparse_status_success;
+        // LCOV_EXCL_STOP
+    }
+}
+
+rocsparse_status rocsparse::bsrsv_buffer_size(rocsparse_handle            handle,
+                                              rocsparse_operation         trans,
+                                              rocsparse_const_spmat_descr A,
+                                              size_t*                     buffer_size)
+{
+    ROCSPARSE_ROUTINE_TRACE;
+
+    // Dispatch on the spmat index types (i32/i64) like the other formats.
+    if(A->row_type == rocsparse_indextype_i32 && A->col_type == rocsparse_indextype_i32)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsv_buffer_size_dispatch_t<int32_t, int32_t>(
+            handle, trans, A, buffer_size)));
+    }
+    else if(A->row_type == rocsparse_indextype_i64 && A->col_type == rocsparse_indextype_i32)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsv_buffer_size_dispatch_t<int64_t, int32_t>(
+            handle, trans, A, buffer_size)));
+    }
+    else if(A->row_type == rocsparse_indextype_i64 && A->col_type == rocsparse_indextype_i64)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsv_buffer_size_dispatch_t<int64_t, int64_t>(
+            handle, trans, A, buffer_size)));
+    }
+    else
+    {
+        RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+    }
+
+    return rocsparse_status_success;
 }
 
 #define C_IMPL(NAME, TYPE)                                                         \

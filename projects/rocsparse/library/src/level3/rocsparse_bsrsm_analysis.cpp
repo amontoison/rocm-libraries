@@ -24,6 +24,7 @@
 
 #include "internal/level3/rocsparse_bsrsm.h"
 #include "rocsparse_control.hpp"
+#include "rocsparse_spmat_descr.hpp"
 #include "rocsparse_utility.hpp"
 
 #include "../level2/rocsparse_csrsv.hpp"
@@ -130,18 +131,18 @@ namespace rocsparse
     }
 }
 
-template <typename T>
+template <typename I, typename J, typename T>
 rocsparse_status rocsparse::bsrsm_analysis_core(rocsparse_handle          handle,
                                                 rocsparse_direction       dir,
                                                 rocsparse_operation       trans_A,
                                                 rocsparse_operation       trans_X,
-                                                rocsparse_int             mb,
+                                                J                         mb,
                                                 rocsparse_int             nrhs,
-                                                rocsparse_int             nnzb,
+                                                I                         nnzb,
                                                 const rocsparse_mat_descr descr,
                                                 const T*                  bsr_val,
-                                                const rocsparse_int*      bsr_row_ptr,
-                                                const rocsparse_int*      bsr_col_ind,
+                                                const I*                  bsr_row_ptr,
+                                                const J*                  bsr_col_ind,
                                                 rocsparse_int             block_dim,
                                                 rocsparse_mat_info        info,
                                                 rocsparse_analysis_policy analysis,
@@ -196,6 +197,106 @@ namespace rocsparse
         RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsm_analysis_core(p...));
         return rocsparse_status_success;
     }
+
+    template <typename I, typename J, typename T>
+    static rocsparse_status bsrsm_analysis_dispatch(rocsparse_handle            handle,
+                                                    rocsparse_operation         trans_A,
+                                                    rocsparse_operation         trans_X,
+                                                    rocsparse_const_spmat_descr A,
+                                                    int64_t                     nrhs,
+                                                    rocsparse_analysis_policy   analysis_policy,
+                                                    rocsparse_solve_policy      solve_policy,
+                                                    void*                       temp_buffer)
+    {
+        if(A->rows == 0)
+        {
+            return rocsparse_status_success;
+        }
+
+        return rocsparse::bsrsm_analysis_core<I, J, T>(handle,
+                                                       A->block_dir,
+                                                       trans_A,
+                                                       trans_X,
+                                                       static_cast<J>(A->rows),
+                                                       static_cast<rocsparse_int>(nrhs),
+                                                       static_cast<I>(A->nnz),
+                                                       A->descr,
+                                                       static_cast<const T*>(A->const_val_data),
+                                                       static_cast<const I*>(A->const_row_data),
+                                                       static_cast<const J*>(A->const_col_data),
+                                                       static_cast<rocsparse_int>(A->block_dim),
+                                                       A->info,
+                                                       analysis_policy,
+                                                       solve_policy,
+                                                       temp_buffer);
+    }
+
+    template <typename I, typename J>
+    static rocsparse_status bsrsm_analysis_dispatch_t(rocsparse_handle            handle,
+                                                      rocsparse_operation         trans_A,
+                                                      rocsparse_operation         trans_X,
+                                                      rocsparse_const_spmat_descr A,
+                                                      int64_t                     nrhs,
+                                                      rocsparse_analysis_policy   analysis_policy,
+                                                      rocsparse_solve_policy      solve_policy,
+                                                      void*                       temp_buffer)
+    {
+        switch(A->data_type)
+        {
+        case rocsparse_datatype_f32_r:
+            return rocsparse::bsrsm_analysis_dispatch<I, J, float>(
+                handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer);
+        case rocsparse_datatype_f64_r:
+            return rocsparse::bsrsm_analysis_dispatch<I, J, double>(
+                handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer);
+        case rocsparse_datatype_f32_c:
+            return rocsparse::bsrsm_analysis_dispatch<I, J, rocsparse_float_complex>(
+                handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer);
+        case rocsparse_datatype_f64_c:
+            return rocsparse::bsrsm_analysis_dispatch<I, J, rocsparse_double_complex>(
+                handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer);
+        default:
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+        }
+        // LCOV_EXCL_START
+        return rocsparse_status_success;
+        // LCOV_EXCL_STOP
+    }
+}
+
+rocsparse_status rocsparse::bsrsm_analysis(rocsparse_handle            handle,
+                                           rocsparse_operation         trans_A,
+                                           rocsparse_operation         trans_X,
+                                           rocsparse_const_spmat_descr A,
+                                           int64_t                     nrhs,
+                                           rocsparse_analysis_policy   analysis_policy,
+                                           rocsparse_solve_policy      solve_policy,
+                                           void*                       temp_buffer)
+{
+    ROCSPARSE_ROUTINE_TRACE;
+
+    // Dispatch on the spmat index types (i32/i64) like the other formats.
+    if(A->row_type == rocsparse_indextype_i32 && A->col_type == rocsparse_indextype_i32)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsm_analysis_dispatch_t<int32_t, int32_t>(
+            handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer)));
+    }
+    else if(A->row_type == rocsparse_indextype_i64 && A->col_type == rocsparse_indextype_i32)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsm_analysis_dispatch_t<int64_t, int32_t>(
+            handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer)));
+    }
+    else if(A->row_type == rocsparse_indextype_i64 && A->col_type == rocsparse_indextype_i64)
+    {
+        RETURN_IF_ROCSPARSE_ERROR((rocsparse::bsrsm_analysis_dispatch_t<int64_t, int64_t>(
+            handle, trans_A, trans_X, A, nrhs, analysis_policy, solve_policy, temp_buffer)));
+    }
+    else
+    {
+        RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+    }
+
+    return rocsparse_status_success;
 }
 
 /*

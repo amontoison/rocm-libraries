@@ -28,11 +28,11 @@
 
 namespace rocsparse
 {
-    template <typename T>
+    template <typename J, typename T>
     ROCSPARSE_DEVICE_ILF void bsrsm_copy_scale_device(
-        rocsparse_int m, rocsparse_int n, T alpha, const T* B, int64_t ldb, T* X, int64_t ldx)
+        J m, rocsparse_int n, T alpha, const T* B, int64_t ldb, T* X, int64_t ldx)
     {
-        const rocsparse_int row = blockIdx.x * blockDim.x + threadIdx.x;
+        const J row = blockIdx.x * blockDim.x + threadIdx.x;
 
         if(row >= m)
         {

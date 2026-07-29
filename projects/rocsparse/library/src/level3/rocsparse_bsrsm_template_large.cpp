@@ -31,18 +31,18 @@
 
 namespace rocsparse
 {
-#define LAUNCH_BSRSM_GTHR_DIM(bsize, wfsize, dim)                                             \
-    RETURN_IF_HIPLAUNCHKERNELGGL_ERROR((rocsparse::bsr_gather<wfsize, bsize / wfsize, dim>),  \
-                                       dim3((wfsize * nnzb - 1) / bsize + 1),                 \
-                                       dim3(wfsize, bsize / wfsize),                          \
-                                       0,                                                     \
-                                       stream,                                                \
-                                       dir,                                                   \
-                                       nnzb,                                                  \
-                                       (const rocsparse_int*)trm_info->get_transposed_perm(), \
-                                       bsr_val,                                               \
-                                       bsrt_val,                                              \
-                                       block_dim)
+#define LAUNCH_BSRSM_GTHR_DIM(bsize, wfsize, dim)                                            \
+    RETURN_IF_HIPLAUNCHKERNELGGL_ERROR((rocsparse::bsr_gather<wfsize, bsize / wfsize, dim>), \
+                                       dim3((wfsize * nnzb - 1) / bsize + 1),                \
+                                       dim3(wfsize, bsize / wfsize),                         \
+                                       0,                                                    \
+                                       stream,                                               \
+                                       dir,                                                  \
+                                       nnzb,                                                 \
+                                       (const I*)trm_info->get_transposed_perm(),            \
+                                       bsr_val,                                              \
+                                       bsrt_val,                                             \
+                                       (I)block_dim)
 
 #define LAUNCH_BSRSM_GTHR(bsize, wfsize, dim) \
     if(dim <= 2)                              \
@@ -62,9 +62,9 @@ namespace rocsparse
         LAUNCH_BSRSM_GTHR_DIM(bsize, 64, 8);  \
     }
 
-    template <uint32_t BLOCKSIZE, typename T>
+    template <uint32_t BLOCKSIZE, typename J, typename T>
     ROCSPARSE_KERNEL(BLOCKSIZE)
-    void bsrsm_copy_scale(rocsparse_int m,
+    void bsrsm_copy_scale(J             m,
                           rocsparse_int n,
                           ROCSPARSE_DEVICE_HOST_SCALAR_PARAMS(T, alpha),
                           const T* B,
@@ -77,19 +77,19 @@ namespace rocsparse
         rocsparse::bsrsm_copy_scale_device(m, n, alpha, B, ldb, X, ldx);
     }
 
-    template <typename T>
+    template <typename I, typename J, typename T>
     rocsparse_status bsrsm_solve_template_large(rocsparse_handle          handle,
                                                 rocsparse_direction       dir,
                                                 rocsparse_operation       trans_A,
                                                 rocsparse_operation       trans_X,
-                                                rocsparse_int             mb,
+                                                J                         mb,
                                                 rocsparse_int             nrhs,
-                                                rocsparse_int             nnzb,
+                                                I                         nnzb,
                                                 const T*                  alpha,
                                                 const rocsparse_mat_descr descr,
                                                 const T*                  bsr_val,
-                                                const rocsparse_int*      bsr_row_ptr,
-                                                const rocsparse_int*      bsr_col_ind,
+                                                const I*                  bsr_row_ptr,
+                                                const J*                  bsr_col_ind,
                                                 rocsparse_int             block_dim,
                                                 rocsparse_mat_info        info,
                                                 const T*                  B,
@@ -100,27 +100,27 @@ namespace rocsparse
     {
         ROCSPARSE_ROUTINE_TRACE;
 
-#define LAUNCH_LARGE_KERNEL(K_, M_, S_)                                                        \
-    dim3 bsrsm_blocks(((nrhs - 1) / NCOL + 1) * mb);                                           \
-    dim3 bsrsm_threads(NCOL* M_);                                                              \
-    RETURN_IF_HIPLAUNCHKERNELGGL_ERROR((K_<NCOL * M_, NCOL, S_>),                              \
-                                       bsrsm_blocks,                                           \
-                                       bsrsm_threads,                                          \
-                                       0,                                                      \
-                                       stream,                                                 \
-                                       mb,                                                     \
-                                       nrhs,                                                   \
-                                       local_bsr_row_ptr,                                      \
-                                       local_bsr_col_ind,                                      \
-                                       local_bsr_val,                                          \
-                                       block_dim,                                              \
-                                       Xt,                                                     \
-                                       ldimX,                                                  \
-                                       done_array,                                             \
-                                       (const rocsparse_int*)trm_info->get_row_map(),          \
-                                       (rocsparse_int*)info->get_bsrsm_info()->get_position(), \
-                                       descr->base,                                            \
-                                       descr->diag_type,                                       \
+#define LAUNCH_LARGE_KERNEL(K_, M_, S_)                                            \
+    dim3 bsrsm_blocks(((nrhs - 1) / NCOL + 1) * mb);                               \
+    dim3 bsrsm_threads(NCOL* M_);                                                  \
+    RETURN_IF_HIPLAUNCHKERNELGGL_ERROR((K_<NCOL * M_, NCOL, S_>),                  \
+                                       bsrsm_blocks,                               \
+                                       bsrsm_threads,                              \
+                                       0,                                          \
+                                       stream,                                     \
+                                       mb,                                         \
+                                       nrhs,                                       \
+                                       local_bsr_row_ptr,                          \
+                                       local_bsr_col_ind,                          \
+                                       local_bsr_val,                              \
+                                       block_dim,                                  \
+                                       Xt,                                         \
+                                       ldimX,                                      \
+                                       done_array,                                 \
+                                       (const J*)trm_info->get_row_map(),          \
+                                       (J*)info->get_bsrsm_info()->get_position(), \
+                                       descr->base,                                \
+                                       descr->diag_type,                           \
                                        dir);
 
         hipStream_t stream = handle->stream;
@@ -157,12 +157,9 @@ namespace rocsparse
         // If diag type is unit, re-initialize zero pivot to remove structural zeros
         if(descr->diag_type == rocsparse_diag_type_unit)
         {
-            static const rocsparse_int max = std::numeric_limits<rocsparse_int>::max();
-            RETURN_IF_HIP_ERROR(rocsparse_hipMemcpyAsync(bsrsm_info->get_position(),
-                                                         &max,
-                                                         sizeof(rocsparse_int),
-                                                         hipMemcpyHostToDevice,
-                                                         stream));
+            static const J max = std::numeric_limits<J>::max();
+            RETURN_IF_HIP_ERROR(rocsparse_hipMemcpyAsync(
+                bsrsm_info->get_position(), &max, sizeof(J), hipMemcpyHostToDevice, stream));
         }
 
         rocsparse_fill_mode fill_mode = descr->fill_mode;
@@ -176,13 +173,27 @@ namespace rocsparse
 
             if(handle->pointer_mode == rocsparse_pointer_mode_device)
             {
-                RETURN_IF_ROCSPARSE_ERROR(rocsparse::dense_transpose(
-                    handle, mb * block_dim, nrhs, alpha, B, ldb, Xt, ldimX));
+                RETURN_IF_ROCSPARSE_ERROR(
+                    rocsparse::dense_transpose(handle,
+                                               static_cast<int64_t>(mb) * block_dim,
+                                               static_cast<int64_t>(nrhs),
+                                               alpha,
+                                               B,
+                                               ldb,
+                                               Xt,
+                                               ldimX));
             }
             else
             {
-                RETURN_IF_ROCSPARSE_ERROR(rocsparse::dense_transpose(
-                    handle, mb * block_dim, nrhs, *alpha, B, ldb, Xt, ldimX));
+                RETURN_IF_ROCSPARSE_ERROR(
+                    rocsparse::dense_transpose(handle,
+                                               static_cast<int64_t>(mb) * block_dim,
+                                               static_cast<int64_t>(nrhs),
+                                               *alpha,
+                                               B,
+                                               ldb,
+                                               Xt,
+                                               ldimX));
             }
         }
         else
@@ -204,9 +215,9 @@ namespace rocsparse
         }
 
         // Pointers to differentiate between transpose mode
-        const rocsparse_int* local_bsr_row_ptr = bsr_row_ptr;
-        const rocsparse_int* local_bsr_col_ind = bsr_col_ind;
-        const T*             local_bsr_val     = bsr_val;
+        const I* local_bsr_row_ptr = bsr_row_ptr;
+        const J* local_bsr_col_ind = bsr_col_ind;
+        const T* local_bsr_val     = bsr_val;
 
         // When computing transposed triangular solve, we first need to update the
         // transposed matrix values
@@ -216,8 +227,8 @@ namespace rocsparse
 
             LAUNCH_BSRSM_GTHR(256, 64, block_dim);
 
-            local_bsr_row_ptr = (const rocsparse_int*)trm_info->get_transposed_row_ptr();
-            local_bsr_col_ind = (const rocsparse_int*)trm_info->get_transposed_col_ind();
+            local_bsr_row_ptr = (const I*)trm_info->get_transposed_row_ptr();
+            local_bsr_col_ind = (const J*)trm_info->get_transposed_col_ind();
             local_bsr_val     = (const T*)bsrt_val;
 
             fill_mode = (fill_mode == rocsparse_fill_mode_lower) ? rocsparse_fill_mode_upper
@@ -282,38 +293,50 @@ namespace rocsparse
         if(trans_X == rocsparse_operation_none)
         {
             RETURN_IF_ROCSPARSE_ERROR(
-                rocsparse::dense_transpose_back(handle, mb * block_dim, nrhs, Xt, ldimX, X, ldx));
+                rocsparse::dense_transpose_back(handle,
+                                                static_cast<int64_t>(mb) * block_dim,
+                                                static_cast<int64_t>(nrhs),
+                                                Xt,
+                                                ldimX,
+                                                X,
+                                                ldx));
         }
 
         return rocsparse_status_success;
     }
 }
 
-#define INSTANTIATE(T)                                               \
-    template rocsparse_status rocsparse::bsrsm_solve_template_large( \
-        rocsparse_handle          handle,                            \
-        rocsparse_direction       dir,                               \
-        rocsparse_operation       trans_A,                           \
-        rocsparse_operation       trans_X,                           \
-        rocsparse_int             mb,                                \
-        rocsparse_int             nrhs,                              \
-        rocsparse_int             nnzb,                              \
-        const T*                  alpha,                             \
-        const rocsparse_mat_descr descr,                             \
-        const T*                  bsr_val,                           \
-        const rocsparse_int*      bsr_row_ptr,                       \
-        const rocsparse_int*      bsr_col_ind,                       \
-        rocsparse_int             block_dim,                         \
-        rocsparse_mat_info        info,                              \
-        const T*                  B,                                 \
-        int64_t                   ldb,                               \
-        T*                        X,                                 \
-        int64_t                   ldx,                               \
+#define INSTANTIATE(I, J, T)                                                  \
+    template rocsparse_status rocsparse::bsrsm_solve_template_large<I, J, T>( \
+        rocsparse_handle          handle,                                     \
+        rocsparse_direction       dir,                                        \
+        rocsparse_operation       trans_A,                                    \
+        rocsparse_operation       trans_X,                                    \
+        J                         mb,                                         \
+        rocsparse_int             nrhs,                                       \
+        I                         nnzb,                                       \
+        const T*                  alpha,                                      \
+        const rocsparse_mat_descr descr,                                      \
+        const T*                  bsr_val,                                    \
+        const I*                  bsr_row_ptr,                                \
+        const J*                  bsr_col_ind,                                \
+        rocsparse_int             block_dim,                                  \
+        rocsparse_mat_info        info,                                       \
+        const T*                  B,                                          \
+        int64_t                   ldb,                                        \
+        T*                        X,                                          \
+        int64_t                   ldx,                                        \
         void*                     temp_buffer)
 
-INSTANTIATE(float);
-INSTANTIATE(double);
-INSTANTIATE(rocsparse_float_complex);
-INSTANTIATE(rocsparse_double_complex);
+#define INSTANTIATE_IJ(I, J)                    \
+    INSTANTIATE(I, J, float);                   \
+    INSTANTIATE(I, J, double);                  \
+    INSTANTIATE(I, J, rocsparse_float_complex); \
+    INSTANTIATE(I, J, rocsparse_double_complex)
 
+INSTANTIATE_IJ(int32_t, int32_t);
+INSTANTIATE_IJ(int64_t, int32_t);
+INSTANTIATE_IJ(int64_t, int64_t);
+
+#undef INSTANTIATE_IJ
 #undef INSTANTIATE

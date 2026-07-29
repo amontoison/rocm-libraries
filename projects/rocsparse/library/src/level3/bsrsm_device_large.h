@@ -28,19 +28,19 @@
 
 namespace rocsparse
 {
-    template <uint32_t BLOCKSIZE, uint32_t NCOLS, bool SLEEP, typename T>
+    template <uint32_t BLOCKSIZE, uint32_t NCOLS, bool SLEEP, typename I, typename J, typename T>
     ROCSPARSE_KERNEL(BLOCKSIZE)
-    void bsrsm_upper_large_kernel(rocsparse_int        mb,
+    void bsrsm_upper_large_kernel(J                    mb,
                                   rocsparse_int        nrhs,
-                                  const rocsparse_int* bsr_row_ptr,
-                                  const rocsparse_int* bsr_col_ind,
+                                  const I*             bsr_row_ptr,
+                                  const J*             bsr_col_ind,
                                   const T*             bsr_val,
                                   rocsparse_int        block_dim,
                                   T*                   X,
                                   rocsparse_int        ldx,
                                   int*                 done_array,
-                                  const rocsparse_int* map,
-                                  rocsparse_int*       zero_pivot,
+                                  const J*             map,
+                                  J*                   zero_pivot,
                                   rocsparse_index_base idx_base,
                                   rocsparse_diag_type  diag_type,
                                   rocsparse_direction  dir)
@@ -56,26 +56,26 @@ namespace rocsparse
         const int lid = threadIdx.x & (WFSIZE - 1);
 
         // Index into the row map
-        const rocsparse_int idx = blockIdx.x % mb;
+        const J idx = blockIdx.x % mb;
 
         // Get the BSR row this thread block will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Get the id of the rhs, this thread block will operate on
-        const rocsparse_int id = blockIdx.x / mb * mb;
+        const J id = blockIdx.x / mb * mb;
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Column index (rhs) into X
         const rocsparse_int col_X = blockIdx.x / mb * NCOLS + threadIdx.x / WFSIZE;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Loop over current row
-        rocsparse_int j;
+        I j;
         for(j = row_end - 1; j >= row_begin; --j)
         {
             // Current column index
@@ -181,19 +181,19 @@ namespace rocsparse
         }
     }
 
-    template <uint32_t BLOCKSIZE, uint32_t NCOLS, bool SLEEP, typename T>
+    template <uint32_t BLOCKSIZE, uint32_t NCOLS, bool SLEEP, typename I, typename J, typename T>
     ROCSPARSE_KERNEL(BLOCKSIZE)
-    void bsrsm_lower_large_kernel(rocsparse_int        mb,
+    void bsrsm_lower_large_kernel(J                    mb,
                                   rocsparse_int        nrhs,
-                                  const rocsparse_int* bsr_row_ptr,
-                                  const rocsparse_int* bsr_col_ind,
+                                  const I*             bsr_row_ptr,
+                                  const J*             bsr_col_ind,
                                   const T*             bsr_val,
                                   rocsparse_int        block_dim,
                                   T*                   X,
                                   rocsparse_int        ldx,
                                   int*                 done_array,
-                                  const rocsparse_int* map,
-                                  rocsparse_int*       zero_pivot,
+                                  const J*             map,
+                                  J*                   zero_pivot,
                                   rocsparse_index_base idx_base,
                                   rocsparse_diag_type  diag_type,
                                   rocsparse_direction  dir)
@@ -209,26 +209,26 @@ namespace rocsparse
         const int lid = threadIdx.x & (WFSIZE - 1);
 
         // Index into the row map
-        const rocsparse_int idx = blockIdx.x % mb;
+        const J idx = blockIdx.x % mb;
 
         // Get the BSR row this thread block will operate on
-        const rocsparse_int row = map[idx];
+        const J row = map[idx];
 
         // Get the id of the rhs, this thread block will operate on
-        const rocsparse_int id = blockIdx.x / mb * mb;
+        const J id = blockIdx.x / mb * mb;
 
         // Current row entry and exit point
-        const rocsparse_int row_begin = bsr_row_ptr[row] - idx_base;
-        const rocsparse_int row_end   = bsr_row_ptr[row + 1] - idx_base;
+        const I row_begin = bsr_row_ptr[row] - idx_base;
+        const I row_end   = bsr_row_ptr[row + 1] - idx_base;
 
         // Column index into X
         const rocsparse_int col_X = blockIdx.x / mb * NCOLS + threadIdx.x / WFSIZE;
 
         // Initialize local_col with mb
-        rocsparse_int local_col = mb;
+        J local_col = mb;
 
         // Loop over current row
-        rocsparse_int j;
+        I j;
         for(j = row_begin; j < row_end; ++j)
         {
             // Current column index
