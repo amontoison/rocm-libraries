@@ -30,6 +30,7 @@
 #include "../conversion/rocsparse_convert_array.hpp"
 #include "../conversion/rocsparse_convert_scalar.hpp"
 #include "internal/level3/rocsparse_csrsm.h"
+#include "rocsparse_bsrsm.hpp"
 #include "rocsparse_common.h"
 #include "rocsparse_coosm.hpp"
 #include "rocsparse_csc_to_csr_descr.hpp"
@@ -1189,6 +1190,21 @@ namespace rocsparse
         }
 
         case rocsparse_format_bsr:
+        {
+            // Native BSR path: only column-major X/Y with a non-transposed X
+            // operation is supported (the bsrsm dense layout convention). No
+            // extra dense-transpose scratch is needed.
+            if(operation_X != rocsparse_operation_none
+               || sptrsm_descr->get_X_order() != rocsparse_order_column
+               || sptrsm_descr->get_Y_order() != rocsparse_order_column)
+            {
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+            }
+            RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsm_buffer_size(
+                handle, operation, operation_X, A, nrhs, buffer_size_in_bytes));
+            return rocsparse_status_success;
+        }
+
         case rocsparse_format_ell:
         case rocsparse_format_bell:
         case rocsparse_format_sell:
@@ -1504,8 +1520,29 @@ namespace rocsparse
 #endif
             }
 
-            case rocsparse_format_coo_aos:
             case rocsparse_format_bsr:
+            {
+                // Native BSR path: only column-major X/Y with a non-transposed X
+                // operation is supported. Analysis state lives on A->info; the
+                // raw buffer is used directly (no dense-transpose scratch).
+                if(X_operation != rocsparse_operation_none || X->order != rocsparse_order_column
+                   || Y->order != rocsparse_order_column)
+                {
+                    RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+                }
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsm_analysis(handle,
+                                                                    operation,
+                                                                    X_operation,
+                                                                    A,
+                                                                    Y->cols,
+                                                                    analysis_policy,
+                                                                    rocsparse_solve_policy_auto,
+                                                                    buffer));
+                sptrsm_descr->set_stage(rocsparse_sptrsm_stage_analysis);
+                return rocsparse_status_success;
+            }
+
+            case rocsparse_format_coo_aos:
             case rocsparse_format_ell:
             case rocsparse_format_bell:
             case rocsparse_format_sell:
@@ -1533,6 +1570,33 @@ namespace rocsparse
 
             RETURN_IF_ROCSPARSE_ERROR(
                 convert_scalars(handle, sptrsm_descr, sptrsm_descr->get_scalar_alpha(), &alpha));
+
+            if(A->format == rocsparse_format_bsr)
+            {
+                // Native BSR path: bsrsm consumes the column-major right-hand
+                // side X and writes the column-major solution Y directly, so we
+                // bypass the CSR dense-transpose case machinery.
+                if(X_operation != rocsparse_operation_none || X->order != rocsparse_order_column
+                   || Y->order != rocsparse_order_column)
+                {
+                    RETURN_IF_ROCSPARSE_ERROR(rocsparse_status_not_implemented);
+                }
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsm_solve(handle,
+                                                                 operation,
+                                                                 X_operation,
+                                                                 A,
+                                                                 Y->cols,
+                                                                 alpha_datatype,
+                                                                 alpha,
+                                                                 X->const_values,
+                                                                 X->ld,
+                                                                 Y->values,
+                                                                 Y->ld,
+                                                                 rocsparse_solve_policy_auto,
+                                                                 buffer));
+                sptrsm_descr->set_stage(rocsparse_sptrsm_stage_compute);
+                return rocsparse_status_success;
+            }
 
             switch(sptrsm_case)
             {

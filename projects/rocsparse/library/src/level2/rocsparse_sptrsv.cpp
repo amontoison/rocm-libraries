@@ -22,6 +22,7 @@
  * ************************************************************************ */
 
 #include <map>
+#include <memory>
 #include <sstream>
 
 #include "internal/generic/rocsparse_sptrsv.h"
@@ -33,9 +34,12 @@
 #include "../conversion/rocsparse_convert_array.hpp"
 #include "../conversion/rocsparse_convert_scalar.hpp"
 #include "internal/level2/rocsparse_csrsv.h"
+#include "rocsparse_bsrsv.hpp"
+#include "rocsparse_bsrsv_info.hpp"
 #include "rocsparse_coosv.hpp"
 #include "rocsparse_cscsv.hpp"
 #include "rocsparse_csrsv.hpp"
+#include "rocsparse_mat_info.hpp"
 #include "rocsparse_sptrsv_descr.hpp"
 
 template <>
@@ -413,6 +417,14 @@ namespace rocsparse
             }
 
             case rocsparse_format_bsr:
+            {
+                // BSR uses a single combined scratch buffer for analysis and
+                // solve, so both stages report the same size.
+                RETURN_IF_ROCSPARSE_ERROR(
+                    rocsparse::bsrsv_buffer_size(handle, operation, A, buffer_size_in_bytes));
+                return rocsparse_status_success;
+            }
+
             case rocsparse_format_ell:
             case rocsparse_format_bell:
             case rocsparse_format_sell:
@@ -457,6 +469,14 @@ namespace rocsparse
             }
 
             case rocsparse_format_bsr:
+            {
+                // BSR uses a single combined scratch buffer for analysis and
+                // solve, so both stages report the same size.
+                RETURN_IF_ROCSPARSE_ERROR(
+                    rocsparse::bsrsv_buffer_size(handle, operation, A, buffer_size_in_bytes));
+                return rocsparse_status_success;
+            }
+
             case rocsparse_format_ell:
             case rocsparse_format_bell:
             case rocsparse_format_sell:
@@ -717,6 +737,21 @@ namespace rocsparse
             }
 
             case rocsparse_format_bsr:
+            {
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsv_analysis(
+                    handle, operation, A, analysis_policy, rocsparse_solve_policy_auto, buffer));
+                // BSR triangular solve keeps its analysis/pivot state on A->info.
+                // _rocsparse_bsrsv_info and _rocsparse_csrsv_info are layout
+                // identical (a rocsparse::trm_data_t plus a singularity), so we
+                // store it in the descriptor's csrsv_info slot to keep the
+                // rocsparse_sptrsv_get_output path uniform across formats.
+                sptrsv_descr->set_shared_csrsv_info(
+                    std::reinterpret_pointer_cast<_rocsparse_csrsv_info>(
+                        A->info->get_shared_bsrsv_info()));
+                sptrsv_descr->set_stage(rocsparse_sptrsv_stage_analysis);
+                return rocsparse_status_success;
+            }
+
             case rocsparse_format_ell:
             case rocsparse_format_bell:
             case rocsparse_format_sell:
@@ -808,6 +843,20 @@ namespace rocsparse
             }
 
             case rocsparse_format_bsr:
+            {
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::bsrsv_solve(handle,
+                                                                 operation,
+                                                                 alpha_datatype,
+                                                                 alpha,
+                                                                 A,
+                                                                 dnvec_descr_x,
+                                                                 dnvec_descr_y,
+                                                                 rocsparse_solve_policy_auto,
+                                                                 buffer));
+                sptrsv_descr->set_stage(rocsparse_sptrsv_stage_compute);
+                return rocsparse_status_success;
+            }
+
             case rocsparse_format_ell:
             case rocsparse_format_bell:
             case rocsparse_format_sell:
