@@ -103,3 +103,11 @@
  *  The sparse reordering routines are a set of functions that can be used for creating colorings of
  *  sparse matrices
  */
+
+/*! \defgroup utility_module SPARSE Utility routines
+ *  \brief This module holds all sparse utility routines.
+ *
+ *  \details
+ *  The sparse utility routines are a set of functions that can be used to check whether a matrix in
+ *  a given sparse format is valid.
+ */
