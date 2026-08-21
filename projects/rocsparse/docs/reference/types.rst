@@ -145,6 +145,11 @@ rocsparse_spilu0_solve_descr
 
 .. doxygentypedef:: rocsparse_spilu0_solve_descr
 
+rocsparse_spildlt0_solve_descr
+------------------------------
+
+.. doxygentypedef:: rocsparse_spildlt0_solve_descr
+
 rocsparse_spgeam_descr
 ----------------------
 

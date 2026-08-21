@@ -460,6 +460,26 @@ rocsparse_spilu0_solve_get_output
 
 .. doxygenfunction:: rocsparse_spilu0_solve_get_output
 
+rocsparse_spildlt0_solve_descr_create
+-------------------------------------
+
+.. doxygenfunction:: rocsparse_spildlt0_solve_descr_create
+
+rocsparse_spildlt0_solve_descr_destroy
+--------------------------------------
+
+.. doxygenfunction:: rocsparse_spildlt0_solve_descr_destroy
+
+rocsparse_spildlt0_solve_set_input
+----------------------------------
+
+.. doxygenfunction:: rocsparse_spildlt0_solve_set_input
+
+rocsparse_spildlt0_solve_get_output
+-----------------------------------
+
+.. doxygenfunction:: rocsparse_spildlt0_solve_get_output
+
 
 rocsparse_spildlt0_descr_create
 -------------------------------

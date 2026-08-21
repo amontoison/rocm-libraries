@@ -301,6 +301,26 @@ rocsparse_spilu0_solve_output
 
 .. doxygenenum:: rocsparse_spilu0_solve_output
 
+rocsparse_spildlt0_solve_alg
+----------------------------
+
+.. doxygenenum:: rocsparse_spildlt0_solve_alg
+
+rocsparse_spildlt0_solve_stage
+------------------------------
+
+.. doxygenenum:: rocsparse_spildlt0_solve_stage
+
+rocsparse_spildlt0_solve_input
+------------------------------
+
+.. doxygenenum:: rocsparse_spildlt0_solve_input
+
+rocsparse_spildlt0_solve_output
+-------------------------------
+
+.. doxygenenum:: rocsparse_spildlt0_solve_output
+
 rocsparse_spmm_alg
 ------------------
 

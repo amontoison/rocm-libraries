@@ -294,6 +294,14 @@ typedef struct _rocsparse_spic0_solve_descr* rocsparse_spic0_solve_descr;
  * end using rocsparse_spilu0_solve_descr_destroy().
  */
 typedef struct _rocsparse_spilu0_solve_descr* rocsparse_spilu0_solve_descr;
+
+/*! \ingroup types_module
+ * \brief \p rocsparse_spildlt0_solve_descr is a structure holding the rocSPARSE spildlt0_solve
+ * descriptor data. It must be initialized using
+ * the rocsparse_spildlt0_solve_descr_create() routine. It should be destroyed at the
+ * end using rocsparse_spildlt0_solve_descr_destroy().
+ */
+typedef struct _rocsparse_spildlt0_solve_descr* rocsparse_spildlt0_solve_descr;
 #endif
 
 /*! \ingroup types_module
@@ -1292,6 +1300,57 @@ typedef enum rocsparse_spilu0_solve_output_
     rocsparse_spilu0_solve_output_refinement_iterations, /**< Get the number of iterative refinement iterations performed (\p int32_t). */
     rocsparse_spilu0_solve_output_refinement_residual, /**< Get the achieved iterative refinement residual (\p double). */
 } rocsparse_spilu0_solve_output;
+
+/*! \ingroup types_module
+ *  \brief List of SpILDLT0 solve algorithms.
+ *
+ *  \details
+ *  This is a list of supported \ref rocsparse_spildlt0_solve_alg types that are used to perform the
+ *  triangular backsolve on an incomplete LDL^T factor of level 0.
+ */
+typedef enum rocsparse_spildlt0_solve_alg_
+{
+    rocsparse_spildlt0_solve_alg_default
+} rocsparse_spildlt0_solve_alg;
+
+/*! \ingroup types_module
+ *  \brief List of SpILDLT0 solve stages.
+ *
+ *  \details
+ *  This is a list of possible stages during the SpILDLT0 backsolve.
+ */
+typedef enum rocsparse_spildlt0_solve_stage_
+{
+    rocsparse_spildlt0_solve_stage_analysis, /**< Analysis of both triangular sweeps. */
+    rocsparse_spildlt0_solve_stage_solve /**< Performs the actual SpILDLT0 backsolve. */
+} rocsparse_spildlt0_solve_stage;
+
+/*! \ingroup types_module
+ *  \brief List of inputs to the SpILDLT0 solve descriptor.
+ *
+ *  \details
+ *  This is a list of possible inputs to the SpILDLT0 solve descriptor.
+ */
+typedef enum rocsparse_spildlt0_solve_input_
+{
+    rocsparse_spildlt0_solve_input_alg, /**< Select algorithm \ref rocsparse_spildlt0_solve_alg for input on a SpILDLT0 solve descriptor. */
+    rocsparse_spildlt0_solve_input_analysis_policy, /**< Select the analysis policy \ref rocsparse_analysis_policy for input on a SpILDLT0 solve descriptor. */
+    rocsparse_spildlt0_solve_input_compute_datatype, /**< Select compute datatype \ref rocsparse_datatype for input on a SpILDLT0 solve descriptor. */
+    rocsparse_spildlt0_solve_input_refinement_steps, /**< Select the number of iterative refinement steps (\p int32_t, 0 disables refinement) for input on a SpILDLT0 solve descriptor. */
+    rocsparse_spildlt0_solve_input_matrix, /**< Provide the original matrix \f$A\f$ (\ref rocsparse_const_spmat_descr) used to compute the iterative refinement residual. */
+} rocsparse_spildlt0_solve_input;
+
+/*! \ingroup types_module
+ *  \brief List of outputs of the SpILDLT0 solve descriptor.
+ *
+ *  \details
+ *  This is a list of possible outputs of the SpILDLT0 solve descriptor.
+ */
+typedef enum rocsparse_spildlt0_solve_output_
+{
+    rocsparse_spildlt0_solve_output_refinement_iterations, /**< Get the number of iterative refinement iterations performed (\p int32_t). */
+    rocsparse_spildlt0_solve_output_refinement_residual, /**< Get the achieved iterative refinement residual (\p double). */
+} rocsparse_spildlt0_solve_output;
 #endif
 
 /*! \ingroup types_module

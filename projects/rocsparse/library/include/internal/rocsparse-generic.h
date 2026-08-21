@@ -46,6 +46,7 @@
 #include "generic/rocsparse_spic0.h"
 #ifdef ROCSPARSE_WITH_PRECONDITIONERS_SOLVE
 #include "generic/rocsparse_spic0_solve.h"
+#include "generic/rocsparse_spildlt0_solve.h"
 #include "generic/rocsparse_spilu0_solve.h"
 #endif
 #ifdef ROCSPARSE_WITH_SPMAT_SCALE
