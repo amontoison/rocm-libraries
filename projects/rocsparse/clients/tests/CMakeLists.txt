@@ -253,6 +253,7 @@ endif()
 
 if(BUILD_WITH_PRECONDITIONERS_SOLVE)
   list(APPEND ROCSPARSE_TEST_SOURCES test_spic0_solve.cpp)
+  list(APPEND ROCSPARSE_TEST_SOURCES test_spilu0_solve.cpp)
 endif()
 
 if(ROCSPARSE_ENABLE_SPMAT_SCALE)
@@ -430,6 +431,7 @@ endif()
 
 if(BUILD_WITH_PRECONDITIONERS_SOLVE)
   list(APPEND ROCSPARSE_CLIENTS_TESTINGS ../testings/testing_spic0_solve.cpp)
+  list(APPEND ROCSPARSE_CLIENTS_TESTINGS ../testings/testing_spilu0_solve.cpp)
 endif()
 
 if(ROCSPARSE_ENABLE_SPMAT_SCALE)

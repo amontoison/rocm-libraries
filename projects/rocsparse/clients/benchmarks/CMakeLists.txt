@@ -241,6 +241,7 @@ endif()
 
 if(BUILD_WITH_PRECONDITIONERS_SOLVE)
   list(APPEND ROCSPARSE_BENCHMARK_SOURCES ../testings/testing_spic0_solve.cpp)
+  list(APPEND ROCSPARSE_BENCHMARK_SOURCES ../testings/testing_spilu0_solve.cpp)
 endif()
 
 add_executable(rocsparse-bench ${ROCSPARSE_BENCHMARK_SOURCES} ${ROCSPARSE_CLIENTS_COMMON} ${ROCSPARSE_CLIENTS_TESTINGS})

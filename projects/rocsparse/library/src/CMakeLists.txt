@@ -695,6 +695,11 @@ if(BUILD_WITH_PRECONDITIONERS_SOLVE)
     src/generic/spic0_solve/rocsparse_spic0_solve_get_output.cpp
     src/generic/spic0_solve/rocsparse_spic0_solve.cpp
     src/generic/spic0_solve/rocsparse_spic0_solve_buffer_size.cpp
+    src/generic/spilu0_solve/rocsparse_spilu0_solve_descr.cpp
+    src/generic/spilu0_solve/rocsparse_spilu0_solve_set_input.cpp
+    src/generic/spilu0_solve/rocsparse_spilu0_solve_get_output.cpp
+    src/generic/spilu0_solve/rocsparse_spilu0_solve.cpp
+    src/generic/spilu0_solve/rocsparse_spilu0_solve_buffer_size.cpp
   )
 endif()
 

@@ -112,6 +112,16 @@ rocsparse_spic0_solve()
 
 .. doxygenfunction:: rocsparse_spic0_solve
 
+rocsparse_spilu0_solve_buffer_size()
+------------------------------------
+
+.. doxygenfunction:: rocsparse_spilu0_solve_buffer_size
+
+rocsparse_spilu0_solve()
+------------------------
+
+.. doxygenfunction:: rocsparse_spilu0_solve
+
 rocsparse_spildlt0_buffer_size()
 --------------------------------
 

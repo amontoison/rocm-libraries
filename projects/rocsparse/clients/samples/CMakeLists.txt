@@ -188,6 +188,7 @@ endif()
 
 if(NOT BUILD_WITH_PRECONDITIONERS_SOLVE)
   list(FILTER DOCUMENTATION_EXAMPLES EXCLUDE REGEX ".*example_rocsparse_spic0_solve\\.cpp$")
+  list(FILTER DOCUMENTATION_EXAMPLES EXCLUDE REGEX ".*example_rocsparse_spilu0_solve\\.cpp$")
 endif()
 
 foreach(file ${DOCUMENTATION_EXAMPLES})
