@@ -135,6 +135,11 @@ rocsparse_spic0_descr
 
 .. doxygentypedef:: rocsparse_spic0_descr
 
+rocsparse_spic0_solve_descr
+---------------------------
+
+.. doxygentypedef:: rocsparse_spic0_solve_descr
+
 rocsparse_spgeam_descr
 ----------------------
 

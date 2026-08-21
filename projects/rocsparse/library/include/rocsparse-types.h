@@ -278,6 +278,16 @@ typedef struct _rocsparse_sptrsm_descr* rocsparse_sptrsm_descr;
  */
 typedef struct _rocsparse_spic0_descr* rocsparse_spic0_descr;
 
+#ifdef ROCSPARSE_WITH_PRECONDITIONERS_SOLVE
+/*! \ingroup types_module
+ * \brief \p rocsparse_spic0_solve_descr is a structure holding the rocSPARSE spic0_solve
+ * descriptor data. It must be initialized using
+ * the rocsparse_spic0_solve_descr_create() routine. It should be destroyed at the
+ * end using rocsparse_spic0_solve_descr_destroy().
+ */
+typedef struct _rocsparse_spic0_solve_descr* rocsparse_spic0_solve_descr;
+#endif
+
 /*! \ingroup types_module
  * \brief \p rocsparse_spilu0_descr is a structure holding the rocSPARSE spilu0
  * descriptor data. It must be initialized using
@@ -1171,6 +1181,59 @@ typedef enum rocsparse_spic0_output_
     rocsparse_spic0_output_singularity, /**< Get the type of \ref rocsparse_singularity detected during SpIC0 calculation for output from the SpIC0 descriptor. */
     rocsparse_spic0_output_singularity_position, /**< Get the singularity \p int64_t based position for output from the SpIC0 descriptor. */
 } rocsparse_spic0_output;
+
+#ifdef ROCSPARSE_WITH_PRECONDITIONERS_SOLVE
+/*! \ingroup types_module
+ *  \brief List of SpIC0 solve algorithms.
+ *
+ *  \details
+ *  This is a list of supported \ref rocsparse_spic0_solve_alg types that are used to perform the
+ *  triangular backsolve on an incomplete Cholesky factor of level 0.
+ */
+typedef enum rocsparse_spic0_solve_alg_
+{
+    rocsparse_spic0_solve_alg_default
+} rocsparse_spic0_solve_alg;
+
+/*! \ingroup types_module
+ *  \brief List of SpIC0 solve stages.
+ *
+ *  \details
+ *  This is a list of possible stages during the SpIC0 backsolve.
+ */
+typedef enum rocsparse_spic0_solve_stage_
+{
+    rocsparse_spic0_solve_stage_analysis, /**< Analysis of both triangular sweeps. */
+    rocsparse_spic0_solve_stage_solve /**< Performs the actual SpIC0 backsolve. */
+} rocsparse_spic0_solve_stage;
+
+/*! \ingroup types_module
+ *  \brief List of inputs to the SpIC0 solve descriptor.
+ *
+ *  \details
+ *  This is a list of possible inputs to the SpIC0 solve descriptor.
+ */
+typedef enum rocsparse_spic0_solve_input_
+{
+    rocsparse_spic0_solve_input_alg, /**< Select algorithm \ref rocsparse_spic0_solve_alg for input on a SpIC0 solve descriptor. */
+    rocsparse_spic0_solve_input_analysis_policy, /**< Select the analysis policy \ref rocsparse_analysis_policy for input on a SpIC0 solve descriptor. */
+    rocsparse_spic0_solve_input_compute_datatype, /**< Select compute datatype \ref rocsparse_datatype for input on a SpIC0 solve descriptor. */
+    rocsparse_spic0_solve_input_refinement_steps, /**< Select the number of iterative refinement steps (\p int32_t, 0 disables refinement) for input on a SpIC0 solve descriptor. */
+    rocsparse_spic0_solve_input_matrix, /**< Provide the original matrix \f$A\f$ (\ref rocsparse_const_spmat_descr) used to compute the iterative refinement residual. */
+} rocsparse_spic0_solve_input;
+
+/*! \ingroup types_module
+ *  \brief List of outputs of the SpIC0 solve descriptor.
+ *
+ *  \details
+ *  This is a list of possible outputs of the SpIC0 solve descriptor.
+ */
+typedef enum rocsparse_spic0_solve_output_
+{
+    rocsparse_spic0_solve_output_refinement_iterations, /**< Get the number of iterative refinement iterations performed (\p int32_t). */
+    rocsparse_spic0_solve_output_refinement_residual, /**< Get the achieved iterative refinement residual (\p double). */
+} rocsparse_spic0_solve_output;
+#endif
 
 /*! \ingroup types_module
  *  \brief List of SpILU0 algorithms.

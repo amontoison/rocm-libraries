@@ -251,6 +251,10 @@ if(BUILD_WITH_ILDLT0)
   list(APPEND ROCSPARSE_TEST_SOURCES test_spildlt0.cpp)
 endif()
 
+if(BUILD_WITH_PRECONDITIONERS_SOLVE)
+  list(APPEND ROCSPARSE_TEST_SOURCES test_spic0_solve.cpp)
+endif()
+
 if(ROCSPARSE_ENABLE_SPMAT_SCALE)
   list(APPEND ROCSPARSE_TEST_SOURCES test_spmat_scale.cpp)
 endif()
@@ -422,6 +426,10 @@ rocsparse_test_listeners.cpp
 
 if(BUILD_WITH_ILDLT0)
   list(APPEND ROCSPARSE_CLIENTS_TESTINGS ../testings/testing_spildlt0.cpp)
+endif()
+
+if(BUILD_WITH_PRECONDITIONERS_SOLVE)
+  list(APPEND ROCSPARSE_CLIENTS_TESTINGS ../testings/testing_spic0_solve.cpp)
 endif()
 
 if(ROCSPARSE_ENABLE_SPMAT_SCALE)

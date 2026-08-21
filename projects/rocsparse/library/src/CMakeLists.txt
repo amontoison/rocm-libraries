@@ -687,6 +687,17 @@ set(rocsparse_source
 
 )
 
+# Unified preconditioner backsolve sources, gated by BUILD_WITH_PRECONDITIONERS_SOLVE.
+if(BUILD_WITH_PRECONDITIONERS_SOLVE)
+  list(APPEND rocsparse_source
+    src/generic/spic0_solve/rocsparse_spic0_solve_descr.cpp
+    src/generic/spic0_solve/rocsparse_spic0_solve_set_input.cpp
+    src/generic/spic0_solve/rocsparse_spic0_solve_get_output.cpp
+    src/generic/spic0_solve/rocsparse_spic0_solve.cpp
+    src/generic/spic0_solve/rocsparse_spic0_solve_buffer_size.cpp
+  )
+endif()
+
 if(BUILD_ROCSPARSE_DEBUGGING)
   list(APPEND rocsparse_source
     src/hip/rocsparse_hip.cpp

@@ -420,6 +420,26 @@ rocsparse_spic0_get_output
 
 .. doxygenfunction:: rocsparse_spic0_get_output
 
+rocsparse_spic0_solve_descr_create
+----------------------------------
+
+.. doxygenfunction:: rocsparse_spic0_solve_descr_create
+
+rocsparse_spic0_solve_descr_destroy
+-----------------------------------
+
+.. doxygenfunction:: rocsparse_spic0_solve_descr_destroy
+
+rocsparse_spic0_solve_set_input
+-------------------------------
+
+.. doxygenfunction:: rocsparse_spic0_solve_set_input
+
+rocsparse_spic0_solve_get_output
+--------------------------------
+
+.. doxygenfunction:: rocsparse_spic0_solve_get_output
+
 
 rocsparse_spildlt0_descr_create
 -------------------------------
