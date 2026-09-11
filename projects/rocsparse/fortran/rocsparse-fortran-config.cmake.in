@@ -1,0 +1,39 @@
+# Config package for the rocSPARSE Fortran bindings.
+#
+#   find_package(rocsparse-fortran REQUIRED)
+#   target_link_libraries(my_app PRIVATE roc::rocsparse_fortran)
+#
+# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
+# because a .mod is not portable across compilers or even across versions of the
+# same compiler. This package therefore checks that the consumer is building with
+# the compiler the bindings were installed for, and fails with a named diagnostic
+# rather than letting the build hit an unreadable .mod much later.
+
+@PACKAGE_INIT@
+
+set(ROCSPARSE_FORTRAN_COMPILER_DIR "@ROCSPARSE_FORTRAN_COMPILER_DIR@")
+
+if(NOT CMAKE_Fortran_COMPILER_LOADED)
+  set(rocsparse-fortran_FOUND FALSE)
+  set(rocsparse-fortran_NOT_FOUND_MESSAGE
+      "The rocSPARSE Fortran bindings need Fortran enabled before find_package: "
+      "add Fortran to your project() languages, or call enable_language(Fortran).")
+  return()
+endif()
+
+string(TOLOWER "${CMAKE_Fortran_COMPILER_ID}" _rocsparse_fc_id)
+set(_rocsparse_fc "${_rocsparse_fc_id}-${CMAKE_Fortran_COMPILER_VERSION}")
+
+if(NOT _rocsparse_fc STREQUAL ROCSPARSE_FORTRAN_COMPILER_DIR)
+  set(rocsparse-fortran_FOUND FALSE)
+  set(rocsparse-fortran_NOT_FOUND_MESSAGE
+      "The installed rocSPARSE Fortran bindings were built with "
+      "${ROCSPARSE_FORTRAN_COMPILER_DIR}, but this project builds with "
+      "${_rocsparse_fc}. A Fortran .mod cannot be shared across compilers or "
+      "versions; install the bindings for ${_rocsparse_fc}.")
+  return()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/rocsparse-fortran-targets.cmake")
+
+check_required_components(rocsparse-fortran)
