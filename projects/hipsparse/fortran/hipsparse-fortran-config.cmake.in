@@ -1,0 +1,39 @@
+# Config package for the hipSPARSE Fortran bindings.
+#
+#   find_package(hipsparse-fortran REQUIRED)
+#   target_link_libraries(my_app PRIVATE roc::hipsparse_fortran)
+#
+# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
+# because a .mod is not portable across compilers or even across versions of the
+# same compiler. This package therefore checks that the consumer is building with
+# the compiler the bindings were installed for, and fails with a named diagnostic
+# rather than letting the build hit an unreadable .mod much later.
+
+@PACKAGE_INIT@
+
+set(HIPSPARSE_FORTRAN_COMPILER_DIR "@HIPSPARSE_FORTRAN_COMPILER_DIR@")
+
+if(NOT CMAKE_Fortran_COMPILER_LOADED)
+  set(hipsparse-fortran_FOUND FALSE)
+  set(hipsparse-fortran_NOT_FOUND_MESSAGE
+      "The hipSPARSE Fortran bindings need Fortran enabled before find_package: "
+      "add Fortran to your project() languages, or call enable_language(Fortran).")
+  return()
+endif()
+
+string(TOLOWER "${CMAKE_Fortran_COMPILER_ID}" _hipsparse_fc_id)
+set(_hipsparse_fc "${_hipsparse_fc_id}-${CMAKE_Fortran_COMPILER_VERSION}")
+
+if(NOT _hipsparse_fc STREQUAL HIPSPARSE_FORTRAN_COMPILER_DIR)
+  set(hipsparse-fortran_FOUND FALSE)
+  set(hipsparse-fortran_NOT_FOUND_MESSAGE
+      "The installed hipSPARSE Fortran bindings were built with "
+      "${HIPSPARSE_FORTRAN_COMPILER_DIR}, but this project builds with "
+      "${_hipsparse_fc}. A Fortran .mod cannot be shared across compilers or "
+      "versions; install the bindings for ${_hipsparse_fc}.")
+  return()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/hipsparse-fortran-targets.cmake")
+
+check_required_components(hipsparse-fortran)
