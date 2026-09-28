@@ -332,6 +332,36 @@ if( NOT SKIP_LIBRARY )
     add_subdirectory( library )
 endif()
 
+# Fortran bindings, generated from the headers above and committed next to them.
+# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF
+# or when no Fortran compiler is available, so a C-only site is unaffected.
+#
+# Outside the SKIP_LIBRARY guard on purpose, and not merely for symmetry with the
+# other libraries. That guard decides whether librocblas is BUILT here; the
+# bindings need it linked, not built, and resolve it from the prefix path when
+# the in-tree target is absent. Inheriting the skip would be actively broken now
+# that clients consume this target rather than building their own from
+# rocblas_module.f90: BUILD_FORTRAN_CLIENTS would then find no rocblas_fortran.
+add_subdirectory(fortran)
+
+# The Fortran clients link roc::rocblas_fortran, so they cannot be built when
+# the bindings were not. Drop them rather than stopping the configure: switching
+# the bindings off is a supported choice (-DBUILD_FORTRAN_BINDINGS=OFF for the
+# whole monorepo, -DROCBLAS_BUILD_FORTRAN_BINDINGS=OFF for this library alone),
+# and so is having no Fortran compiler at all, while BUILD_FORTRAN_CLIENTS
+# defaults to ON. Failing here would mean that turning one thing off obliges the
+# user to turn a second one off as well, in a flag they never touched.
+#
+# ROCBLAS_HAVE_FORTRAN_BINDINGS is what fortran/ reports back, and it is the
+# only honest test: FALSE when the directory returned early, TRUE only when the
+# target was really created.
+if(BUILD_FORTRAN_CLIENTS AND NOT ROCBLAS_HAVE_FORTRAN_BINDINGS)
+  message(STATUS
+    "rocBLAS: the Fortran bindings were not built, so skipping the Fortran "
+    "clients. Enable BUILD_FORTRAN_BINDINGS to get them back.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 # Build clients of the library
 if( BUILD_CLIENTS )
   add_subdirectory( clients )
