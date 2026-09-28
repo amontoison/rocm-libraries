@@ -51,7 +51,11 @@ end subroutine HIPBLAS_CHECK
 program example_fortran_gemm_ex
     use iso_c_binding
     use hipblas
-    use hipblas_enums
+    ! aType/bType/cType below are hipDataType (HIP_R_32F), which belongs to the
+    ! HIP runtime and not to hipBLAS. They used to arrive through hipblas_enums;
+    ! that module is gone now that the hipBLAS enumerators live in `hipblas`
+    ! itself, but HIP_R_32F was never one of them.
+    use hip
 
     implicit none
 
