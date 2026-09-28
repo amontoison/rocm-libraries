@@ -8,6 +8,23 @@ rocBLAS documentation is available at
 ### Resolved issues
 
 * Fix incorrect results and out-of-bounds reads from Level 1 ILP64 `dot` and `dotc`, including batched, strided-batched, and `_ex` forms, when a negative increment is wide enough to take the 64-bit increment path and `n` fits the single-block reduction. That path shifted by `(n - 1)` before calling the launcher, which applies the same walk, and the `y` shift tested `incx` rather than `incy`. The offsets are now passed through unshifted.
+### Added
+
+* Generated Fortran bindings, as a single self-contained `rocblas` module (`use rocblas`,
+  link `roc::rocblas_fortran`). Built by default when a Fortran compiler is available;
+  controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
+  `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(rocblas-fortran)`, installed per
+  compiler under `lib/fortran/<compiler>` and `include/fortran/<compiler>`.
+
+### Changed
+
+* The Fortran binding is now generated from the rocBLAS headers instead of hand-written.
+  `library/include/rocblas_module.f90` is removed and is no longer installed into
+  `include/rocblas`. It defined two modules, `rocblas` and `rocblas_enums`; the generated
+  binding defines only `rocblas`, with the enum constants folded in. `use rocblas` is
+  unchanged, but `use rocblas_enums` should become `use rocblas`. Rather than shipping a
+  `.f90` source to compile yourself, a compiled archive and `.mod` are installed; link
+  `roc::rocblas_fortran`.
 
 ## rocBLAS 5.7.0 for ROCm 10.1.0
 
