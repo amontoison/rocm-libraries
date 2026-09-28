@@ -36,7 +36,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgbr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -55,7 +55,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgbr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -74,7 +74,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungbr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -93,7 +93,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungbr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -112,7 +112,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgbrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -133,7 +133,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgbrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -154,7 +154,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungbrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -175,7 +175,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungbrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -197,7 +197,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -215,7 +215,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -233,7 +233,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -251,7 +251,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -269,7 +269,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -289,7 +289,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -309,7 +309,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -329,7 +329,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -350,7 +350,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -367,7 +367,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -384,7 +384,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -401,7 +401,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -418,7 +418,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSorgtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -437,7 +437,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDorgtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -456,7 +456,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCungtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -475,7 +475,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZungtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -495,7 +495,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSormqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -517,7 +517,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDormqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -539,7 +539,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCunmqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -561,7 +561,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZunmqr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -583,7 +583,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSormqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -607,7 +607,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDormqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -631,7 +631,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCunmqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -655,7 +655,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZunmqrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -680,7 +680,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSormtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -702,7 +702,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDormtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -724,7 +724,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCunmtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -746,7 +746,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZunmtr_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -768,7 +768,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSormtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -792,7 +792,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDormtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -816,7 +816,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCunmtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -840,7 +840,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZunmtrFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_SIDE_LEFT)), value :: side
@@ -865,7 +865,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgebrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -879,7 +879,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgebrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -893,7 +893,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgebrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -907,7 +907,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgebrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -921,7 +921,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgebrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -943,7 +943,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgebrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -965,7 +965,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgebrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -987,7 +987,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgebrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1010,7 +1010,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSSgels_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1031,7 +1031,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDDgels_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1052,7 +1052,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCCgels_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1073,7 +1073,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZZgels_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1094,7 +1094,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSSgelsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1107,7 +1107,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1118,7 +1118,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDDgelsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1131,7 +1131,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1142,7 +1142,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCCgelsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1155,7 +1155,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1166,7 +1166,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZZgelsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1179,7 +1179,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1191,7 +1191,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgeqrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1207,7 +1207,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgeqrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1223,7 +1223,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgeqrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1239,7 +1239,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgeqrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1255,7 +1255,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgeqrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1274,7 +1274,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgeqrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1293,7 +1293,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgeqrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1312,7 +1312,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgeqrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -1332,7 +1332,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSSgesv_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1353,7 +1353,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDDgesv_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1374,7 +1374,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCCgesv_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1395,7 +1395,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZZgesv_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1416,7 +1416,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSSgesvFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1429,7 +1429,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1440,7 +1440,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDDgesvFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1453,7 +1453,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1464,7 +1464,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCCgesvFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1477,7 +1477,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1488,7 +1488,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZZgesvFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -1501,7 +1501,7 @@ module hipsolver_interface
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
-        integer(c_int), value :: lwork
+        integer(c_size_t), value :: lwork
         type(c_ptr), value :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
@@ -1509,11 +1509,15 @@ module hipsolver_interface
     end function hipsolverZZgesvFortran
 
     ! ******************** GESVD ********************
+    ! jobu/jobv reach the binding as character(c_char), value. The achar() result
+    ! goes through a named local rather than straight into the call: gfortran 13
+    ! passes the ADDRESS of a character expression to a VALUE dummy instead of its
+    ! value, so the callee sees a stack byte and gesvd returns INVALID_VALUE.
     function hipsolverSgesvd_bufferSizeFortran(handle, jobu, jobv, m, n, lwork) &
             result(res) &
             bind(c, name = 'hipsolverSgesvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1522,14 +1526,17 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: lwork
         integer(c_int) :: res
-        res = hipsolverSgesvd_bufferSize(handle, jobu, jobv, m, n, lwork)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverSgesvd_bufferSize(handle, cjobu, cjobv, m, n, lwork)
     end function hipsolverSgesvd_bufferSizeFortran
     
     function hipsolverDgesvd_bufferSizeFortran(handle, jobu, jobv, m, n, lwork) &
             result(res) &
             bind(c, name = 'hipsolverDgesvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1538,14 +1545,17 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: lwork
         integer(c_int) :: res
-        res = hipsolverDgesvd_bufferSize(handle, jobu, jobv, m, n, lwork)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverDgesvd_bufferSize(handle, cjobu, cjobv, m, n, lwork)
     end function hipsolverDgesvd_bufferSizeFortran
     
     function hipsolverCgesvd_bufferSizeFortran(handle, jobu, jobv, m, n, lwork) &
             result(res) &
             bind(c, name = 'hipsolverCgesvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1554,14 +1564,17 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: lwork
         integer(c_int) :: res
-        res = hipsolverCgesvd_bufferSize(handle, jobu, jobv, m, n, lwork)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverCgesvd_bufferSize(handle, cjobu, cjobv, m, n, lwork)
     end function hipsolverCgesvd_bufferSizeFortran
     
     function hipsolverZgesvd_bufferSizeFortran(handle, jobu, jobv, m, n, lwork) &
             result(res) &
             bind(c, name = 'hipsolverZgesvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1570,14 +1583,17 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: lwork
         integer(c_int) :: res
-        res = hipsolverZgesvd_bufferSize(handle, jobu, jobv, m, n, lwork)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverZgesvd_bufferSize(handle, cjobu, cjobv, m, n, lwork)
     end function hipsolverZgesvd_bufferSizeFortran
 
     function hipsolverSgesvdFortran(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info) &
             result(res) &
             bind(c, name = 'hipsolverSgesvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1596,14 +1612,18 @@ module hipsolver_interface
         type(c_ptr), value :: rwork
         type(c_ptr), value :: info
         integer(c_int) :: res
-        res = hipsolverSgesvd(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverSgesvd(handle, cjobu, cjobv, &
+                              m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
     end function hipsolverSgesvdFortran
 
     function hipsolverDgesvdFortran(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info) &
             result(res) &
             bind(c, name = 'hipsolverDgesvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1622,14 +1642,18 @@ module hipsolver_interface
         type(c_ptr), value :: rwork
         type(c_ptr), value :: info
         integer(c_int) :: res
-        res = hipsolverDgesvd(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverDgesvd(handle, cjobu, cjobv, &
+                              m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
     end function hipsolverDgesvdFortran
 
     function hipsolverCgesvdFortran(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info) &
             result(res) &
             bind(c, name = 'hipsolverCgesvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1648,14 +1672,18 @@ module hipsolver_interface
         type(c_ptr), value :: rwork
         type(c_ptr), value :: info
         integer(c_int) :: res
-        res = hipsolverCgesvd(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverCgesvd(handle, cjobu, cjobv, &
+                              m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
     end function hipsolverCgesvdFortran
 
     function hipsolverZgesvdFortran(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info) &
             result(res) &
             bind(c, name = 'hipsolverZgesvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_signed_char), value :: jobu
@@ -1674,7 +1702,11 @@ module hipsolver_interface
         type(c_ptr), value :: rwork
         type(c_ptr), value :: info
         integer(c_int) :: res
-        res = hipsolverZgesvd(handle, jobu, jobv, m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
+        character(kind=c_char) :: cjobu, cjobv
+        cjobu = achar(jobu, kind=c_char)
+        cjobv = achar(jobv, kind=c_char)
+        res = hipsolverZgesvd(handle, cjobu, cjobv, &
+                              m, n, A, lda, S, U, ldu, V, ldv, work, lwork, rwork, info)
     end function hipsolverZgesvdFortran
 
     ! ******************** GESVDJ ********************
@@ -1682,7 +1714,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgesvdj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1706,7 +1738,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgesvdj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1730,7 +1762,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgesvdj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1754,7 +1786,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgesvdj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1778,7 +1810,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgesvdjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1804,7 +1836,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgesvdjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1830,7 +1862,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgesvdjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1856,7 +1888,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgesvdjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1883,7 +1915,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgesvdjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1907,7 +1939,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgesvdjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1931,7 +1963,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgesvdjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1955,7 +1987,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgesvdjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -1979,7 +2011,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgesvdjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -2005,7 +2037,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgesvdjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -2031,7 +2063,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgesvdjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -2057,7 +2089,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgesvdjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -2084,7 +2116,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgetrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2100,7 +2132,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgetrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2116,7 +2148,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgetrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2132,7 +2164,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgetrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2148,7 +2180,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgetrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2167,7 +2199,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgetrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2186,7 +2218,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgetrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2205,7 +2237,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgetrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: m
@@ -2225,7 +2257,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgetrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2245,7 +2277,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgetrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2265,7 +2297,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgetrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2285,7 +2317,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgetrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2305,7 +2337,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSgetrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2327,7 +2359,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDgetrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2349,7 +2381,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCgetrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2371,7 +2403,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZgetrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_OP_N)), value :: trans
@@ -2394,7 +2426,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2410,7 +2442,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2426,7 +2458,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2442,7 +2474,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2458,7 +2490,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2476,7 +2508,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2494,7 +2526,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2512,7 +2544,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2531,7 +2563,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrfBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2548,7 +2580,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrfBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2565,7 +2597,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrfBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2582,7 +2614,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrfBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2599,7 +2631,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrfBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2618,7 +2650,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrfBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2637,7 +2669,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrfBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2656,7 +2688,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrfBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2676,7 +2708,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotri_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2692,7 +2724,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotri_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2708,7 +2740,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotri_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2724,7 +2756,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotri_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2740,7 +2772,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotriFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2758,7 +2790,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotriFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2776,7 +2808,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotriFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2794,7 +2826,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotriFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2813,7 +2845,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2832,7 +2864,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2851,7 +2883,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2870,7 +2902,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrs_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2889,7 +2921,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2910,7 +2942,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2931,7 +2963,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2952,7 +2984,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrsFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2974,7 +3006,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrsBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -2994,7 +3026,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrsBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3014,7 +3046,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrsBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3034,7 +3066,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrsBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3054,7 +3086,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSpotrsBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3076,7 +3108,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDpotrsBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3098,7 +3130,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCpotrsBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3120,7 +3152,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZpotrsBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -3143,7 +3175,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3161,7 +3193,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3179,7 +3211,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3197,7 +3229,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3215,7 +3247,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3235,7 +3267,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3255,7 +3287,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3275,7 +3307,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3296,7 +3328,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3315,7 +3347,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3334,7 +3366,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3353,7 +3385,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3372,7 +3404,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3393,7 +3425,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3414,7 +3446,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3435,7 +3467,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3457,7 +3489,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3477,7 +3509,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3497,7 +3529,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3517,7 +3549,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevjBatched_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3537,7 +3569,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsyevjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3559,7 +3591,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsyevjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3581,7 +3613,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCheevjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3603,7 +3635,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZheevjBatchedFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -3626,7 +3658,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsygvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3647,7 +3679,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsygvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3668,7 +3700,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChegvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3689,7 +3721,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhegvd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3710,7 +3742,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsygvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3733,7 +3765,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsygvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3756,7 +3788,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChegvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3779,7 +3811,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhegvdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3803,7 +3835,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsygvj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3825,7 +3857,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsygvj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3847,7 +3879,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChegvj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3869,7 +3901,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhegvj_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3891,7 +3923,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsygvjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3915,7 +3947,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsygvjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3939,7 +3971,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChegvjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3963,7 +3995,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhegvjFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_EIG_TYPE_1)), value :: itype
@@ -3988,7 +4020,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsytrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4007,7 +4039,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsytrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4026,7 +4058,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChetrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4045,7 +4077,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhetrd_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4064,7 +4096,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsytrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4085,7 +4117,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsytrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4106,7 +4138,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverChetrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4127,7 +4159,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZhetrdFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4149,7 +4181,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsytrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -4164,7 +4196,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsytrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -4179,7 +4211,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCsytrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -4194,7 +4226,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZsytrf_bufferSizeFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(c_int), value :: n
@@ -4209,7 +4241,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverSsytrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4228,7 +4260,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverDsytrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4247,7 +4279,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverCsytrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
@@ -4266,7 +4298,7 @@ module hipsolver_interface
             result(res) &
             bind(c, name = 'hipsolverZsytrfFortran')
         use iso_c_binding
-        use hipsolver_enums
+        use hipsolver
         implicit none
         type(c_ptr), value :: handle
         integer(kind(HIPSOLVER_FILL_MODE_LOWER)), value :: uplo
