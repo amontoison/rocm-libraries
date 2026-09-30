@@ -73,6 +73,31 @@ if ( NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC} )
   set( CMAKE_Fortran_COMPILER "gfortran" )
 endif()
 
+# The Fortran binding is no longer built here from the hand-written
+# ../library/include/rocblas_module.f90: it is generated from the C headers and
+# built by ../fortran, which exports roc::rocblas_fortran. Building it twice
+# would also collide, since both targets carry the same name.
+#
+# So the Fortran clients can be built only where that directory produced the
+# target, and BUILD_FORTRAN_CLIENTS merely keeping its ON default is not a
+# request for them: -DBUILD_FORTRAN_BINDINGS=OFF and a host with no Fortran
+# compiler both leave it absent, and neither is a mistake worth stopping the
+# whole configure over. Skip, and say so.
+#
+# This has to run before project() below, not after it: with no Fortran compiler
+# on the host, ${fortran_language} would ask project() to enable Fortran and the
+# configure would die there, before anything here could explain why. Shadowing
+# BUILD_FORTRAN_CLIENTS as a plain variable is deliberate -- the cache entry is
+# one switch shared by every library in the monorepo -- and it is what every use
+# below, including those in gtest/, benchmarks/ and samples/, reads.
+if ( BUILD_FORTRAN_CLIENTS AND NOT TARGET rocblas_fortran )
+  message(STATUS
+    "rocBLAS: the Fortran bindings were not built, so the Fortran clients are "
+    "skipped. They come from projects/rocblas/fortran, which needs "
+    "BUILD_FORTRAN_BINDINGS on and a Fortran compiler.")
+  set( BUILD_FORTRAN_CLIENTS OFF )
+endif()
+
 # This project may compile dependencies for clients
 if ( BUILD_FORTRAN_CLIENTS )
   set( fortran_language "Fortran" )
@@ -89,16 +114,6 @@ if ( BUILD_FORTRAN_CLIENTS )
 
   # Set Fortran module output directory
   set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/rocblas/internal)
-
-  # The rocblas module is no longer built here from the hand-written
-  # ../library/include/rocblas_module.f90: it is generated from the C headers and
-  # built by ../fortran, which exports roc::rocblas_fortran. Building it twice
-  # would also collide, since both targets carry the same name.
-  if( NOT TARGET rocblas_fortran )
-    message(FATAL_ERROR
-      "BUILD_FORTRAN_CLIENTS is ON but the rocblas_fortran target is missing. "
-      "It is built by projects/rocblas/fortran; enable BUILD_FORTRAN_BINDINGS.")
-  endif()
 
   if( BUILD_WITH_TENSILE )
     list( APPEND rocblas_f90_source_clients include/rocblas_fortran_tensile.f90 )
