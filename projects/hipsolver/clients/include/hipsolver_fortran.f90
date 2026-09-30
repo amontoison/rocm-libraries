@@ -46,7 +46,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSorgbr_bufferSize(handle, side, m, n, k, A, lda, tau, lwork)
     end function hipsolverSorgbr_bufferSizeFortran
@@ -65,7 +65,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDorgbr_bufferSize(handle, side, m, n, k, A, lda, tau, lwork)
     end function hipsolverDorgbr_bufferSizeFortran
@@ -84,7 +84,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCungbr_bufferSize(handle, side, m, n, k, A, lda, tau, lwork)
     end function hipsolverCungbr_bufferSizeFortran
@@ -103,7 +103,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZungbr_bufferSize(handle, side, m, n, k, A, lda, tau, lwork)
     end function hipsolverZungbr_bufferSizeFortran
@@ -206,7 +206,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSorgqr_bufferSize(handle, m, n, k, A, lda, tau, lwork)
     end function hipsolverSorgqr_bufferSizeFortran
@@ -224,7 +224,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDorgqr_bufferSize(handle, m, n, k, A, lda, tau, lwork)
     end function hipsolverDorgqr_bufferSizeFortran
@@ -242,7 +242,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCungqr_bufferSize(handle, m, n, k, A, lda, tau, lwork)
     end function hipsolverCungqr_bufferSizeFortran
@@ -260,7 +260,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZungqr_bufferSize(handle, m, n, k, A, lda, tau, lwork)
     end function hipsolverZungqr_bufferSizeFortran
@@ -358,7 +358,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSorgtr_bufferSize(handle, uplo, n, A, lda, tau, lwork)
     end function hipsolverSorgtr_bufferSizeFortran
@@ -375,7 +375,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDorgtr_bufferSize(handle, uplo, n, A, lda, tau, lwork)
     end function hipsolverDorgtr_bufferSizeFortran
@@ -392,7 +392,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCungtr_bufferSize(handle, uplo, n, A, lda, tau, lwork)
     end function hipsolverCungtr_bufferSizeFortran
@@ -409,7 +409,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZungtr_bufferSize(handle, uplo, n, A, lda, tau, lwork)
     end function hipsolverZungtr_bufferSizeFortran
@@ -508,7 +508,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSormqr_bufferSize(handle, side, trans, m, n, k, A, lda, tau, C, ldc, lwork)
     end function hipsolverSormqr_bufferSizeFortran
@@ -530,7 +530,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDormqr_bufferSize(handle, side, trans, m, n, k, A, lda, tau, C, ldc, lwork)
     end function hipsolverDormqr_bufferSizeFortran
@@ -552,7 +552,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCunmqr_bufferSize(handle, side, trans, m, n, k, A, lda, tau, C, ldc, lwork)
     end function hipsolverCunmqr_bufferSizeFortran
@@ -574,7 +574,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZunmqr_bufferSize(handle, side, trans, m, n, k, A, lda, tau, C, ldc, lwork)
     end function hipsolverZunmqr_bufferSizeFortran
@@ -693,7 +693,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSormtr_bufferSize(handle, side, uplo, trans, m, n, A, lda, tau, C, ldc, lwork)
     end function hipsolverSormtr_bufferSizeFortran
@@ -715,7 +715,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDormtr_bufferSize(handle, side, uplo, trans, m, n, A, lda, tau, C, ldc, lwork)
     end function hipsolverDormtr_bufferSizeFortran
@@ -737,7 +737,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCunmtr_bufferSize(handle, side, uplo, trans, m, n, A, lda, tau, C, ldc, lwork)
     end function hipsolverCunmtr_bufferSizeFortran
@@ -759,7 +759,7 @@ module hipsolver_interface
         type(c_ptr), value :: tau
         type(c_ptr), value :: C
         integer(c_int), value :: ldc
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZunmtr_bufferSize(handle, side, uplo, trans, m, n, A, lda, tau, C, ldc, lwork)
     end function hipsolverZunmtr_bufferSizeFortran
@@ -870,7 +870,7 @@ module hipsolver_interface
         type(c_ptr), value :: handle
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSgebrd_bufferSize(handle, m, n, lwork)
     end function hipsolverSgebrd_bufferSizeFortran
@@ -884,7 +884,7 @@ module hipsolver_interface
         type(c_ptr), value :: handle
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDgebrd_bufferSize(handle, m, n, lwork)
     end function hipsolverDgebrd_bufferSizeFortran
@@ -898,7 +898,7 @@ module hipsolver_interface
         type(c_ptr), value :: handle
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCgebrd_bufferSize(handle, m, n, lwork)
     end function hipsolverCgebrd_bufferSizeFortran
@@ -912,7 +912,7 @@ module hipsolver_interface
         type(c_ptr), value :: handle
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZgebrd_bufferSize(handle, m, n, lwork)
     end function hipsolverZgebrd_bufferSizeFortran
@@ -1022,7 +1022,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverSSgels_bufferSize(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, lwork)
     end function hipsolverSSgels_bufferSizeFortran
@@ -1043,7 +1043,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverDDgels_bufferSize(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, lwork)
     end function hipsolverDDgels_bufferSizeFortran
@@ -1064,7 +1064,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverCCgels_bufferSize(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, lwork)
     end function hipsolverCCgels_bufferSizeFortran
@@ -1085,7 +1085,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverZZgels_bufferSize(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, lwork)
     end function hipsolverZZgels_bufferSizeFortran
@@ -1198,7 +1198,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSgeqrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverSgeqrf_bufferSizeFortran
@@ -1214,7 +1214,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDgeqrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverDgeqrf_bufferSizeFortran
@@ -1230,7 +1230,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCgeqrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverCgeqrf_bufferSizeFortran
@@ -1246,7 +1246,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZgeqrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverZgeqrf_bufferSizeFortran
@@ -1344,7 +1344,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverSSgesv_bufferSize(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, lwork)
     end function hipsolverSSgesv_bufferSizeFortran
@@ -1365,7 +1365,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverDDgesv_bufferSize(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, lwork)
     end function hipsolverDDgesv_bufferSizeFortran
@@ -1386,7 +1386,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverCCgesv_bufferSize(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, lwork)
     end function hipsolverCCgesv_bufferSizeFortran
@@ -1407,7 +1407,7 @@ module hipsolver_interface
         integer(c_int), value :: ldb
         type(c_ptr), value :: X
         integer(c_int), value :: ldx
-        type(c_ptr), value :: lwork
+        integer(c_size_t) :: lwork
         integer(c_int) :: res
         res = hipsolverZZgesv_bufferSize(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, lwork)
     end function hipsolverZZgesv_bufferSizeFortran
@@ -1524,7 +1524,7 @@ module hipsolver_interface
         integer(c_signed_char), value :: jobv
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         character(kind=c_char) :: cjobu, cjobv
         cjobu = achar(jobu, kind=c_char)
@@ -1543,7 +1543,7 @@ module hipsolver_interface
         integer(c_signed_char), value :: jobv
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         character(kind=c_char) :: cjobu, cjobv
         cjobu = achar(jobu, kind=c_char)
@@ -1562,7 +1562,7 @@ module hipsolver_interface
         integer(c_signed_char), value :: jobv
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         character(kind=c_char) :: cjobu, cjobv
         cjobu = achar(jobu, kind=c_char)
@@ -1581,7 +1581,7 @@ module hipsolver_interface
         integer(c_signed_char), value :: jobv
         integer(c_int), value :: m
         integer(c_int), value :: n
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         character(kind=c_char) :: cjobu, cjobv
         cjobu = achar(jobu, kind=c_char)
@@ -1728,7 +1728,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverSgesvdj_bufferSize(handle, jobz, econ, m, n, A, lda, S, U, ldu, V, ldv, lwork, params)
@@ -1752,7 +1752,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverDgesvdj_bufferSize(handle, jobz, econ, m, n, A, lda, S, U, ldu, V, ldv, lwork, params)
@@ -1776,7 +1776,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverCgesvdj_bufferSize(handle, jobz, econ, m, n, A, lda, S, U, ldu, V, ldv, lwork, params)
@@ -1800,7 +1800,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverZgesvdj_bufferSize(handle, jobz, econ, m, n, A, lda, S, U, ldu, V, ldv, lwork, params)
@@ -1928,7 +1928,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -1952,7 +1952,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -1976,7 +1976,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -2000,7 +2000,7 @@ module hipsolver_interface
         integer(c_int), value :: ldu
         type(c_ptr), value :: V
         integer(c_int), value :: ldv
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -2123,7 +2123,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSgetrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverSgetrf_bufferSizeFortran
@@ -2139,7 +2139,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDgetrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverDgetrf_bufferSizeFortran
@@ -2155,7 +2155,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCgetrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverCgetrf_bufferSizeFortran
@@ -2171,7 +2171,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZgetrf_bufferSize(handle, m, n, A, lda, lwork)
     end function hipsolverZgetrf_bufferSizeFortran
@@ -2268,7 +2268,7 @@ module hipsolver_interface
         type(c_ptr), value :: ipiv
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSgetrs_bufferSize(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, lwork)
     end function hipsolverSgetrs_bufferSizeFortran
@@ -2288,7 +2288,7 @@ module hipsolver_interface
         type(c_ptr), value :: ipiv
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDgetrs_bufferSize(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, lwork)
     end function hipsolverDgetrs_bufferSizeFortran
@@ -2308,7 +2308,7 @@ module hipsolver_interface
         type(c_ptr), value :: ipiv
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCgetrs_bufferSize(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, lwork)
     end function hipsolverCgetrs_bufferSizeFortran
@@ -2328,7 +2328,7 @@ module hipsolver_interface
         type(c_ptr), value :: ipiv
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZgetrs_bufferSize(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, lwork)
     end function hipsolverZgetrs_bufferSizeFortran
@@ -2433,7 +2433,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSpotrf_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverSpotrf_bufferSizeFortran
@@ -2449,7 +2449,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDpotrf_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverDpotrf_bufferSizeFortran
@@ -2465,7 +2465,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCpotrf_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverCpotrf_bufferSizeFortran
@@ -2481,7 +2481,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZpotrf_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverZpotrf_bufferSizeFortran
@@ -2570,7 +2570,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverSpotrfBatched_bufferSize(handle, uplo, n, A, lda, lwork, batch_count)
@@ -2587,7 +2587,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverDpotrfBatched_bufferSize(handle, uplo, n, A, lda, lwork, batch_count)
@@ -2604,7 +2604,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverCpotrfBatched_bufferSize(handle, uplo, n, A, lda, lwork, batch_count)
@@ -2621,7 +2621,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverZpotrfBatched_bufferSize(handle, uplo, n, A, lda, lwork, batch_count)
@@ -2715,7 +2715,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSpotri_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverSpotri_bufferSizeFortran
@@ -2731,7 +2731,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDpotri_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverDpotri_bufferSizeFortran
@@ -2747,7 +2747,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCpotri_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverCpotri_bufferSizeFortran
@@ -2763,7 +2763,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZpotri_bufferSize(handle, uplo, n, A, lda, lwork)
     end function hipsolverZpotri_bufferSizeFortran
@@ -2855,7 +2855,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSpotrs_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork)
     end function hipsolverSpotrs_bufferSizeFortran
@@ -2874,7 +2874,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDpotrs_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork)
     end function hipsolverDpotrs_bufferSizeFortran
@@ -2893,7 +2893,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCpotrs_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork)
     end function hipsolverCpotrs_bufferSizeFortran
@@ -2912,7 +2912,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZpotrs_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork)
     end function hipsolverZpotrs_bufferSizeFortran
@@ -3016,7 +3016,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverSpotrsBatched_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork, batch_count)
@@ -3036,7 +3036,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverDpotrsBatched_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork, batch_count)
@@ -3056,7 +3056,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverCpotrsBatched_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork, batch_count)
@@ -3076,7 +3076,7 @@ module hipsolver_interface
         integer(c_int), value :: lda
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int), value :: batch_count
         integer(c_int) :: res
         res = hipsolverZpotrsBatched_bufferSize(handle, uplo, n, nrhs, A, lda, B, ldb, lwork, batch_count)
@@ -3184,7 +3184,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSsyevd_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork)
     end function hipsolverSsyevd_bufferSizeFortran
@@ -3202,7 +3202,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDsyevd_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork)
     end function hipsolverDsyevd_bufferSizeFortran
@@ -3220,7 +3220,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCheevd_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork)
     end function hipsolverCheevd_bufferSizeFortran
@@ -3238,7 +3238,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZheevd_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork)
     end function hipsolverZheevd_bufferSizeFortran
@@ -3337,7 +3337,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverSsyevj_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork, params)
@@ -3356,7 +3356,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverDsyevj_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork, params)
@@ -3375,7 +3375,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverCheevj_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork, params)
@@ -3394,7 +3394,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverZheevj_bufferSize(handle, jobz, uplo, n, A, lda, W, lwork, params)
@@ -3498,7 +3498,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -3518,7 +3518,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -3538,7 +3538,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -3558,7 +3558,7 @@ module hipsolver_interface
         type(c_ptr), value :: A
         integer(c_int), value :: lda
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int), value :: batch_count
         integer(c_int) :: res
@@ -3670,7 +3670,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSsygvd_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork)
     end function hipsolverSsygvd_bufferSizeFortran
@@ -3691,7 +3691,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDsygvd_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork)
     end function hipsolverDsygvd_bufferSizeFortran
@@ -3712,7 +3712,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverChegvd_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork)
     end function hipsolverChegvd_bufferSizeFortran
@@ -3733,7 +3733,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZhegvd_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork)
     end function hipsolverZhegvd_bufferSizeFortran
@@ -3847,7 +3847,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverSsygvj_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork, params)
@@ -3869,7 +3869,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverDsygvj_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork, params)
@@ -3891,7 +3891,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverChegvj_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork, params)
@@ -3913,7 +3913,7 @@ module hipsolver_interface
         type(c_ptr), value :: B
         integer(c_int), value :: ldb
         type(c_ptr), value :: W
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         type(c_ptr), value :: params
         integer(c_int) :: res
         res = hipsolverZhegvj_bufferSize(handle, itype, jobz, uplo, n, A, lda, B, ldb, W, lwork, params)
@@ -4030,7 +4030,7 @@ module hipsolver_interface
         type(c_ptr), value :: D
         type(c_ptr), value :: E
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSsytrd_bufferSize(handle, uplo, n, A, lda, D, E, tau, lwork)
     end function hipsolverSsytrd_bufferSizeFortran
@@ -4049,7 +4049,7 @@ module hipsolver_interface
         type(c_ptr), value :: D
         type(c_ptr), value :: E
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDsytrd_bufferSize(handle, uplo, n, A, lda, D, E, tau, lwork)
     end function hipsolverDsytrd_bufferSizeFortran
@@ -4068,7 +4068,7 @@ module hipsolver_interface
         type(c_ptr), value :: D
         type(c_ptr), value :: E
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverChetrd_bufferSize(handle, uplo, n, A, lda, D, E, tau, lwork)
     end function hipsolverChetrd_bufferSizeFortran
@@ -4087,7 +4087,7 @@ module hipsolver_interface
         type(c_ptr), value :: D
         type(c_ptr), value :: E
         type(c_ptr), value :: tau
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZhetrd_bufferSize(handle, uplo, n, A, lda, D, E, tau, lwork)
     end function hipsolverZhetrd_bufferSizeFortran
@@ -4187,7 +4187,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverSsytrf_bufferSize(handle, n, A, lda, lwork)
     end function hipsolverSsytrf_bufferSizeFortran
@@ -4202,7 +4202,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverDsytrf_bufferSize(handle, n, A, lda, lwork)
     end function hipsolverDsytrf_bufferSizeFortran
@@ -4217,7 +4217,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverCsytrf_bufferSize(handle, n, A, lda, lwork)
     end function hipsolverCsytrf_bufferSizeFortran
@@ -4232,7 +4232,7 @@ module hipsolver_interface
         integer(c_int), value :: n
         type(c_ptr), value :: A
         integer(c_int), value :: lda
-        type(c_ptr), value :: lwork
+        integer(c_int) :: lwork
         integer(c_int) :: res
         res = hipsolverZsytrf_bufferSize(handle, n, A, lda, lwork)
     end function hipsolverZsytrf_bufferSizeFortran

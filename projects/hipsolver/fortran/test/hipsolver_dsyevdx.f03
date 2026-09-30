@@ -47,12 +47,12 @@ program hipsolver_dsyevdx
 
   call hipsolverCheck(hipsolverDsyevdx_bufferSize(handle, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_EIG_RANGE_ALL, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, &
-       0.0d0, 0.0d0, 1, N, c_loc(dNev(1)), dW, lwork))
+       0.0d0, 0.0d0, 1, N, nevBuf, dW, lwork))
   call hipCheck(hipMalloc(dWork, max(int(lwork,c_size_t) * 8, 1_c_size_t)))
 
   call hipsolverCheck(hipsolverDsyevdx(handle, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_EIG_RANGE_ALL, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, &
-       0.0d0, 0.0d0, 1, N, c_loc(dNev(1)), dW, dWork, lwork, c_loc(dInfo(1))))
+       0.0d0, 0.0d0, 1, N, dNev(1), dW, dWork, lwork, c_loc(dInfo(1))))
 
   call hipCheck(hipMemcpy(c_loc(hNev), c_loc(dNev(1)), 4_c_size_t, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 8, hipMemcpyDeviceToHost))

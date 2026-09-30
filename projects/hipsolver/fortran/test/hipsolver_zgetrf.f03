@@ -6,9 +6,9 @@
 ! data is moved with hipMemcpy + c_loc.
 !
 ! NOTE: hipSOLVER getrf needs an explicit workspace (hipsolverZgetrf_bufferSize
-! -> hipMalloc(dWork)). Its devInfo output is written to DEVICE memory: the
-! binding types devInfo as an integer(c_int), so it is backed by a device
-! allocation (dInfo), viewed via c_f_pointer, and passed as dInfo_p(1).
+! -> hipMalloc(dWork)). Its devInfo output is written to DEVICE memory, and the
+! binding types devInfo as a type(c_ptr) passed by value, so the device
+! allocation (dInfo) is handed over directly.
 !!!!!!!!!!!!!!/
 !
 program hipsolver_zgetrf
@@ -40,7 +40,6 @@ program hipsolver_zgetrf
   integer(c_size_t) :: size_A = 9
 
   type(c_ptr) :: dA, dIpiv, dWork, dInfo
-  integer(c_int), pointer :: dInfo_p(:)
   type(c_ptr) :: handle = c_null_ptr
   integer(c_int) :: lwork
 
@@ -55,7 +54,6 @@ program hipsolver_zgetrf
   call hipCheck(hipMalloc(dA, size_A * 16))
   call hipCheck(hipMalloc(dIpiv, int(N,c_size_t) * 4))
   call hipCheck(hipMalloc(dInfo, 4_c_size_t))
-  call c_f_pointer(dInfo, dInfo_p, shape=[1])   ! typed device view for the by-ref devInfo arg
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 16, hipMemcpyHostToDevice))
 
   ! Workspace (lwork elements * 16 bytes)
@@ -63,7 +61,7 @@ program hipsolver_zgetrf
   call hipCheck(hipMalloc(dWork, max(int(lwork,c_size_t) * 16, 1_c_size_t)))
 
   ! LU factorization
-  call hipsolverCheck(hipsolverZgetrf(handle, M, N, dA, lda, dWork, lwork, dIpiv, dInfo_p(1)))
+  call hipsolverCheck(hipsolverZgetrf(handle, M, N, dA, lda, dWork, lwork, dIpiv, dInfo))
 
   ! Copy back
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, size_A * 16, hipMemcpyDeviceToHost))

@@ -8,8 +8,8 @@
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
 ! data is moved with hipMemcpy + c_loc. gesvdj takes a gesvdjInfo params handle,
-! an explicit workspace sized by _bufferSize, and a device devInfo (viewed with
-! c_f_pointer so it can be passed by reference).
+! an explicit workspace sized by _bufferSize, and a device devInfo, which the
+! binding types as a type(c_ptr) passed by value.
 !!!!!!!!!!!!!!/
 !
 program dgesvdj
@@ -41,7 +41,6 @@ program dgesvdj
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: params = c_null_ptr
   type(c_ptr) :: dA, dS, dU, dV, dInfo, dWork
-  integer(c_int), pointer :: dInfo_p(:)
   integer(c_int) :: lwork
 
   real(c_double) :: error
@@ -60,7 +59,6 @@ program dgesvdj
   call hipCheck(hipMalloc(dU, sz * 8))
   call hipCheck(hipMalloc(dV, sz * 8))
   call hipCheck(hipMalloc(dInfo, 4_c_size_t))
-  call c_f_pointer(dInfo, dInfo_p, (/1/))
 
   ! Copy memory from host to device
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), sz * 8, hipMemcpyHostToDevice))
@@ -72,7 +70,7 @@ program dgesvdj
 
   ! Compute the singular value decomposition
   call hipsolverCheck(hipsolverDgesvdj(handle, HIPSOLVER_EIG_MODE_VECTOR, econ, &
-       M, N, dA, lda, dS, dU, ldu, dV, ldv, dWork, lwork, dInfo_p(1), params))
+       M, N, dA, lda, dS, dU, ldu, dV, ldv, dWork, lwork, dInfo, params))
 
   ! Copy results back to host
   call hipCheck(hipMemcpy(c_loc(hS(1)), dS, szv * 8, hipMemcpyDeviceToHost))

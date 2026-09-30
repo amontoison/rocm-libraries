@@ -19,6 +19,15 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   generated source alongside in `<datadir>/hipsolver/fortran` (the directories
   `CMAKE_INSTALL_LIBDIR`, `CMAKE_INSTALL_INCLUDEDIR` and `CMAKE_INSTALL_DATADIR` resolve to,
   so `lib64` on a distro that uses it).
+  The module exports the `bind(C)` interfaces, the enum constants and the `hipsolverCheck`
+  status helper, and that is the whole of it. It declares no derived types:
+  `hipsolverHandle_t`, `hipsolverDnHandle_t`, `hipsolverSpHandle_t`, `hipsolverRfHandle_t`,
+  `hipsolverGesvdjInfo_t` and `hipsolverSyevjInfo_t` are all plain `type(c_ptr)`, as they were
+  in the hand-written binding this replaces. There are no strongly-typed (`_typed`) wrappers
+  and no device-pointer (`_dptr`) specifics; a generator can emit that convenience layer, but
+  it is not part of the packaged track. Array overloads are generated for the subset of
+  routines the generator supports, and `FORTRAN_ARRAY_INTERFACES` chooses their form; every
+  other routine exposes the plain `type(c_ptr)` interface under all three settings.
 
 ### Changed
 
