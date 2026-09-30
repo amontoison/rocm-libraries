@@ -6,8 +6,16 @@
 # regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `hipsolver`, carrying
-# the interfaces, the enum constants, the derived types, the opaque handle types
-# and the hipsolverCheck status helper. A consumer writes one `use hipsolver`.
+# the bind(C) interfaces, the enum constants and the hipsolverCheck status
+# helper. A consumer writes one `use hipsolver`.
+#
+# The module declares no derived types at all: every hipSOLVER handle and every
+# opaque info object is a bare type(c_ptr), and the status codes are enumerators
+# rather than a wrapper type. So the Fortran-visible surface is the C one, plus
+# whichever array overloads the tri-state below selects. That is the shape of
+# the packaged track, not an omission -- the convenience layer a generator can
+# also emit (strongly-typed wrappers, device-pointer specifics) is deliberately
+# not part of what ROCm ships.
 #
 # This directory is self-contained: it builds with no dependency on the hipSOLVER
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -64,16 +72,21 @@ if(DEFINED HIPSOLVER_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${HIPSOLVER_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# Which array-argument overloads the module exposes. One tri-state, rather than
+# one boolean per tier, because the two upper tiers cannot legally coexist: an
+# assumed-rank dummy is not distinguishable by rank from the per-rank specifics,
+# so assumed-rank REPLACES the per-rank variants rather than adding to them.
+#
+# The tier applies only where there is an array to overload on. Array overloads
+# are generated for the subset of routines the generator supports; every other
+# routine exposes the plain type(c_ptr) interface under all three tiers, so for
+# those the choice is invisible.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-shape  + the per-rank dimension(:) specifics for those routines
+#                  (Fortran 2008): the default, and what the bindings shipped
+#                  in ROCm are built with
+#   assumed-rank   + one dimension(..) specific in place of them (Fortran 2018)
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -245,15 +258,26 @@ set_target_properties(hipsolver_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, so there is nothing to
+# remember: assumed-shape selects USE_ASSUMED_SHAPE, assumed-rank selects
+# USE_ASSUMED_RANK, and none defines neither and leaves the raw type(c_ptr)
+# surface.
+#
+# The if/elseif below defines exactly ONE of the two, and that is a requirement,
+# not a tidiness preference. The tiers are mutually exclusive rather than
+# nested, because an assumed-rank dummy is not distinguishable by rank from the
+# per-rank specifics and the two cannot legally coexist in one generic.
+#
+# Defining both is not a configuration this file can produce, and the generated
+# source does not treat it as an error either: both guarded regions -- the
+# interface blocks and the module procedures under CONTAINS -- test
+# USE_ASSUMED_RANK first, so assumed-rank wins and the module compiles. Checked
+# with amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(hipsolver_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(hipsolver_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(hipsolver_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(hipsolver_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,

@@ -8,8 +8,8 @@
 ! recovers x.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
-! data is moved with hipMemcpy + c_loc. devInfo is passed by reference through a
-! c_f_pointer view of its device allocation.
+! data is moved with hipMemcpy + c_loc. devInfo is a type(c_ptr) passed by
+! value, so its device allocation is handed over directly.
 !!!!!!!!!!!!!!/
 !
 program cpotrs
@@ -39,7 +39,6 @@ program cpotrs
 
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: dA, dB, dInfo, dWork
-  integer(c_int), pointer :: dInfo_p(:)
   integer(c_int) :: lwork_f, lwork_s, lwork
 
   real(c_float) :: error
@@ -56,7 +55,6 @@ program cpotrs
   call hipCheck(hipMalloc(dA, size_A * 8))
   call hipCheck(hipMalloc(dB, size_B * 8))
   call hipCheck(hipMalloc(dInfo, 4_c_size_t))
-  call c_f_pointer(dInfo, dInfo_p, (/1/))
 
   ! Copy memory from host to device
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
@@ -69,8 +67,8 @@ program cpotrs
   call hipCheck(hipMalloc(dWork, int(lwork,c_size_t) * 8))
 
   ! Factorize A = L*L**H, then solve A*X = B in place
-  call hipsolverCheck(hipsolverCpotrf(handle, HIPSOLVER_FILL_MODE_LOWER, N, dA, lda, dWork, lwork, dInfo_p(1)))
-  call hipsolverCheck(hipsolverCpotrs(handle, HIPSOLVER_FILL_MODE_LOWER, N, nrhs, dA, lda, dB, ldb, dWork, lwork, dInfo_p(1)))
+  call hipsolverCheck(hipsolverCpotrf(handle, HIPSOLVER_FILL_MODE_LOWER, N, dA, lda, dWork, lwork, dInfo))
+  call hipsolverCheck(hipsolverCpotrs(handle, HIPSOLVER_FILL_MODE_LOWER, N, nrhs, dA, lda, dB, ldb, dWork, lwork, dInfo))
 
   ! Copy result from device to host
   call hipCheck(hipMemcpy(c_loc(hB(1,1)), dB, size_B * 8, hipMemcpyDeviceToHost))

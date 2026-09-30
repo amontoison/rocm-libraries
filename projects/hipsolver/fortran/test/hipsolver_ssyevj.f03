@@ -8,8 +8,8 @@
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
 ! data is moved with hipMemcpy + c_loc. syevj takes a syevjInfo params handle,
-! an explicit workspace sized by _bufferSize, and a device devInfo (viewed with
-! c_f_pointer so it can be passed by reference).
+! an explicit workspace sized by _bufferSize, and a device devInfo, which the
+! binding types as a type(c_ptr) passed by value.
 !!!!!!!!!!!!!!/
 !
 program ssyevj
@@ -35,7 +35,6 @@ program ssyevj
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: params = c_null_ptr
   type(c_ptr) :: dA, dW, dInfo, dWork
-  integer(c_int), pointer :: dInfo_p(:)
   integer(c_int) :: lwork
 
   real(c_float) :: error
@@ -52,7 +51,6 @@ program ssyevj
   call hipCheck(hipMalloc(dA, size_A * 4))
   call hipCheck(hipMalloc(dW, size_W * 4))
   call hipCheck(hipMalloc(dInfo, 4_c_size_t))
-  call c_f_pointer(dInfo, dInfo_p, (/1/))
 
   ! Copy memory from host to device
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 4, hipMemcpyHostToDevice))
@@ -64,7 +62,7 @@ program ssyevj
 
   ! Compute eigenvalues and eigenvectors (A overwritten with eigenvectors)
   call hipsolverCheck(hipsolverSsyevj(handle, HIPSOLVER_EIG_MODE_VECTOR, &
-       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, dInfo_p(1), params))
+       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, dInfo, params))
 
   ! Copy results back to host
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, size_A * 4, hipMemcpyDeviceToHost))

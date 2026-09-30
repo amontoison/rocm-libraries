@@ -29,7 +29,6 @@ program spotrfbatched
   type(c_ptr), target :: hostPtrs(batch)
   type(c_ptr) :: dA1, dA2, dPtrArray, dWork, dInfo
   type(c_ptr) :: handle
-  integer(c_int), pointer :: dInfo_p(:)
   integer(c_int) :: lwork
   integer(c_size_t) :: ptrbytes
   write(*,"(a)",advance="no") "-- Running test 'hipsolver_spotrfbatched' (Fortran 2003 interfaces) - "
@@ -48,13 +47,12 @@ program spotrfbatched
   call hipCheck(hipMemcpy(dPtrArray, c_loc(hostPtrs), ptrbytes, hipMemcpyHostToDevice))
 
   call hipCheck(hipMalloc(dInfo, int(batch,c_size_t) * 4))
-  call c_f_pointer(dInfo, dInfo_p, (/batch/))
 
   call hipsolverCheck(hipsolverSpotrfBatched_bufferSize(handle, HIPSOLVER_FILL_MODE_UPPER, &
        N, dPtrArray, lda, lwork, batch))
   call hipCheck(hipMalloc(dWork, int(max(lwork,1),c_size_t) * 4))
   call hipsolverCheck(hipsolverSpotrfBatched(handle, HIPSOLVER_FILL_MODE_UPPER, &
-       N, dPtrArray, lda, dWork, lwork, dInfo_p(1), batch))
+       N, dPtrArray, lda, dWork, lwork, dInfo, batch))
   call hipCheck(hipDeviceSynchronize())
 
   call hipCheck(hipMemcpy(c_loc(hInfo(1)), dInfo, int(batch,c_size_t) * 4, hipMemcpyDeviceToHost))

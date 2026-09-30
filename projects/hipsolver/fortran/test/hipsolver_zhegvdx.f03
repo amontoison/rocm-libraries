@@ -56,7 +56,7 @@ program hipsolver_zhegvdx
 
   call hipsolverCheck(hipsolverZhegvdx(handle, HIPSOLVER_EIG_TYPE_1, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_EIG_RANGE_ALL, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dB, ldb, &
-       0.0d0, 0.0d0, 1, N, hNev, dW, dWork, lwork, dInfo(1)))
+       0.0d0, 0.0d0, 1, N, hNev, dW, dWork, lwork, c_loc(dInfo(1))))
 
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 16, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hW(1)), dW, sizeW * 8, hipMemcpyDeviceToHost))
