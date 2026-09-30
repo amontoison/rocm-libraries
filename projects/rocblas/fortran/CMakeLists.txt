@@ -1,3 +1,27 @@
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell cop-
+# ies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IM-
+# PLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNE-
+# CTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# ########################################################################
+
 # Fortran bindings for rocBLAS.
 #
 # rocblas.F90 is GENERATED from the rocBLAS C headers by the rocm-fortran
@@ -48,7 +72,17 @@ option(BUILD_FORTRAN_CLIENTS "Build the rocBLAS Fortran clients and binding test
 # every library in the monorepo, which is what you want for the common case:
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
 # a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which wins when it is set.
+# so each library also honours a name of its own.
+#
+# What that per-library name buys differs between the two switches, and the
+# difference is not symmetric. ROCBLAS_BUILD_FORTRAN_BINDINGS decides this
+# directory outright: nothing downstream can overrule it. The clients one only
+# raises or lowers the shared DEFAULT, because the Fortran clients are gtest and
+# benchmark executables that run on a GPU, and they are built in clients/, under
+# whatever gates that track already has. BUILD_CLIENTS off means clients/ is
+# never entered at all, and ../CMakeLists.txt forces this OFF again whenever the
+# bindings themselves were not built. Setting the per-library name ON does not
+# lift either of those, and is not meant to.
 if(DEFINED ROCBLAS_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCBLAS_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -203,6 +237,13 @@ endif()
 
 enable_language(Fortran)
 
+# Pulled in here rather than beside the install() rules below because the
+# install layout is also baked into the target's INSTALL_INTERFACE include
+# directory, which is set well before them. Nothing must hardcode lib/ or
+# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
+# and a literal lib/fortran then names a directory that does not exist.
+include(GNUInstallDirs)
+
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
   message(FATAL_ERROR
     "FORTRAN_ARRAY_INTERFACES must be none, assumed-shape or assumed-rank, "
@@ -286,7 +327,7 @@ endif()
 
 target_include_directories(rocblas_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
-  "$<INSTALL_INTERFACE:include/fortran/${ROCBLAS_FORTRAN_COMPILER_DIR}>")
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCBLAS_FORTRAN_COMPILER_DIR}>")
 
 # Link interface only: needed to link an executable, not to build this archive.
 # roc::rocblas is defined by rocBLAS's library/, and brings the HIP runtime with
@@ -309,12 +350,21 @@ if(NOT TARGET roc::rocblas)
   find_package(rocblas QUIET)
 endif()
 
+#
+# Whichever way this goes, the config package has to agree with it. The
+# template's find_dependency(rocblas) is guarded on
+# ROCBLAS_FORTRAN_NEEDS_C_PACKAGE, so record here which of the two archives was
+# actually built. TRUE and FALSE spelled out, never an empty value: the guard is
+# @-substituted into the installed config, and an empty one would install a bare
+# if() that fails to parse and takes every consumer's find_package down with it.
 if(TARGET roc::rocblas)
   target_link_libraries(rocblas_fortran INTERFACE roc::rocblas)
+  set(ROCBLAS_FORTRAN_NEEDS_C_PACKAGE TRUE)
 else()
   message(STATUS
     "rocBLAS: the C library was not found, so the Fortran bindings carry no "
     "link interface; a consumer will have to link it (-lrocblas) itself.")
+  set(ROCBLAS_FORTRAN_NEEDS_C_PACKAGE FALSE)
 endif()
 
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -327,7 +377,6 @@ endif()
 # would add and is already in CI. The nine libraries with no such path keep
 # theirs.
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # lib/cmake/rocblas is where rocBLAS's own rocm_export_targets() puts
@@ -342,11 +391,25 @@ include(CMakePackageConfigHelpers)
 # layout, like hipBLAS and the FFT libraries.
 set(_fortran_pkgdir "${CMAKE_INSTALL_LIBDIR}/cmake/rocblas")
 
+# COMPONENT devel on every rule below, because everything this directory
+# installs -- a static archive, a set of .mod files, the generated source and
+# the CMake package -- is a development artifact: nothing here is needed to RUN
+# a program, only to build one against the bindings. devel is also what
+# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
+# it. Without it these files land in the runtime component instead, which for
+# rocBLAS is a packaging regression, since the hand-written
+# library/include/rocblas_module.f90 they replace was shipped by a
+# rocm_install(FILES ...) into devel.
+#
+# Plain install(), not rocm_install(): this directory must also configure
+# standalone, where rocm-cmake was never loaded and those commands do not exist.
 install(TARGETS rocblas_fortran
         EXPORT rocblas-fortran-targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCBLAS_FORTRAN_COMPILER_DIR}")
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCBLAS_FORTRAN_COMPILER_DIR}"
+                COMPONENT devel)
 install(DIRECTORY "${_moddir}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCBLAS_FORTRAN_COMPILER_DIR}"
+        COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
 # The generated source, so that a user on a compiler ROCm ships no .mod for can
@@ -362,23 +425,35 @@ install(DIRECTORY "${_moddir}/"
 # directory to report which compilers are installed, and would list rocblas.F90
 # among them.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/rocblas.F90"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/rocblas/fortran")
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/rocblas/fortran"
+        COMPONENT devel)
 install(EXPORT rocblas-fortran-targets
         FILE rocblas-fortran-targets.cmake
         NAMESPACE roc::
-        DESTINATION "${_fortran_pkgdir}")
+        DESTINATION "${_fortran_pkgdir}"
+        COMPONENT devel)
+
+# The two directories the config package has to name, kept out of the template
+# so that neither side spells lib/ or include/ literally. A literal lib/fortran
+# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
+# the consumer an IMPORTED_LOCATION that does not exist.
+set(ROCBLAS_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
+set(ROCBLAS_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/rocblas-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/rocblas-fortran-config.cmake"
-  # No PATH_VARS: it only creates PACKAGE_<var>, and the template interpolates
-  # @ROCBLAS_FORTRAN_COMPILER_DIR@ directly. Passing it was a dead argument, and
-  # worse than dead if anyone later switched the template to the PACKAGE_ form,
-  # since PATH_VARS would then resolve this relative value as a path under the
-  # install prefix.
-  INSTALL_DESTINATION "${_fortran_pkgdir}")
+  INSTALL_DESTINATION "${_fortran_pkgdir}"
+  # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
+  # an absolute path computed from where the config file was FOUND, so the
+  # package survives being relocated and gets lib64 right without the template
+  # knowing which layout it was built for. ROCBLAS_FORTRAN_COMPILER_DIR stays a
+  # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
+  # and PATH_VARS would resolve it as one, under the install prefix.
+  PATH_VARS ROCBLAS_FORTRAN_LIBDIR ROCBLAS_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocblas-fortran-config.cmake"
-        DESTINATION "${_fortran_pkgdir}")
+        DESTINATION "${_fortran_pkgdir}"
+        COMPONENT devel)
 
 # The config lands in lib/cmake/rocblas, BESIDE the C package, because that is
 # what would let rocblas-config.cmake pick it up with a bare
@@ -407,7 +482,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocblas-fortran-config.cmake"
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../rocblas/rocblas-fortran-config.cmake\")
 ")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/rocblas-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocblas-fortran")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocblas-fortran"
+        COMPONENT devel)
 
 # A version file, so that find_package(rocblas-fortran 5.1) resolves rather than
 # failing with "could not find a configuration file compatible with requested
@@ -447,9 +523,11 @@ if(_fortran_version)
   # fails with "could not find a configuration file compatible with requested
   # version" even though the config is right there and the version matches.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocblas-fortran-config-version.cmake"
-          DESTINATION "${_fortran_pkgdir}")
+          DESTINATION "${_fortran_pkgdir}"
+          COMPONENT devel)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocblas-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocblas-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocblas-fortran"
+          COMPONENT devel)
 else()
   # Better no version file than a wrong one: without it an unversioned
   # find_package still succeeds, whereas a version file claiming the wrong

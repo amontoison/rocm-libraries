@@ -320,12 +320,9 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
         RPM "${OPENMP_RPM}"
     )
   endif()
-  if(BUILD_FORTRAN_CLIENTS)
-    rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
-    rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
-    rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
-    rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
-  endif()
+  # The libgfortran dependency of the tests and benchmarks packages is declared
+  # after add_subdirectory(fortran) below, once BUILD_FORTRAN_CLIENTS reflects
+  # whether any Fortran was really built rather than the ON it defaults to.
 endif()
 
 if( NOT SKIP_LIBRARY )
@@ -360,6 +357,19 @@ if(BUILD_FORTRAN_CLIENTS AND NOT ROCBLAS_HAVE_FORTRAN_BINDINGS)
     "rocBLAS: the Fortran bindings were not built, so skipping the Fortran "
     "clients. Enable BUILD_FORTRAN_BINDINGS to get them back.")
   set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
+# Only now, with BUILD_FORTRAN_CLIENTS settled. The clients' gtest and benchmark
+# executables pull in libgfortran only when they carry Fortran objects, so
+# declaring this beside the other client components above would make every
+# package built with the bindings off depend on a runtime nothing in it links.
+# BUILD_CLIENTS is the same condition that guards those components, and is set
+# by the block above.
+if(BUILD_CLIENTS AND BUILD_FORTRAN_CLIENTS)
+  rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
+  rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
+  rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
+  rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
 endif()
 
 # Build clients of the library
