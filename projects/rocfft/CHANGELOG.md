@@ -5,6 +5,10 @@ Documentation for rocFFT is available at
 
 ## (Unreleased) rocFFT 1.0.41
 
+### Added
+
+* Added generated Fortran bindings, exposed as a single self-contained `rocfft` module: a consumer writes `use rocfft` and links `roc::rocfft_fortran`. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(rocfft-fortran)`, and the archive and `.mod` files are installed per compiler, under `fortran/<compiler>` within `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR` respectively.
+
 ### Resolved issues
 
 * Fixed possible failures of `rocfft_plan_create` for multi-device plans.
