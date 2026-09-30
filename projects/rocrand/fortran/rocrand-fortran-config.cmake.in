@@ -13,6 +13,19 @@
 
 set(ROCRAND_FORTRAN_COMPILER_DIR "@ROCRAND_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# The preamble is named, never spelled: configure_package_config_file()
+# substitutes its token wherever it appears, comments included, so writing it
+# here would splice a second copy of the whole preamble into the middle of this
+# sentence.
+set(_rocrand_libdir "@PACKAGE_ROCRAND_FORTRAN_LIBDIR@")
+set(_rocrand_incdir "@PACKAGE_ROCRAND_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a rocRAND Fortran binding available here?" through
 # rocrand_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(rocrand-fortran) or alongside rocrand-config.cmake, with which it
@@ -104,7 +117,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_rocrand_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocrand_fc}/rocrand.mod")
+if(EXISTS "${_rocrand_incdir}/${_rocrand_fc}/rocrand.mod")
   set(_rocrand_dir "${_rocrand_fc}")
 else()
   _rocrand_dir_matches("${ROCRAND_FORTRAN_COMPILER_DIR}" "${_rocrand_fc}" _rocrand_ok)
@@ -116,12 +129,12 @@ endif()
 if(NOT _rocrand_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _rocrand_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _rocrand_avail RELATIVE "${_rocrand_incdir}"
+       "${_rocrand_incdir}/*")
   set(rocrand-fortran_FOUND FALSE)
   string(CONCAT rocrand-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_rocrand_fc}, but no rocrand.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_rocrand_incdir}. Available: "
       "${_rocrand_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_rocrand_fc}, or set "
       "ROCRAND_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -142,12 +155,21 @@ endif()
 # for a reason that has nothing to do with their code, after a
 # "FindThreads only works if either C or CXX language is enabled" that names
 # nothing they wrote.
-if(NOT TARGET roc::rocrand)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+#
+# Only when the archive really carries roc::rocrand in its link interface. The
+# bindings compile against nothing, so they can legitimately be built where no C
+# library was found, and the exported target then links nothing; obliging the
+# consumer to find a package that this one does not depend on would fail their
+# configure over a dependency that is not there. The flag is written by
+# fortran/CMakeLists.txt from the same condition that decides the link.
+if(@ROCRAND_FORTRAN_NEEDS_C_PACKAGE@)
+  if(NOT TARGET roc::rocrand)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(rocrand)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(rocrand)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/rocrand-fortran-targets.cmake")
@@ -157,12 +179,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/rocrand-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _rocrand_dir STREQUAL "${ROCRAND_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::rocrand_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocrand_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_rocrand_incdir}/${_rocrand_dir}")
   get_target_property(_rocrand_cfgs roc::rocrand_fortran IMPORTED_CONFIGURATIONS)
   foreach(_rocrand_c IN LISTS _rocrand_cfgs)
     set_target_properties(roc::rocrand_fortran PROPERTIES
       IMPORTED_LOCATION_${_rocrand_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_rocrand_dir}/librocrand_fortran.a")
+        "${_rocrand_libdir}/${_rocrand_dir}/librocrand_fortran.a")
   endforeach()
 endif()
 
