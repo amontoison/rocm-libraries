@@ -18,7 +18,8 @@ Documentation for rocRAND is available at
   available; controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the
   tri-state `FORTRAN_ARRAY_INTERFACES`. The package is found with
   `find_package(rocrand-fortran)` and installs per compiler under
-  `lib/fortran/<compiler>` and `include/fortran/<compiler>`.
+  `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and
+  `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
 
 ### Removed
 
