@@ -7,6 +7,17 @@ Documentation for rocSPARSE is available at
 
 ### Added
 * Added support for the `gfx1250-strict` architecture.
+* Added generated Fortran bindings, exposed as a single self-contained `rocsparse` module: a consumer writes `use rocsparse` and links `roc::rocsparse_fortran`. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests and the Fortran samples), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(rocsparse-fortran)`, and the archive and `.mod` files are installed per compiler, under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`, where `<libdir>` and `<includedir>` are `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR` (so `lib64` rather than `lib` on a distribution that uses it). Nothing Fortran is built under `BUILD_ROCSPARSE_ILP64`, which widens `rocsparse_int` to `int64_t` while the generated module binds it as `integer(c_int)`.
+
+### Changed
+* The Fortran module is now generated from the rocSPARSE C headers rather than hand-written, and `library/src/rocsparse.f90` and `library/src/rocsparse_enums.f90` have been removed; neither is installed into `include/rocsparse` any more. `use rocsparse` is unchanged and still brings in the enum constants, so the separate `rocsparse_enums` module is gone and any `use rocsparse_enums` has to be dropped. The bindings install as a static archive plus compiler-specific `.mod` files instead of as `.f90` sources for the consumer to compile; the generated source is still shipped, under `share/rocsparse/fortran`, for compilers no `.mod` is provided for. Because the generated interfaces follow the C headers exactly, the following calls no longer compile, or no longer mean what they did, against the hand-written module:
+  * `rocsparse_csrsort` and `rocsparse_cscsort` take nine arguments, not eight: the hand-written interfaces omitted `descr`, which the C routines declare in fifth position, between `nnz` and `csr_row_ptr` / `csc_col_ptr`.
+  * `rocsparse_scsr2csr_compress`, `rocsparse_dcsr2csr_compress`, `rocsparse_ccsr2csr_compress` and `rocsparse_zcsr2csr_compress` take `csr_row_ptr_A` before `csr_col_ind_A`, and `csr_row_ptr_C` before `csr_col_ind_C`, which is the order the C routines declare. The hand-written interfaces had each pair the wrong way round; since both members are `type(c_ptr)`, an existing call still compiles and now passes the row pointer where the column indices are read.
+  * `rocsparse_zdoti`: the result argument is `myResult`, a `type(c_ptr)` passed by value, where it was `result`, a `complex(c_double_complex)`. This makes it agree with `rocsparse_sdoti`, `rocsparse_ddoti`, `rocsparse_cdoti`, `rocsparse_cdotci` and `rocsparse_zdotci`, which already took a `type(c_ptr)`.
+  * `rocsparse_dprune_csr2csr_by_percentage`: `percentage` is `real(c_double)`, not `real(c_float)`; the C routine takes a `double`.
+  * `rocsparse_handle_create`: `p_error` is a `type(c_ptr)` passed by reference, not by value, because the C routine takes a `rocsparse_error*` that it writes to.
+  * `rocsparse_get_git_rev`: `rev` is a `type(c_ptr)` passed by value rather than a `character(c_char)` assumed-size array, so pass `c_loc(buffer)`.
+  * Dummy arguments that collided with a Fortran keyword or intrinsic were renamed, which matters only to a caller using keyword arguments: `info` is `myInfo` in every routine that takes a `rocsparse_mat_info`, `result` is `myResult` in `rocsparse_sdoti`, `rocsparse_ddoti`, `rocsparse_cdoti`, `rocsparse_zdoti`, `rocsparse_cdotci` and `rocsparse_zdotci`, and `mat_type` is `myType` in `rocsparse_set_mat_type`. Four more arguments now carry the header's name rather than the hand-written one: `bsr_dim` is `block_dim` in `rocsparse_sbsrmv`, `rocsparse_dbsrmv`, `rocsparse_cbsrmv`, `rocsparse_zbsrmv` and the `s`/`d`/`c`/`z` forms of `rocsparse_Xbsrsv_buffer_size`, `rocsparse_Xbsrsv_analysis` and `rocsparse_Xbsrsv_solve`; `buffer_size` is `p_buffer_size` in `rocsparse_sgebsr2gebsc_buffer_size`, `rocsparse_dgebsr2gebsc_buffer_size`, `rocsparse_cgebsr2gebsc_buffer_size` and `rocsparse_zgebsr2gebsc_buffer_size`; `bsr_nnz` is `bsr_nnz_devhost` in `rocsparse_csr2gebsr_nnz`; and `policy` is `solve` in `rocsparse_scsrsm_analysis`, `rocsparse_dcsrsm_analysis`, `rocsparse_ccsrsm_analysis` and `rocsparse_zcsrsm_analysis`.
 
 ### Resolved issues
 * Fixed an overflow issue in `rocsparse_roti` and the generic `rocsparse_rot` routine. When using 64-bit indices and `nnz` >= `2^32`, a 32-bit element-index calculation could overflow, leaving some elements unrotated and causing low-index elements to be processed with incorrect data. The kernel now computes element indices in 64-bit arithmetic and uses a grid-stride loop with the launch grid clamped to the device limit.
@@ -17,22 +28,6 @@ Documentation for rocSPARSE is available at
 ## rocSPARSE 5.1.0 for ROCm 10.1
 
 ### Added
-
-* Generated Fortran bindings, as a single self-contained `rocsparse` module (`use rocsparse`,
-  link `roc::rocsparse_fortran`). Built by default when a Fortran compiler is available;
-  controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
-  `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(rocsparse-fortran)`, installed per
-  compiler under `lib/fortran/<compiler>` and `include/fortran/<compiler>`.
-
-### Changed
-
-* The Fortran binding is now generated from the rocSPARSE headers instead of hand-written.
-  The hand-written `library/src/rocsparse.f90` and `library/src/rocsparse_enums.f90` are
-  removed, and are no longer installed into `include/rocsparse`. The module keeps the name
-  `rocsparse`, so `use rocsparse` is unchanged, but the separate `rocsparse_enums` module is
-  gone: its constants are part of `rocsparse`. Code that said `use rocsparse_enums` should say
-  `use rocsparse`. Rather than shipping `.f90` sources to compile yourself, a compiled archive
-  and `.mod` are installed; link `roc::rocsparse_fortran`.
 * Added the `rocsparse_spmat_scale` generic routine for sparse matrix scaling (`C = alpha * A`). It writes to `C` `alpha` times the values of `A` and does not copy the sparsity pattern (`C` is assumed to already have the same sparsity pattern as `A`). `alpha` is passed as a self-describing scalar dense vector descriptor that can reside in host or device memory, so no temporary storage buffer is required.  In-place operation (`C == A`) is supported.  COO, COO AoS, CSR, CSC, BSR, ELL, Blocked ELL, and SELL formats are supported.
 * Added the `rocsparse_dnvec_descr_create_scalar` auxiliary routine, which creates a size-one dense vector descriptor for a host or device scalar.
 * Added batched support to the SpMM algorithm `rocsparse_spmm_alg_csr_nnz_split` and `rocsparse_spmm_alg_csr_merge_path`.
