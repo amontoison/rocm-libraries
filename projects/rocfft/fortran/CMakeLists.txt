@@ -38,7 +38,14 @@ option(BUILD_FORTRAN_CLIENTS "Build the rocFFT Fortran clients and binding tests
 # every library in the monorepo, which is what you want for the common case:
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
 # a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which wins when it is set.
+# so each library also honours a name of its own, which overrides the shared
+# default here.
+#
+# That override is the last word for the BINDINGS only. In-tree the binding
+# tests are GPU test executables and belong to rocFFT's client/test track, so the
+# library's own client switch is a floor they cannot rise above: see the gate
+# further down, which turns BUILD_FORTRAN_CLIENTS off in a library-only build
+# whatever ROCFFT_BUILD_FORTRAN_CLIENTS says.
 if(DEFINED ROCFFT_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCFFT_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -193,6 +200,13 @@ endif()
 
 enable_language(Fortran)
 
+# Pulled in here rather than beside the install() rules below because the
+# install layout is also baked into the target's INSTALL_INTERFACE include
+# directory, which is set well before them. Nothing must hardcode lib/ or
+# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
+# and a literal lib/fortran then names a directory that does not exist.
+include(GNUInstallDirs)
+
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
   message(FATAL_ERROR
     "FORTRAN_ARRAY_INTERFACES must be none, assumed-shape or assumed-rank, "
@@ -280,7 +294,7 @@ endif()
 
 target_include_directories(rocfft_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
-  "$<INSTALL_INTERFACE:include/fortran/${ROCFFT_FORTRAN_COMPILER_DIR}>")
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCFFT_FORTRAN_COMPILER_DIR}>")
 
 # Link interface only: needed to link an executable, not to build this archive.
 # In-tree roc::rocfft comes from rocFFT's own library/src. Standalone it has to
@@ -301,9 +315,18 @@ if(NOT TARGET roc::rocfft)
   find_package(rocfft QUIET)
 endif()
 
+# Whether the config package installed below must make its consumer find the C
+# package. It must exactly when the archive really carries roc::rocfft in its
+# link interface, and must not when it does not: a binding built with no rocFFT
+# in sight exports nothing to link, so demanding find_dependency(rocfft) from the
+# consumer would impose a dependency this package does not have, on precisely the
+# machines that do not have it. Written as the literal TRUE or FALSE, never left
+# empty, because the template substitutes it straight into an if() condition.
 if(TARGET roc::rocfft)
   target_link_libraries(rocfft_fortran INTERFACE roc::rocfft)
+  set(ROCFFT_FORTRAN_NEEDS_C_PACKAGE TRUE)
 else()
+  set(ROCFFT_FORTRAN_NEEDS_C_PACKAGE FALSE)
   message(STATUS
     "rocFFT: librocfft was not found, so the Fortran bindings carry no link "
     "interface; a consumer will have to link it (-lrocfft) itself.")
@@ -313,36 +336,62 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(ROCFFT_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
 endif()
 
+# The binding tests below are GPU runtime executables, so in-tree they belong to
+# the client/test track and follow the library's own switch: a library-only build
+# has no business producing test binaries, and would be made to link a GPU
+# runtime it never asked for. The condition is the one rocFFT guards
+# add_subdirectory( clients ) with, so the two cannot disagree; the root resolves
+# those three switches before it reaches this directory precisely so that this
+# test reads the same values the clients guard will. It is a floor, not a
+# preference: nothing a user can pass turns the tests back on in a library-only
+# build.
+#
+# Placed after the early returns above rather than beside the option(), so that a
+# configure which never builds anything Fortran -- BUILD_FORTRAN_BINDINGS=OFF, or
+# a host with no Fortran compiler -- does not announce a decision about tests it
+# was never going to reach.
+#
+# Standalone, this directory IS the build and the tests are the point, so the
+# library's switch does not exist and BUILD_FORTRAN_CLIENTS stands on its own.
+# Setting it as a plain variable is deliberate: the cache entry is one switch
+# shared by every library in the monorepo, so turning it off here has to be
+# scoped to this directory and must not be written back.
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
+   AND BUILD_FORTRAN_CLIENTS
+   AND NOT (BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCH))
+  message(STATUS
+    "rocFFT: clients are not being built, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
-  # enable_testing() here is enough for a STANDALONE build of this directory, but
-  # NOT for an in-tree one: CMake only writes the chain of CTestTestfile.cmake
-  # that ctest walks down from a build root when testing was enabled at the TOP
-  # level. Enabled only here, the tests are built and registered, and `ctest` run
-  # from the top of the parent build reports "Total Tests: 0", a silent
-  # nothing, which is the worst way to find out. So say it.
+  # Registers this directory's tests. ctest walks the chain of
+  # CTestTestfile.cmake down from a build root, and CMake writes that chain only
+  # for directories where testing was enabled, starting at the top, so in-tree
+  # the root has to enable it too -- which it does, on the same three client
+  # switches the gate above reads.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
-      message(STATUS
-        "rocFFT: the Fortran binding tests are registered, but ctest discovers "
-        "tests only from a build root where testing was enabled at the top "
-        "level. If `ctest` there reports no tests, add include(CTest) or "
-        "enable_testing() to the top-level CMakeLists, or run ctest from "
-        "${CMAKE_CURRENT_BINARY_DIR}/test.")
-    endif()
-  endif()
   add_subdirectory(test)
 endif()
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# COMPONENT devel on every rule below, because everything this directory
+# installs -- a static archive, a set of .mod files, the generated source and
+# the CMake package -- is a development artifact: nothing here is needed to RUN
+# a program, only to build one against the bindings. devel is also what
+# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
+# it. Without it these files land in the runtime component instead.
+#
+# Plain install(), not rocm_install(): this directory must also configure
+# standalone, where rocm-cmake was never loaded and those commands do not exist.
 install(TARGETS rocfft_fortran
         EXPORT rocfft-fortran-targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCFFT_FORTRAN_COMPILER_DIR}")
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCFFT_FORTRAN_COMPILER_DIR}"
+                COMPONENT devel)
 install(DIRECTORY "${_moddir}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCFFT_FORTRAN_COMPILER_DIR}"
+        COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
 # The generated source, so that a user on a compiler ROCm ships no .mod for can
@@ -357,11 +406,20 @@ install(DIRECTORY "${_moddir}/"
 # there would be read as naming one: the config below enumerates that directory
 # to report which compilers are installed, and would list rocfft.F90 among them.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/rocfft.F90"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/rocfft/fortran")
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/rocfft/fortran"
+        COMPONENT devel)
 install(EXPORT rocfft-fortran-targets
         FILE rocfft-fortran-targets.cmake
         NAMESPACE roc::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft"
+        COMPONENT devel)
+
+# The two directories the config package has to name, kept out of the template
+# so that neither side spells lib/ or include/ literally. A literal lib/fortran
+# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
+# the consumer an IMPORTED_LOCATION that does not exist.
+set(ROCFFT_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
+set(ROCFFT_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
 # lib/cmake/rocfft is where rocFFT's own rocm_export_targets() puts
 # rocfft-config.cmake, so the Fortran package lands beside the C one and a single
@@ -369,14 +427,17 @@ install(EXPORT rocfft-fortran-targets
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/rocfft-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/rocfft-fortran-config.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft")
-# No PATH_VARS: it only creates PACKAGE_<var>, and the template interpolates
-# @ROCFFT_FORTRAN_COMPILER_DIR@ directly. Passing it was a dead argument, and
-# worse than dead if anyone later switched the template to the PACKAGE_ form,
-# since PATH_VARS would then resolve this relative value as a path under the
-# install prefix.
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft"
+  # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
+  # an absolute path computed from where the config file was FOUND, so the
+  # package survives being relocated and gets lib64 right without the template
+  # knowing which layout it was built for. ROCFFT_FORTRAN_COMPILER_DIR stays a
+  # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
+  # and PATH_VARS would resolve it as one, under the install prefix.
+  PATH_VARS ROCFFT_FORTRAN_LIBDIR ROCFFT_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocfft-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft"
+        COMPONENT devel)
 
 # That placement is what lets rocfft-config.cmake pick the bindings up with a
 # bare include(rocfft-fortran-config.cmake OPTIONAL): a Fortran binding installed
@@ -397,7 +458,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocfft-fortran-config.cmake"
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../rocfft/rocfft-fortran-config.cmake\")
 ")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/rocfft-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft-fortran")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft-fortran"
+        COMPONENT devel)
 
 # A version file, so that find_package(rocfft-fortran 1.0) resolves rather than
 # failing with "could not find a configuration file compatible with requested
@@ -452,9 +514,11 @@ if(_fortran_version)
   # fails with "could not find a configuration file compatible with requested
   # version" even though the config is right there and the version matches.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocfft-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft"
+          COMPONENT devel)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocfft-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft-fortran"
+          COMPONENT devel)
 else()
   # Better no version file than a wrong one: without it an unversioned
   # find_package still succeeds, whereas a version file claiming the wrong number

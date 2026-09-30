@@ -15,6 +15,20 @@
 
 set(ROCFFT_FORTRAN_COMPILER_DIR "@ROCFFT_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# No comment in this file may spell that preamble's placeholder token with its
+# surrounding @ delimiters. configure_package_config_file() substitutes every
+# occurrence of it, comments included, so naming it would splice a second copy
+# of the whole preamble -- PACKAGE_PREFIX_DIR, set_and_check() and
+# check_required_components() all defined twice -- into the middle of a sentence.
+set(_rocfft_libdir "@PACKAGE_ROCFFT_FORTRAN_LIBDIR@")
+set(_rocfft_incdir "@PACKAGE_ROCFFT_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a rocFFT Fortran binding available here?" through
 # rocfft_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(rocfft-fortran) or through an OPTIONAL include from
@@ -108,7 +122,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_rocfft_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocfft_fc}/rocfft.mod")
+if(EXISTS "${_rocfft_incdir}/${_rocfft_fc}/rocfft.mod")
   set(_rocfft_dir "${_rocfft_fc}")
 else()
   _rocfft_dir_matches("${ROCFFT_FORTRAN_COMPILER_DIR}" "${_rocfft_fc}" _rocfft_ok)
@@ -120,36 +134,46 @@ endif()
 if(NOT _rocfft_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _rocfft_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _rocfft_avail RELATIVE "${_rocfft_incdir}"
+       "${_rocfft_incdir}/*")
   set(rocfft-fortran_FOUND FALSE)
   string(CONCAT rocfft-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_rocfft_fc}, but no rocfft.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_rocfft_incdir}. Available: "
       "${_rocfft_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_rocfft_fc}, or set "
       "ROCFFT_FORTRAN_COMPILER_DIR to the directory to use.")
   return()
 endif()
 
-# The exported target carries roc::rocfft in its link interface, so that target
-# has to exist BEFORE the targets file is read, otherwise CMake stops with "the
-# link interface of target roc::rocfft_fortran contains: roc::rocfft but the
-# target was not found", which reads like a packaging bug rather than a missing
-# find_package in the consumer.
-#
-# rocfft-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled. A Fortran-only
-# consumer has neither, so C is enabled here. Enabling a language from a config
-# package is unusual, and it is done deliberately: the alternative is making
-# every Fortran consumer of these bindings write enable_language(C) for a reason
-# that has nothing to do with their code.
-if(NOT TARGET roc::rocfft)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+# Whether the exported target really carries roc::rocfft in its link interface.
+# The bindings declare bind(C) interfaces only, so they build with no C library
+# in sight, and when none was found at build time the archive is exported with an
+# empty link interface. Obliging the consumer to find a package this package does
+# not depend on would then be pure ceremony, and it would fail on exactly the
+# machines where rocFFT is not installed -- which is the case that produced the
+# empty interface in the first place. The value is written by fortran/
+# CMakeLists.txt as the literal TRUE or FALSE, never left empty: a bare if() here
+# is a syntax error that kills every consumer's find_package.
+if(@ROCFFT_FORTRAN_NEEDS_C_PACKAGE@)
+  # roc::rocfft has to exist BEFORE the targets file is read, otherwise CMake
+  # stops with "the link interface of target roc::rocfft_fortran contains:
+  # roc::rocfft but the target was not found", which reads like a packaging bug
+  # rather than a missing find_package in the consumer.
+  #
+  # rocfft-config.cmake does find_dependency(hip), and hip-config.cmake reaches
+  # FindThreads, which hard-errors unless C or CXX is enabled. A Fortran-only
+  # consumer has neither, so C is enabled here. Enabling a language from a config
+  # package is unusual, and it is done deliberately: the alternative is making
+  # every Fortran consumer of these bindings write enable_language(C) for a
+  # reason that has nothing to do with their code.
+  if(NOT TARGET roc::rocfft)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(rocfft)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(rocfft)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/rocfft-fortran-targets.cmake")
@@ -159,12 +183,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/rocfft-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _rocfft_dir STREQUAL "${ROCFFT_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::rocfft_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocfft_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_rocfft_incdir}/${_rocfft_dir}")
   get_target_property(_rocfft_cfgs roc::rocfft_fortran IMPORTED_CONFIGURATIONS)
   foreach(_rocfft_c IN LISTS _rocfft_cfgs)
     set_target_properties(roc::rocfft_fortran PROPERTIES
       IMPORTED_LOCATION_${_rocfft_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_rocfft_dir}/librocfft_fortran.a")
+        "${_rocfft_libdir}/${_rocfft_dir}/librocfft_fortran.a")
   endforeach()
 endif()
 

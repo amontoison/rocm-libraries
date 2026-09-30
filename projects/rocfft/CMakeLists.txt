@@ -229,6 +229,44 @@ if( ROCFFT_BUILD_INTERNAL_TESTS )
 endif()
 
 add_subdirectory( library )
+
+# Resolved here, ahead of fortran/, rather than immediately before
+# add_subdirectory( clients ) where it used to sit. The Fortran binding tests are
+# clients too, and fortran/ decides whether to build them from the same three
+# switches this block computes; read before the block runs, BUILD_CLIENTS_TESTS
+# and its siblings are simply not defined yet, and a -DBUILD_CLIENTS=ON build
+# would silently drop the Fortran tests. Nothing between here and the clients
+# guard below depends on the order, because build-options.cmake only declares
+# options and the two blocks after it only derive plain variables from them.
+include( clients/cmake/build-options.cmake )
+
+# Build clients of the library
+if( BUILD_CLIENTS )
+  set( BUILD_CLIENTS_BENCH ON )
+  set( BUILD_CLIENTS_SAMPLES ON )
+  set( BUILD_CLIENTS_TESTS ON )
+endif( )
+
+# old name for BUILD_CLIENTS_BENCH
+if( BUILD_CLIENTS_RIDER )
+  set( BUILD_CLIENTS_BENCH ${BUILD_CLIENTS_RIDER} )
+endif()
+
+# ctest walks the chain of CTestTestfile.cmake down from a build root, and CMake
+# writes that chain only for directories where testing was enabled, starting at
+# this one. fortran/ registers the binding tests under exactly these three
+# switches, but the only other enable_testing() at this level is the one inside
+# the BUILD_CLIENTS_TESTS branch below, so a samples-only or bench-only build
+# would compile those tests and then hand ctest an empty project -- "Total
+# Tests: 0", which reads as a broken binding rather than as a build root that was
+# never told to collect anything. Enabling testing twice is a no-op; leaving
+# those two configurations uncovered is not.
+if( BUILD_CLIENTS_SAMPLES
+    OR BUILD_CLIENTS_TESTS
+    OR BUILD_CLIENTS_BENCH )
+  enable_testing()
+endif()
+
 # Fortran bindings. Self-contained: it declares bind(C) interfaces only, so it
 # compiles against neither the rocFFT headers nor librocfft, and it is safe to
 # add unconditionally. The directory does its own guarding and returns quietly
@@ -244,20 +282,6 @@ add_subdirectory( library )
 # build machine, and the in-tree build would ship bindings pointing at the wrong
 # librocfft with no diagnostic at all.
 add_subdirectory( fortran )
-
-include( clients/cmake/build-options.cmake )
-
-# Build clients of the library
-if( BUILD_CLIENTS )
-  set( BUILD_CLIENTS_BENCH ON )
-  set( BUILD_CLIENTS_SAMPLES ON )
-  set( BUILD_CLIENTS_TESTS ON )
-endif( )
-
-# old name for BUILD_CLIENTS_BENCH
-if( BUILD_CLIENTS_RIDER )
-  set( BUILD_CLIENTS_BENCH ${BUILD_CLIENTS_RIDER} )
-endif()
 
 if( BUILD_CLIENTS_SAMPLES
     OR BUILD_CLIENTS_TESTS
