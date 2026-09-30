@@ -149,6 +149,33 @@ if( NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." )
 endif()
 
+# The hipblas module is no longer built here from the hand-written
+# ../library/src/hipblas_module.f90: it is generated from the C headers and
+# built by ../fortran, which exports the roc::hipblas_fortran target the shims
+# below link against. Building it twice would also collide, since both targets
+# carry the same name.
+#
+# So the Fortran clients can be built only where that directory produced the
+# target, and BUILD_FORTRAN_CLIENTS merely keeping its ON default is not a
+# request for them: -DBUILD_FORTRAN_BINDINGS=OFF and a site with no Fortran
+# compiler both leave it absent, and neither is a mistake worth stopping the
+# whole configure over. Skip, and say so.
+#
+# This has to run before project() below, not after it: with the target missing
+# because there is no Fortran compiler, ${fortran_language} would ask project()
+# to enable Fortran and the configure would die there, before anything here
+# could explain why. Shadowing BUILD_FORTRAN_CLIENTS as a plain variable is
+# deliberate -- the cache entry is one switch shared by every library in the
+# monorepo -- and it is what every use below, including those in samples/,
+# gtest/ and benchmarks/, reads.
+if ( BUILD_FORTRAN_CLIENTS AND NOT TARGET hipblas_fortran )
+  message(STATUS
+    "hipBLAS: the Fortran bindings were not built, so the Fortran clients are "
+    "skipped. They come from projects/hipblas/fortran, which needs "
+    "BUILD_FORTRAN_BINDINGS on and a Fortran compiler.")
+  set( BUILD_FORTRAN_CLIENTS OFF )
+endif()
+
 # This project may compile dependencies for clients
 if ( BUILD_FORTRAN_CLIENTS )
   if ( NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC} )
@@ -179,16 +206,6 @@ if( BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES )
   if( BUILD_FORTRAN_CLIENTS )
       # Set Fortran module output directory
       set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/hipblas)
-
-      # The hipblas module is no longer built here from the hand-written
-      # ../library/src/hipblas_module.f90: it is generated from the C headers and
-      # built by ../fortran, which exports roc::hipblas_fortran. Building it twice
-      # would also collide, since both targets carry the same name.
-      if( NOT TARGET hipblas_fortran )
-        message(FATAL_ERROR
-          "BUILD_FORTRAN_CLIENTS is ON but the hipblas_fortran target is missing. "
-          "It is built by projects/hipblas/fortran; enable BUILD_FORTRAN_BINDINGS.")
-      endif()
 
       # Linking rather than absorbing $<TARGET_OBJECTS:hipblas_fortran>: the
       # binding is a real library now, with its own .mod directory and link

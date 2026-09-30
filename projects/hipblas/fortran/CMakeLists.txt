@@ -48,7 +48,14 @@ option(BUILD_FORTRAN_CLIENTS "Build the hipBLAS Fortran clients and binding test
 # every library in the monorepo, which is what you want for the common case:
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
 # a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which wins when it is set.
+# so each library also honours a name of its own, which overrides the shared
+# default.
+#
+# That override is the last word for the BINDINGS only. The Fortran clients are
+# GPU test and sample executables and belong to hipBLAS's client track, so
+# clients/ turns them off whenever this directory produced no binding target,
+# whatever HIPBLAS_BUILD_FORTRAN_CLIENTS said: a library-only build produces no
+# client binaries, with no exception.
 if(DEFINED HIPBLAS_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${HIPBLAS_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -203,6 +210,13 @@ endif()
 
 enable_language(Fortran)
 
+# Pulled in here rather than beside the install() rules below because the
+# install layout is also baked into the target's INSTALL_INTERFACE include
+# directory, which is set well before them. Nothing must hardcode lib/ or
+# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
+# and a literal lib/fortran then names a directory that does not exist.
+include(GNUInstallDirs)
+
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
   message(FATAL_ERROR
     "FORTRAN_ARRAY_INTERFACES must be none, assumed-shape or assumed-rank, "
@@ -286,7 +300,7 @@ endif()
 
 target_include_directories(hipblas_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
-  "$<INSTALL_INTERFACE:include/fortran/${HIPBLAS_FORTRAN_COMPILER_DIR}>")
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPBLAS_FORTRAN_COMPILER_DIR}>")
 
 # Link interface only: needed to link an executable, not to build this archive.
 # roc::hipblas is defined by hipBLAS's library/src, and brings the HIP runtime
@@ -309,12 +323,23 @@ if(NOT TARGET roc::hipblas)
   find_package(hipblas QUIET)
 endif()
 
+# Whichever way that went, the answer is recorded in
+# HIPBLAS_FORTRAN_NEEDS_C_PACKAGE, which the config template below turns into
+# the condition on its find_dependency call. The two have to agree: a config
+# that requires the C package unconditionally obliges the consumer to find
+# something this archive does not name in its link interface, and a config that
+# never requires it leaves roc::hipblas undefined for the consumers that do link
+# against it. An explicit TRUE or FALSE, never an empty value, because the
+# template substitutes this into a bare if() and an empty substitution is a
+# syntax error in every installed copy.
 if(TARGET roc::hipblas)
   target_link_libraries(hipblas_fortran INTERFACE roc::hipblas)
+  set(HIPBLAS_FORTRAN_NEEDS_C_PACKAGE TRUE)
 else()
   message(STATUS
     "hipBLAS: the C library was not found, so the Fortran bindings carry no "
     "link interface; a consumer will have to link it (-lhipblas) itself.")
+  set(HIPBLAS_FORTRAN_NEEDS_C_PACKAGE FALSE)
 endif()
 
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -327,17 +352,30 @@ endif()
 # would add and is already in CI. The nine libraries with no such path keep
 # theirs.
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # lib/cmake/hipblas is where hipBLAS's own rocm_export_targets() puts
 # hipblas-config.cmake, so the Fortran package lands beside the C one and a
 # single CMAKE_PREFIX_PATH entry finds both.
+#
+# COMPONENT devel on every rule below, because everything this directory
+# installs -- a static archive, a set of .mod files, the generated source and
+# the CMake package -- is a development artifact: nothing here is needed to RUN
+# a program, only to build one against the bindings. devel is also what
+# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
+# it. Without it these files land in the runtime component instead, which for
+# hipBLAS is a packaging regression, since the hand-written hipblas_module.f90
+# they replace was shipped into devel by library/src's rocm_install(FILES ...).
+#
+# Plain install(), not rocm_install(): this directory must also configure
+# standalone, where rocm-cmake was never loaded and those commands do not exist.
 install(TARGETS hipblas_fortran
         EXPORT hipblas-fortran-targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPBLAS_FORTRAN_COMPILER_DIR}")
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPBLAS_FORTRAN_COMPILER_DIR}"
+                COMPONENT devel)
 install(DIRECTORY "${_moddir}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPBLAS_FORTRAN_COMPILER_DIR}"
+        COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
 # The generated source, so that a user on a compiler ROCm ships no .mod for can
@@ -353,23 +391,35 @@ install(DIRECTORY "${_moddir}/"
 # directory to report which compilers are installed, and would list hipblas.F90
 # among them.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipblas.F90"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/hipblas/fortran")
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/hipblas/fortran"
+        COMPONENT devel)
 install(EXPORT hipblas-fortran-targets
         FILE hipblas-fortran-targets.cmake
         NAMESPACE roc::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas"
+        COMPONENT devel)
+
+# The two directories the config package has to name, kept out of the template
+# so that neither side spells lib/ or include/ literally. A literal lib/fortran
+# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
+# the consumer an IMPORTED_LOCATION that does not exist.
+set(HIPBLAS_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
+set(HIPBLAS_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/hipblas-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/hipblas-fortran-config.cmake"
-  # No PATH_VARS: it only creates PACKAGE_<var>, and the template interpolates
-  # @HIPBLAS_FORTRAN_COMPILER_DIR@ directly. Passing it was a dead argument, and
-  # worse than dead if anyone later switched the template to the PACKAGE_ form,
-  # since PATH_VARS would then resolve this relative value as a path under the
-  # install prefix.
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas")
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas"
+  # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
+  # an absolute path computed from where the config file was FOUND, so the
+  # package survives being relocated and gets lib64 right without the template
+  # knowing which layout it was built for. HIPBLAS_FORTRAN_COMPILER_DIR stays a
+  # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
+  # and PATH_VARS would resolve it as one, under the install prefix.
+  PATH_VARS HIPBLAS_FORTRAN_LIBDIR HIPBLAS_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipblas-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas"
+        COMPONENT devel)
 
 # The config lands in lib/cmake/hipblas, BESIDE the C package, because that is
 # what would let hipblas-config.cmake pick it up with a bare
@@ -392,7 +442,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/hipblas-fortran-config.cmake"
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipblas/hipblas-fortran-config.cmake\")
 ")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/hipblas-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas-fortran")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas-fortran"
+        COMPONENT devel)
 
 # A version file, so that find_package(hipblas-fortran 3.8) resolves rather than
 # failing with "could not find a configuration file compatible with requested
@@ -432,9 +483,11 @@ if(_fortran_version)
   # fails with "could not find a configuration file compatible with requested
   # version" even though the config is right there and the version matches.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipblas-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas"
+          COMPONENT devel)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipblas-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipblas-fortran"
+          COMPONENT devel)
 else()
   # Better no version file than a wrong one: without it an unversioned
   # find_package still succeeds, whereas a version file claiming the wrong

@@ -11,7 +11,9 @@ Documentation for hipBLAS is available at
   link `roc::hipblas_fortran`). Built by default when a Fortran compiler is available;
   controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
   `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(hipblas-fortran)`, installed per
-  compiler under `lib/fortran/<compiler>` and `include/fortran/<compiler>`.
+  compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`,
+  where `<libdir>` and `<includedir>` are `CMAKE_INSTALL_LIBDIR` and
+  `CMAKE_INSTALL_INCLUDEDIR`.
 
 ### Changed
 
@@ -19,9 +21,14 @@ Documentation for hipBLAS is available at
   `library/src/hipblas_module.f90` is removed and is no longer installed into
   `include/hipblas`. It defined two modules, `hipblas` and `hipblas_enums`; the generated
   binding defines only `hipblas`, with the enum constants folded in. `use hipblas` is
-  unchanged, but `use hipblas_enums` should become `use hipblas`. Rather than shipping a
-  `.f90` source to compile yourself, a compiled archive and `.mod` are installed; link
-  `roc::hipblas_fortran`.
+  unchanged, but `use hipblas_enums` should become `use hipblas`. The one exception is the
+  `hipDataType` enumerators (`HIP_R_32F` and the rest), which `hipblas_enums` re-exported
+  and the generated module does not: they belong to HIP rather than to hipBLAS, so code
+  that names them when calling `hipblasGemmEx` and the other `_ex` routines has to get
+  them from elsewhere. Rather than shipping a `.f90` source to compile yourself, a
+  compiled archive and `.mod` are installed; link `roc::hipblas_fortran`. The generated
+  source is still shipped, under `share/hipblas/fortran`, for compilers no `.mod` is
+  provided for.
 
 ## hipBLAS 3.7.0
 
