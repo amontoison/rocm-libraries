@@ -4,6 +4,13 @@
 # and draw numbers on a device, so they build anywhere but only pass on a machine
 # with a GPU.
 #
+# Two suites live here. The .f03 sources are one test per (generator,
+# distribution) pair. fruit/ and the three .f90 sources beside it are the
+# FRUIT-based suite that used to sit in test/fortran/ and exercise the
+# hand-written wrapper; it moved here with the binding it now exercises, so that
+# every Fortran test sits next to the module it tests and one hip::hip_fortran
+# guard covers them all.
+#
 # Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
 
 # The Intel compilers (ifx/ifort) do not recognize the .f03 source extension and
@@ -58,21 +65,43 @@ if(NOT TARGET roc::rocrand)
   return()
 endif()
 
-# Build <name>.f03 into one executable and register it with CTest as
-# rocrand_fortran_<name>, labelled gpu. Expects the source to sit in this
-# directory and to link rocrand_fortran, hip::hip_fortran and roc::rocrand.
+# Build one executable out of one or more sources and register it with CTest as
+# rocrand_fortran_<name>, labelled gpu. Sources are named relative to this
+# directory; with none given the source is taken to be <name>.f03, which is the
+# shape every single-source test below uses. The FRUIT driver is a
+# multi-source executable and passes its sources explicitly.
+#
+# One function rather than a second link path beside it: every test here needs
+# the same three libraries, and two places to state that is two places to keep
+# in step by hand.
 function(rocrand_fortran_add_test name)
-  set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
-  if(NOT EXISTS "${src}")
-    message(FATAL_ERROR "Missing test source: ${src}")
+  set(srcs ${ARGN})
+  if(NOT srcs)
+    set(srcs "${name}.f03")
   endif()
+  set(abs_srcs "")
+  foreach(src IN LISTS srcs)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+      message(FATAL_ERROR "Missing test source: ${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+    endif()
+    list(APPEND abs_srcs "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+  endforeach()
   # Force language detection for .f03 in toolchains where CMake misses it.
-  set_source_files_properties("${src}" PROPERTIES LANGUAGE Fortran)
-  add_executable(rocrand_fortran_test_${name} "${src}")
-  set_target_properties(rocrand_fortran_test_${name} PROPERTIES LINKER_LANGUAGE Fortran)
+  set_source_files_properties(${abs_srcs} PROPERTIES LANGUAGE Fortran)
+  add_executable(rocrand_fortran_test_${name} ${abs_srcs})
+  set_target_properties(rocrand_fortran_test_${name} PROPERTIES
+    LINKER_LANGUAGE Fortran
+    # A multi-source test WRITES .mod files as it builds (the FRUIT driver
+    # writes four), so each test gets a directory of its own to write them to
+    # rather than sharing this one and racing over the names.
+    Fortran_MODULE_DIRECTORY
+      "${CMAKE_CURRENT_BINARY_DIR}/rocrand_fortran_test_${name}.mod.dir")
   target_link_libraries(rocrand_fortran_test_${name} PRIVATE
     rocrand_fortran hip::hip_fortran roc::rocrand)
-  # The tests call EXIT, a GNU extension in gfortran.
+  # Each .f03 test ends in a call to EXIT, a GNU extension in gfortran. Applied
+  # to every target here rather than to those alone: the flag only widens what
+  # gfortran accepts, so it costs the FRUIT sources (which do not call EXIT)
+  # nothing, and one rule is one thing to keep right.
   target_compile_options(rocrand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocrand_fortran_${name} COMMAND rocrand_fortran_test_${name})
@@ -83,10 +112,10 @@ function(rocrand_fortran_add_test name)
   set_tests_properties(rocrand_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per (generator, distribution) pair: five generators against uniform,
-# normal and log-normal in both precisions, plus Poisson. Between them they
-# cover every rocrand_generate_* entry point the module exposes that returns
-# data a host can check the distribution of.
+# One source per (generator, distribution) pair, named for the pair it drives.
+# Every generator listed below is exercised against uniform and normal in both
+# precisions; log-normal in both precisions and Poisson are driven through
+# philox only, since those paths do not vary with the generator.
 set(ROCRAND_FORTRAN_TESTS
     mrg32k3a_normal
     mrg32k3a_normal_double
@@ -116,4 +145,19 @@ if(_have_hip_binding)
   foreach(_t IN LISTS ROCRAND_FORTRAN_TESTS)
     rocrand_fortran_add_test(${_t})
   endforeach()
+
+  # The FRUIT suite: the vendored harness under fruit/ (third-party, carrying
+  # its own LICENSE.txt, left unmodified), the helper that wraps a test case in
+  # its setup and teardown, the test module and the program that drives them.
+  # One executable and so one CTest test, because FRUIT reports its own
+  # per-case results to stdout and to an XML file rather than through CTest.
+  #
+  # Listed in compile order for the reader; CMake scans Fortran module
+  # dependencies itself and does not need it.
+  rocrand_fortran_add_test(fruit
+      fruit/fruit_util.f90
+      fruit/fruit.f90
+      fruit_helpers.f90
+      test_rocrand.f90
+      fruit_test_driver_rocrand.f90)
 endif()
