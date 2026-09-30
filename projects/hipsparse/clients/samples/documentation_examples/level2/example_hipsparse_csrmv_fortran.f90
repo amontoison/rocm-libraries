@@ -118,7 +118,7 @@ program example_fortran_csrmv
     type(c_ptr) :: handle
     type(c_ptr) :: descr
 
-    integer :: version
+    integer(c_int), target :: version
 
 !   Input data
     m = 4
@@ -162,7 +162,7 @@ program example_fortran_csrmv
     call HIPSPARSE_CHECK(hipsparseCreateMatDescr(descr))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &

@@ -138,7 +138,7 @@ program example_fortran_spmv
 
     integer :: Mb, Nb, bsr_dim
     integer, target :: nnzb
-    integer :: version
+    integer(c_int), target :: version
 
     integer i
     integer tbegin(8)
@@ -221,7 +221,7 @@ program example_fortran_spmv
     call HIPSPARSE_CHECK(hipsparseCreate(handle))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &
