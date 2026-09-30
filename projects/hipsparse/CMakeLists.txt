@@ -84,6 +84,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(HIPSPARSE_ENABLE_FORTRAN)
+    # enable_language(Fortran) resolves CMAKE_Fortran_COMPILER once and freezes
+    # it for the whole tree, so the preference for ROCm's own amdflang has to be
+    # expressed BEFORE it. Left to itself, CMake takes the first Fortran
+    # compiler on the search path -- the system gfortran on a ROCm CI image --
+    # and fortran/ is reached far too late to have a say: its own call finds the
+    # compiler already chosen and does nothing. Both go through the one macro so
+    # that the two cannot drift apart.
+    include("${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake")
+    rocm_fortran_prefer_amdflang()
     enable_language(Fortran)
 endif()
 

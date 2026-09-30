@@ -9,6 +9,10 @@ Documentation for hipSPARSE is available at
 ### Added
 * Added the generic API routines `hipsparseSpGEAM_createDescr`, `hipsparseSpGEAM_destroyDescr`, `hipsparseSpGEAM_bufferSize`, `hipsparseSpGEAM_nnz`, and `hipsparseSpGEAM` for sparse matrix-matrix addition (`C = alpha * op(A) + beta * op(B)`), along with the `hipsparseSpGEAMDescr_t` type and the `hipsparseSpGEAMAlg_t` algorithm enum, to match the cuSPARSE 13.3 generic `SpGEAM` API.
 * Added batched support to `hipsparseSDDMM` for CSR format.
+* Added generated Fortran bindings, exposed as a single self-contained `hipsparse` module: a consumer writes `use hipsparse` and links `roc::hipsparse_fortran`. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(hipsparse-fortran)`, and the archive and `.mod` files are installed per compiler, under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`, following `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR`.
+
+### Changed
+* The Fortran module is now generated from the hipSPARSE C headers rather than hand-written, and `library/src/hipsparse.f90` and `library/src/hipsparse_enums.f90` have been removed. `use hipsparse` is unchanged and still brings in the enum constants, so the separate `hipsparse_enums` module is gone and any `use hipsparse_enums` has to be dropped. The hand-written module was compiled straight into the in-tree Fortran samples and was never installed; the bindings now ship as a static archive plus compiler-specific `.mod` files, with the generated source beside them under `<datadir>/hipsparse/fortran` for compilers no `.mod` is provided for.
 
 ## hipSPARSE 4.7.0 for ROCm 10.0
 

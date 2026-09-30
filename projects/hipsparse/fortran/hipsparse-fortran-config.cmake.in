@@ -13,6 +13,20 @@
 
 set(HIPSPARSE_FORTRAN_COMPILER_DIR "@HIPSPARSE_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# That preamble's token is deliberately not spelled out here.
+# configure_package_config_file() substitutes every occurrence of it, comments
+# included, so naming it would splice a second copy of the whole preamble --
+# including the set_and_check and check_required_components definitions -- into
+# the middle of this sentence.
+set(_hipsparse_libdir "@PACKAGE_HIPSPARSE_FORTRAN_LIBDIR@")
+set(_hipsparse_incdir "@PACKAGE_HIPSPARSE_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a hipSPARSE Fortran binding available here?" through
 # hipsparse_FORTRAN_FOUND, which is set whether this package is reached directly
 # by find_package(hipsparse-fortran) or through an OPTIONAL include from
@@ -33,8 +47,9 @@ if(NOT CMAKE_Fortran_COMPILER_LOADED)
 endif()
 
 # Compare on the compiler EXECUTABLE name, which is what the install layout is
-# keyed on (include/fortran/<compiler>, lib/fortran/<compiler>): CMake's compiler
-# ID would say "LLVMFlang" where the user and the directory both say "amdflang".
+# keyed on -- the fortran/<compiler> tail of both directories above. CMake's
+# compiler ID would say "LLVMFlang" where the user and the directory both say
+# "amdflang".
 # Taking the basename of CMAKE_Fortran_COMPILER instead would reject a perfectly
 # good consumer that reaches gfortran through mpif90 or gfortran-13.
 #
@@ -91,7 +106,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_hipsparse_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipsparse_fc}/hipsparse.mod")
+if(EXISTS "${_hipsparse_incdir}/${_hipsparse_fc}/hipsparse.mod")
   set(_hipsparse_dir "${_hipsparse_fc}")
 else()
   _hipsparse_dir_matches("${HIPSPARSE_FORTRAN_COMPILER_DIR}" "${_hipsparse_fc}" _hipsparse_ok)
@@ -103,12 +118,12 @@ endif()
 if(NOT _hipsparse_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _hipsparse_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _hipsparse_avail RELATIVE "${_hipsparse_incdir}"
+       "${_hipsparse_incdir}/*")
   set(hipsparse-fortran_FOUND FALSE)
   string(CONCAT hipsparse-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_hipsparse_fc}, but no hipsparse.mod for it "
-      "is installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "is installed under ${_hipsparse_incdir}. Available: "
       "${_hipsparse_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_hipsparse_fc}, or set "
       "HIPSPARSE_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -148,12 +163,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/hipsparse-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _hipsparse_dir STREQUAL "${HIPSPARSE_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::hipsparse_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipsparse_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_hipsparse_incdir}/${_hipsparse_dir}")
   get_target_property(_hipsparse_cfgs roc::hipsparse_fortran IMPORTED_CONFIGURATIONS)
   foreach(_hipsparse_c IN LISTS _hipsparse_cfgs)
     set_target_properties(roc::hipsparse_fortran PROPERTIES
       IMPORTED_LOCATION_${_hipsparse_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_hipsparse_dir}/libhipsparse_fortran.a")
+        "${_hipsparse_libdir}/${_hipsparse_dir}/libhipsparse_fortran.a")
   endforeach()
 endif()
 
