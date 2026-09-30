@@ -7,12 +7,14 @@ Documentation for hipRAND is available at
 
 ### Added
 
+* gfx1250 support
 * Generated Fortran bindings for hipRAND, as a single self-contained `hiprand` module
   (`use hiprand`, link `hip::hiprand_fortran`). Built by default when a Fortran compiler is
   available; controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the
   tri-state `FORTRAN_ARRAY_INTERFACES`. The package is found with
   `find_package(hiprand-fortran)` and installs per compiler under
-  `lib/fortran/<compiler>` and `include/fortran/<compiler>`.
+  `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and
+  `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
 
 ### Removed
 
@@ -22,10 +24,6 @@ Documentation for hipRAND is available at
   and was never shipped enabled, so `hiprand_FORTRAN_FOUND` was already `NOTFOUND` and
   `hiprand_FORTRAN_SRC_DIRS` was never set in a released package. Source builds that passed
   `-DBUILD_FORTRAN_WRAPPER=ON` are affected and should move to `use hiprand`.
-
-### Added
-
-* gfx1250 support
 
 ## Since last release ROCm 7.12
 
