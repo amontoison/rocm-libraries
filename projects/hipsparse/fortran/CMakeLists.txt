@@ -14,8 +14,13 @@
 # bind(C) interfaces). libhipsparse is required to LINK a final executable, and is
 # carried as the target's link interface for that reason.
 #
-# hipSPARSE ships no hand-written Fortran module, so this adds a binding rather
-# than replacing one.
+# This binding REPLACES the hand-written library/src/hipsparse.f90 and
+# hipsparse_enums.f90. Those were compiled into an OBJECT library for the
+# in-tree Fortran samples and were never installed, so calling hipSPARSE from
+# Fortran outside this tree had no supported path at all. This binding installs
+# as an archive plus a .mod set, so there now is one. The separate
+# hipsparse_enums module goes with them: `use hipsparse` carries the enum
+# constants too.
 
 cmake_minimum_required(VERSION 3.19)
 
@@ -44,7 +49,15 @@ option(BUILD_FORTRAN_CLIENTS "Build the hipSPARSE Fortran clients and binding te
 # every library in the monorepo, which is what you want for the common case:
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
 # a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which wins when it is set.
+# so each library also honours a name of its own, which overrides the shared
+# default.
+#
+# That override is the last word for the BINDINGS only. In-tree the binding
+# TESTS are capped further down by hipSPARSE's own client/test switch, because
+# they are GPU test executables and belong to that track: an explicit
+# -DHIPSPARSE_BUILD_FORTRAN_CLIENTS=ON raises them no higher than the library's
+# own tests go. Standalone there is no such switch and the override stands on
+# its own.
 if(DEFINED HIPSPARSE_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${HIPSPARSE_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -102,6 +115,7 @@ elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_LIBS_HAVE_FORTRAN})
 else()
   include(CheckLanguage)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROCmFortranCompiler.cmake")
 
   # check_language() answers by writing the CACHE entry CMAKE_Fortran_COMPILER,
   # and rocm-cmake's ROCMChecks arms a variable_watch on exactly that name to
@@ -125,59 +139,12 @@ else()
   set(ROCM_WARN_TOOLCHAIN_VAR OFF)
   set(ROCM_ERROR_TOOLCHAIN_VAR OFF)
 
-  # Prefer ROCm's own amdflang over whatever CMake would otherwise find first.
-  # check_language(Fortran) takes the first compiler on the search path, which on
-  # a ROCm CI image is the system gfortran, and that is how the bindings ended up
-  # as the one component of ROCm built by a different toolchain from everything
-  # else: installed under fortran/gfortran/ while the documentation promises
-  # fortran/amdflang/, and exercising a compiler the product does not ship with.
-  #
-  # amdflang sits beside the clang already compiling this project, so the answer
-  # is next to CMAKE_CXX_COMPILER when there is one; ROCM_PATH covers a
-  # standalone configure. Searched with NO_DEFAULT_PATH so a stray amdflang
-  # elsewhere on PATH cannot win over the ROCm being built against.
-  #
-  # An explicit CMAKE_Fortran_COMPILER, or FC in the environment, always wins:
-  # building these bindings with gfortran is a supported thing to do, and a .mod
-  # is compiler-specific, so whoever asked for a compiler meant it.
-  #
-  # check_language() is a no-op once CMAKE_Fortran_COMPILER is defined, so this
-  # has to run before it, and the probe below never overrides what we set here.
-  if(NOT CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
-    set(_rocm_fc_hints)
-    foreach(_rocm_fc_cc "${CMAKE_CXX_COMPILER}" "${CMAKE_C_COMPILER}"
-                        "${CMAKE_HIP_COMPILER}")
-      if(_rocm_fc_cc)
-        get_filename_component(_rocm_fc_dir "${_rocm_fc_cc}" DIRECTORY)
-        list(APPEND _rocm_fc_hints "${_rocm_fc_dir}")
-      endif()
-    endforeach()
-    if(ROCM_PATH)
-      list(APPEND _rocm_fc_hints "${ROCM_PATH}/lib/llvm/bin" "${ROCM_PATH}/bin")
-    endif()
-    if(_rocm_fc_hints)
-      find_program(_rocm_amdflang NAMES amdflang HINTS ${_rocm_fc_hints}
-                   NO_DEFAULT_PATH)
-      # Confirm it runs before committing to it. A ROCm tree can carry a dangling
-      # amdflang symlink, and check_language() would not catch that: it does
-      # nothing at all once the variable is set, so the failure would surface far
-      # later as a broken enable_language with no hint of where the choice was
-      # made.
-      if(_rocm_amdflang)
-        execute_process(COMMAND "${_rocm_amdflang}" --version
-                        RESULT_VARIABLE _rocm_fc_rc
-                        OUTPUT_QUIET ERROR_QUIET)
-        if(_rocm_fc_rc EQUAL 0)
-          set(CMAKE_Fortran_COMPILER "${_rocm_amdflang}" CACHE FILEPATH
-              "Fortran compiler used for the ROCm Fortran bindings" FORCE)
-        endif()
-        unset(_rocm_fc_rc)
-      endif()
-    endif()
-    unset(_rocm_fc_hints)
-    unset(_rocm_fc_cc)
-    unset(_rocm_fc_dir)
-  endif()
+  # Express the amdflang preference before probing: check_language() is a no-op
+  # once CMAKE_Fortran_COMPILER is defined, so whatever this leaves behind is
+  # what the probe reports, and the probe never overrides it. The macro lives in
+  # cmake/ROCmFortranCompiler.cmake because hipSPARSE's root CMakeLists has to
+  # make the same choice, earlier, before its own enable_language(Fortran).
+  rocm_fortran_prefer_amdflang()
 
   check_language(Fortran)
   set(ROCM_WARN_TOOLCHAIN_VAR "${_rocm_warn_toolchain_var}")
@@ -198,6 +165,13 @@ if(NOT _have_fortran)
 endif()
 
 enable_language(Fortran)
+
+# Pulled in here rather than beside the install() rules below because the
+# install layout is also baked into the target's INSTALL_INTERFACE include
+# directory, which is set well before them. Nothing must hardcode lib/ or
+# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
+# and a literal lib/fortran then names a directory that does not exist.
+include(GNUInstallDirs)
 
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
   message(FATAL_ERROR
@@ -282,7 +256,7 @@ endif()
 
 target_include_directories(hipsparse_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
-  "$<INSTALL_INTERFACE:include/fortran/${HIPSPARSE_FORTRAN_COMPILER_DIR}>")
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPSPARSE_FORTRAN_COMPILER_DIR}>")
 
 # Link interface only: needed to link an executable, not to build this archive.
 # roc::hipsparse is defined by hipSPARSE's library/, and brings the HIP runtime with
@@ -305,9 +279,19 @@ if(NOT TARGET roc::hipsparse)
   find_package(hipsparse QUIET)
 endif()
 
+# Whether the archive really carries roc::hipsparse in its link interface is
+# also what the installed config package has to know, and it cannot work it out
+# for itself: it sees only the targets file. So record it here and interpolate
+# it into the template. The consumer-side find_dependency(hipsparse) exists
+# solely to make roc::hipsparse exist before the targets file names it; a
+# binding built with no C library in sight names nothing, and making its
+# consumers find a package the artifact does not depend on would be an invented
+# requirement.
 if(TARGET roc::hipsparse)
   target_link_libraries(hipsparse_fortran INTERFACE roc::hipsparse)
+  set(HIPSPARSE_FORTRAN_NEEDS_C_PACKAGE TRUE)
 else()
+  set(HIPSPARSE_FORTRAN_NEEDS_C_PACKAGE FALSE)
   message(STATUS
     "hipSPARSE: the C library was not found, so the Fortran bindings carry no "
     "link interface; a consumer will have to link it (-lhipsparse) itself.")
@@ -317,29 +301,49 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(HIPSPARSE_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
 endif()
 
+# The binding tests below are GPU runtime executables, so in-tree they belong to
+# the client/test track and have to follow the library's own switch: a
+# library-only build has no business producing test binaries, and would be made
+# to link a GPU runtime it never asked for. That holds without exception, which
+# is why the gate is unconditional rather than deferring to an explicit
+# HIPSPARSE_BUILD_FORTRAN_CLIENTS=ON. The condition is the one hipSPARSE guards
+# add_subdirectory(clients) with, so the two cannot disagree.
+#
+# Standalone, this directory IS the build and the tests are the point, so the
+# library's switch does not exist and BUILD_FORTRAN_CLIENTS stands on its own.
+# Setting it as a plain variable is deliberate: the cache entry is one switch
+# shared by every library in the monorepo, so turning it off here has to be
+# scoped to this directory and must not be written back.
+#
+# Placed here, immediately before the switch is read, rather than beside the
+# option() above: everything between the two can return early -- a
+# -DBUILD_FORTRAN_BINDINGS=OFF configure, or a host with no Fortran compiler --
+# and a message about skipping tests would then be printed for a directory that
+# configures nothing at all, blaming a reason that is not the one that applied.
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
+   AND BUILD_FORTRAN_CLIENTS
+   AND NOT (HIPSPARSE_ENABLE_CLIENT OR HIPSPARSE_BUILD_TESTING OR BUILD_TESTING))
+  message(STATUS
+    "hipSPARSE: clients are not being built, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
-  # enable_testing() here is enough for a STANDALONE build of this directory, but
-  # NOT for an in-tree one: CMake only writes the chain of CTestTestfile.cmake
-  # that ctest walks down from a build root when testing was enabled at the TOP
-  # level. Enabled only here, the tests are built and registered, and `ctest` run
-  # from the top of the hipSPARSE build reports "Total Tests: 0": a silent
-  # nothing, which is the worst way to find out. So say it.
+  # Load-bearing on both paths. Standalone this is the only enable_testing() in
+  # the build. In-tree it is still needed, because hipSPARSE's root adds this
+  # directory BEFORE its own call, so the directory property is not inherited
+  # here; it is the root's later call that puts this directory into the chain of
+  # CTestTestfile.cmake ctest walks down from the build root.
+  #
+  # Nothing here can check that the root really made that call. The gate above
+  # has just established that we are inside the exact condition the root guards
+  # it with, and the call has not run yet at this point, so a probe of the
+  # global property CTest sets would read unset on every in-tree build and warn
+  # about a problem that is not there.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
-      message(STATUS
-        "hipSPARSE: the Fortran binding tests are registered, but ctest discovers "
-        "tests only from a build root where testing was enabled at the top "
-        "level. If `ctest` there reports no tests, add include(CTest) or "
-        "enable_testing() to the top-level CMakeLists, or run ctest from "
-        "${CMAKE_CURRENT_BINARY_DIR}/test.")
-    endif()
-  endif()
   add_subdirectory(test)
 endif()
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # lib/cmake/hipsparse is where hipSPARSE's own rocm_export_targets() puts
@@ -354,11 +358,25 @@ include(CMakePackageConfigHelpers)
 # layout, like hipBLAS and the FFT libraries.
 set(_fortran_pkgdir "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse")
 
+# COMPONENT devel on every rule below, because everything this directory
+# installs -- a static archive, a set of .mod files, the generated source and
+# the CMake package -- is a development artifact: nothing here is needed to RUN
+# a program, only to build one against the bindings. devel is also what
+# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
+# it. Without it these files land in the runtime component instead, so a user
+# who installs only the runtime package gets an archive and a set of .mod files
+# they cannot use, while the one who installs devel to build against hipSPARSE
+# does not get them at all.
+#
+# Plain install(), not rocm_install(): this directory must also configure
+# standalone, where rocm-cmake was never loaded and those commands do not exist.
 install(TARGETS hipsparse_fortran
         EXPORT hipsparse-fortran-targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPSPARSE_FORTRAN_COMPILER_DIR}")
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPSPARSE_FORTRAN_COMPILER_DIR}"
+                COMPONENT devel)
 install(DIRECTORY "${_moddir}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPSPARSE_FORTRAN_COMPILER_DIR}"
+        COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
 # The generated source, so that a user on a compiler ROCm ships no .mod for can
@@ -374,23 +392,35 @@ install(DIRECTORY "${_moddir}/"
 # directory to report which compilers are installed, and would list hipsparse.F90
 # among them.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipsparse.F90"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/hipsparse/fortran")
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/hipsparse/fortran"
+        COMPONENT devel)
 install(EXPORT hipsparse-fortran-targets
         FILE hipsparse-fortran-targets.cmake
         NAMESPACE roc::
-        DESTINATION "${_fortran_pkgdir}")
+        DESTINATION "${_fortran_pkgdir}"
+        COMPONENT devel)
+
+# The two directories the config package has to name, kept out of the template
+# so that neither side spells lib/ or include/ literally. A literal lib/fortran
+# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
+# the consumer an IMPORTED_LOCATION that does not exist.
+set(HIPSPARSE_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
+set(HIPSPARSE_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/hipsparse-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/hipsparse-fortran-config.cmake"
-  # No PATH_VARS: it only creates PACKAGE_<var>, and the template interpolates
-  # @HIPSPARSE_FORTRAN_COMPILER_DIR@ directly. Passing it was a dead argument, and
-  # worse than dead if anyone later switched the template to the PACKAGE_ form,
-  # since PATH_VARS would then resolve this relative value as a path under the
-  # install prefix.
-  INSTALL_DESTINATION "${_fortran_pkgdir}")
+  INSTALL_DESTINATION "${_fortran_pkgdir}"
+  # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
+  # an absolute path computed from where the config file was FOUND, so the
+  # package survives being relocated and gets lib64 right without the template
+  # knowing which layout it was built for. HIPSPARSE_FORTRAN_COMPILER_DIR stays a
+  # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
+  # and PATH_VARS would resolve it as one, under the install prefix.
+  PATH_VARS HIPSPARSE_FORTRAN_LIBDIR HIPSPARSE_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipsparse-fortran-config.cmake"
-        DESTINATION "${_fortran_pkgdir}")
+        DESTINATION "${_fortran_pkgdir}"
+        COMPONENT devel)
 
 # The config lands in lib/cmake/hipsparse, BESIDE the C package, because that is
 # what would let hipsparse-config.cmake pick it up with a bare
@@ -419,7 +449,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/hipsparse-fortran-config.cmake"
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipsparse/hipsparse-fortran-config.cmake\")
 ")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/hipsparse-fortran-config.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse-fortran")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse-fortran"
+        COMPONENT devel)
 
 # A version file, so that find_package(hipsparse-fortran 5.1) resolves rather than
 # failing with "could not find a configuration file compatible with requested
@@ -459,9 +490,11 @@ if(_fortran_version)
   # fails with "could not find a configuration file compatible with requested
   # version" even though the config is right there and the version matches.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipsparse-fortran-config-version.cmake"
-          DESTINATION "${_fortran_pkgdir}")
+          DESTINATION "${_fortran_pkgdir}"
+          COMPONENT devel)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipsparse-fortran-config-version.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse-fortran"
+          COMPONENT devel)
 else()
   # Better no version file than a wrong one: without it an unversioned
   # find_package still succeeds, whereas a version file claiming the wrong
