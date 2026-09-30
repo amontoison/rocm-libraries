@@ -6,8 +6,18 @@
 # hand: regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `rocsparse`, carrying
-# the interfaces, the enum constants, the derived types, the opaque handle types
-# and the rocsparseCheck status helper. A consumer writes one `use rocsparse`.
+# one bind(C) interface per rocSPARSE entry point (731 distinct bind(C) names),
+# the enum constants and the rocsparseCheck status helper. A consumer writes one
+# `use rocsparse`.
+#
+# What the module deliberately does NOT carry: there are no derived-type
+# wrappers, no `_typed` strongly-typed overloads and no `_dptr` device-pointer
+# specifics, no `character` convenience variants, and the source ships without
+# docstrings. Every rocSPARSE handle and descriptor is an opaque `type(c_ptr)`,
+# the same representation the hand-written binding used, so the C header stays
+# the single description of what a handle is and of every argument. None of that
+# is a compatibility break: the generated bindings are new here and no release
+# ever shipped a version of them that had more.
 #
 # This directory is self-contained: it builds with no dependency on the rocSPARSE
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -64,15 +74,23 @@ if(DEFINED ROCSPARSE_BUILD_FORTRAN_CLIENTS)
 endif()
 
 # Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
+# pair of booleans a caller would otherwise have to combine correctly, because
+# the two upper tiers are mutually exclusive: an assumed-rank dummy is not
 # distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# the per-rank variants rather than adding to them. A tri-state has no way to
+# spell the combination, which is the point of choosing one.
+#
+# Array overloads are generated for the subset of routines the generator
+# supports; every other routine exposes the same plain type(c_ptr) interface
+# under all three settings, so no entry point becomes unreachable by choosing a
+# tier, and the tier only ever ADDS to the `none` surface.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-shape  + dimension(:) overloads, one per rank, for the routines
+#                  that have them (Fortran 2008): the default, and what the
+#                  bindings shipped in ROCm are built with
+#   assumed-rank   + one dimension(..) overload for each of those routines
+#                  (Fortran 2018)
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -307,15 +325,28 @@ set_target_properties(rocsparse_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, so there is nothing to
+# remember: assumed-shape selects USE_ASSUMED_SHAPE and assumed-rank selects
+# USE_ASSUMED_RANK.
+#
+# This branch defines exactly one macro, never both, because a tri-state has no
+# way to spell the combination. Defining both by hand is nonetheless
+# well-defined rather than an error: the generic-interface region and the
+# procedure-body region of the generated source both test USE_ASSUMED_RANK
+# first, so assumed-rank wins and USE_ASSUMED_SHAPE is ignored. Checked with
+#
+#   amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only \
+#     rocsparse.F90
+#
+# which compiles cleanly, and whose preprocessed output is byte-identical to
+# that of -DUSE_ASSUMED_RANK=1 alone.
+#
+# none defines neither and leaves the raw type(c_ptr) surface.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(rocsparse_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(rocsparse_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(rocsparse_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(rocsparse_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,

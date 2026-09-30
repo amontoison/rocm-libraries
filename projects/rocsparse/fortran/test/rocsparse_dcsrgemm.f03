@@ -8,7 +8,9 @@
 ! (descr_D / arrays passed as null, beta = 0).
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count and
-! passed directly; host data is moved with hipMemcpy + c_loc.
+! passed directly; host data is moved with hipMemcpy + c_loc. alpha/beta are
+! type(c_ptr) too, so one call serves a host scalar (c_loc of a target) and a
+! device scalar alike.
 !!!!!!!!!!!!!!/
 !
 program dcsrgemm
@@ -71,9 +73,9 @@ program dcsrgemm
 
   ! Phase 0: workspace size
   call rocsparseCheck(rocsparse_dcsrgemm_buffer_size(handle, rocsparse_operation_none, rocsparse_operation_none, &
-                          M, N, K, alpha, descr_A, nnz_A, d_csr_row_ptr, d_csr_col_ind, &
+                          M, N, K, c_loc(alpha), descr_A, nnz_A, d_csr_row_ptr, d_csr_col_ind, &
                           descr_B, nnz_A, d_csr_row_ptr, d_csr_col_ind, &
-                          beta, c_null_ptr, 0, c_null_ptr, c_null_ptr, info_C, buffer_size))
+                          c_loc(beta), c_null_ptr, 0, c_null_ptr, c_null_ptr, info_C, buffer_size))
   call hipCheck(hipMalloc(d_buffer, max(buffer_size, 1_c_size_t)))
 
   ! Phase 1: compute the sparsity of C (row_ptr_C + total nnz_C)
@@ -89,10 +91,10 @@ program dcsrgemm
   call hipCheck(hipMalloc(d_val_C,     int(nnz_C,c_size_t) * 8))
 
   ! Phase 2: compute the values of C
-  call rocsparseCheck(rocsparse_dcsrgemm(handle, rocsparse_operation_none, rocsparse_operation_none, M, N, K, alpha, &
+  call rocsparseCheck(rocsparse_dcsrgemm(handle, rocsparse_operation_none, rocsparse_operation_none, M, N, K, c_loc(alpha), &
                           descr_A, nnz_A, d_csr_val, d_csr_row_ptr, d_csr_col_ind, &
                           descr_B, nnz_A, d_csr_val, d_csr_row_ptr, d_csr_col_ind, &
-                          beta, c_null_ptr, 0, c_null_ptr, c_null_ptr, c_null_ptr, &
+                          c_loc(beta), c_null_ptr, 0, c_null_ptr, c_null_ptr, c_null_ptr, &
                           descr_C, d_val_C, d_row_ptr_C, d_col_ind_C, info_C, d_buffer))
   call hipCheck(hipDeviceSynchronize())
 

@@ -1,8 +1,8 @@
 # Tests for the rocSPARSE Fortran bindings.
 #
-# One executable per test, driven by CTest. The runtime tests create a generator
-# and draw numbers on a device, so they build anywhere but only pass on a machine
-# with a GPU.
+# One executable per test, driven by CTest. Each builds its input on the host,
+# copies it into device memory and drives one rocSPARSE routine through the
+# binding, so they build anywhere but only pass on a machine with a GPU.
 #
 # Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
 
@@ -29,10 +29,9 @@ set(_have_hip_binding TRUE)
 if(NOT TARGET hip::hip_fortran)
   set(_have_hip_binding FALSE)
   message(STATUS
-    "rocSPARSE: no hip::hip_fortran target, skipping the Fortran binding tests "
-    "that use it (65 of 66; the symbol test does not). Point CMAKE_PREFIX_PATH "
-    "at a ROCm whose HIP Fortran bindings were built with "
-    "${CMAKE_Fortran_COMPILER}.")
+    "rocSPARSE: no hip::hip_fortran target, skipping the Fortran binding tests, "
+    "every one of which uses it. Point CMAKE_PREFIX_PATH at a ROCm whose HIP "
+    "Fortran bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
 # librocsparse itself, needed to link but not to compile. In-tree it arrives
@@ -77,8 +76,8 @@ function(rocsparse_fortran_add_test name)
   target_compile_options(rocsparse_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocsparse_fortran_${name} COMMAND rocsparse_fortran_test_${name})
-  # Every one of these creates a generator and draws numbers on a device, so it
-  # fails without a GPU, which is not the same thing as the binding being
+  # Every one of these opens a rocSPARSE handle and allocates device memory, so
+  # it fails without a GPU, which is not the same thing as the binding being
   # broken. The label lets a build machine with no GPU still run the suite
   # meaningfully: ctest -LE gpu.
   set_tests_properties(rocsparse_fortran_${name} PROPERTIES LABELS "gpu")
@@ -155,24 +154,20 @@ set(ROCSPARSE_FORTRAN_TESTS
     zgpsv_interleaved_batch)
 
 # The csrgeam and csrgemm tests are commented out above, all four precisions of
-# each, because they segfault. The cause is in the tests, not in the binding, and
-# is worth stating so nobody re-adds them unchanged.
+# each, because they segfault. The cause is established for csrgemm and is worth
+# stating so nobody re-adds those unchanged. For csrgeam it is not, and those
+# entries stay commented out pending an investigation rather than a guess.
 #
-# Both routine families select what they compute from whether alpha and beta are
-# NULL POINTERS, not from their values. rocsparse_csrgemm.h is explicit about it:
-# "csr_val_C, csr_row_ptr_C, or csr_col_ind_C are invalid if beta is valid".
-# These tests pass beta = 0.0_c_double: a perfectly valid pointer, while
-# passing c_null_ptr for descr_D and every D array. rocSPARSE is therefore told
-# that a D term exists, goes looking for it, and dereferences null. That is
-# exactly why the failures are these two families and no others.
+# csrgemm selects what it computes from whether beta is a NULL POINTER, not from
+# its value. rocsparse_csrgemm.h is explicit about it: "descr_D, csr_val_D,
+# csr_row_ptr_D, or csr_col_ind_D are invalid if beta is valid". These tests
+# declare beta = 0.0_c_double and hand over c_loc(beta), a perfectly valid
+# pointer, while passing c_null_ptr for descr_D and every D array. rocSPARSE is
+# therefore told a D term exists, goes looking for it, and dereferences null.
+# What the plain C = alpha*A*B case wants is c_null_ptr for beta itself.
 #
-# The binding can express the NULL: the module carries a _dptr specific taking
-# type(c_ptr),value :: alpha,beta alongside the real(c_double) one, which is also
-# why these tests never compiled against the old hand-written binding, where
-# alpha and beta were type(c_ptr) throughout. Fixing them means moving the whole
-# call onto the c_ptr specific consistently, not just swapping the two scalars;
-# a partial switch fails to resolve the generic. Left for a follow-up rather than
-# guessed at here.
+# csrgeam has no D term, and its tests pass c_loc(alpha) and c_loc(beta) with
+# both scalars set to 1.0, so that explanation does not carry over to them.
 
 if(_have_hip_binding)
   foreach(_t IN LISTS ROCSPARSE_FORTRAN_TESTS)

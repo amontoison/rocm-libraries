@@ -10,7 +10,8 @@
 ! against the dense reference y = A_dense * x.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host data
-! is moved with hipMemcpy + c_loc. alpha/beta are host scalars (by reference).
+! is moved with hipMemcpy + c_loc. alpha/beta are type(c_ptr) too, so one call
+! serves a host scalar (c_loc of a target) and a device scalar alike.
 !!!!!!!!!!!!!!
 !
 program dbsrmv
@@ -28,7 +29,7 @@ program dbsrmv
   real(c_double), target :: hX(4) = (/1.0d0, 2.0d0, 3.0d0, 4.0d0/)
   real(c_double), target :: hY(4) = (/0.0d0, 0.0d0, 0.0d0, 0.0d0/)
   real(c_double) :: hRef(4)
-  real(c_double) :: alpha = 1.0d0, beta = 0.0d0
+  real(c_double), target :: alpha = 1.0d0, beta = 0.0d0
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: descr = c_null_ptr, info = c_null_ptr
   type(c_ptr) :: dVal, dRowPtr, dColInd, dX, dY
@@ -54,7 +55,8 @@ program dbsrmv
   call rocsparseCheck(rocsparse_create_mat_descr(descr))
   call rocsparseCheck(rocsparse_create_mat_info(info))
   call rocsparseCheck(rocsparse_dbsrmv(handle, rocsparse_direction_row, rocsparse_operation_none, &
-       mb, nb, nnzb, alpha, descr, dVal, dRowPtr, dColInd, block_dim, info, dX, beta, dY))
+       mb, nb, nnzb, c_loc(alpha), descr, dVal, dRowPtr, dColInd, block_dim, info, dX, &
+       c_loc(beta), dY))
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(mdim,c_size_t) * 8, hipMemcpyDeviceToHost))
 
