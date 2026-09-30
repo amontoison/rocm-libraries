@@ -54,7 +54,7 @@ endif()
 # wrapper or a gfortran-13 binary whose .mod the installed bindings are perfectly
 # readable by. It catches the case that actually bites (gfortran reading an
 # amdflang .mod) and deliberately does not police version skew inside one
-# compiler, which amdflang itself can tolerate via -fmodule-mismatch-check=warn.
+# compiler, which the recorded directory carries no version to detect anyway.
 #
 # This MUST mirror the mapping in projects/rocfft/fortran/CMakeLists.txt exactly.
 # The two cannot share code, because this file runs in a consumer's build long
