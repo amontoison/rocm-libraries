@@ -58,21 +58,34 @@ program example_fortran_auxiliary
     type(c_ptr) :: descr_A
     type(c_ptr) :: descr_B
 
-    integer :: version
-    integer :: pointer_mode
+    integer(c_int), target :: version
+    integer(c_int), target :: pointer_mode
     integer :: index_base
     integer :: mat_type
     integer :: fill_mode
     integer :: diag_type
 
+!   rocsparse_get_git_rev takes a char*, so the binding takes a type(c_ptr) and
+!   the destination is an interoperable character array rather than a Fortran
+!   string. The C side writes a NUL-terminated revision, so the buffer is one
+!   byte longer than the text printed from it.
+    character(kind=c_char), target :: rev_buf(13)
     character(len=12) :: rev
 
 !   Create rocSPARSE handle
     call ROCSPARSE_CHECK(rocsparse_create_handle(handle))
 
 !   Get rocSPARSE version
-    call ROCSPARSE_CHECK(rocsparse_get_version(handle, version))
-    call ROCSPARSE_CHECK(rocsparse_get_git_rev(handle, rev))
+    call ROCSPARSE_CHECK(rocsparse_get_version(handle, c_loc(version)))
+!   Zero-fill first: the C side writes only as many bytes as the revision needs,
+!   and the transfer below copies a fixed 12, so any byte it does not write must
+!   already hold a NUL rather than whatever was on the stack.
+    rev_buf = c_null_char
+    call ROCSPARSE_CHECK(rocsparse_get_git_rev(handle, c_loc(rev_buf)))
+    rev = transfer(rev_buf(1:len(rev)), rev)
+
+!   Blank the NUL terminator and everything past it so it is not printed
+    if (index(rev, c_null_char) > 0) rev(index(rev, c_null_char):) = ' '
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0,A,A)') 'rocSPARSE version: ', version / 100000, '.', &
@@ -80,11 +93,11 @@ program example_fortran_auxiliary
 
 !   Pointer mode
     call ROCSPARSE_CHECK(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_host))
-    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, pointer_mode))
+    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, c_loc(pointer_mode)))
     call COMPARE_EQUAL(pointer_mode, rocsparse_pointer_mode_host);
 
     call ROCSPARSE_CHECK(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_device))
-    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, pointer_mode))
+    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, c_loc(pointer_mode)))
     call COMPARE_EQUAL(pointer_mode, rocsparse_pointer_mode_device);
 
 !   Matrix descriptor

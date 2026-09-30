@@ -469,8 +469,20 @@ This will generate a ``.pftrace`` file which can then be viewed using the `Perfe
 rocSPARSE Fortran bindings
 ==============================
 
-Fortran functionality for rocSPARSE is offered by :doc:`hipFORT <hipfort:index>`. For more information,
-consult the :doc:`hipFORT API file list <hipfort:doxygen/html/files>`.
+rocSPARSE ships its own Fortran bindings, generated from the rocSPARSE C headers and
+exposed as a single self-contained module. A consumer writes ``use rocsparse`` and links
+``roc::rocsparse_fortran``; the package is found with ``find_package(rocsparse-fortran)``.
+
+The bindings are built whenever a Fortran compiler is available, and are controlled by:
+
+* ``BUILD_FORTRAN_BINDINGS`` (default ``ON``): the bindings themselves.
+* ``BUILD_FORTRAN_CLIENTS`` (default ``ON``): the Fortran samples and the binding tests.
+  In an in-tree build this is forced off unless the rocSPARSE clients are also being built.
+* ``FORTRAN_ARRAY_INTERFACES`` (default ``assumed-shape``): which array-argument overloads
+  the module exposes. One of ``none``, ``assumed-shape``, or ``assumed-rank``.
+
+The first two are one cache entry shared across the monorepo. To single rocSPARSE out, set
+``ROCSPARSE_BUILD_FORTRAN_BINDINGS`` or ``ROCSPARSE_BUILD_FORTRAN_CLIENTS`` instead.
 
 
 hipSPARSE

@@ -10,7 +10,8 @@
 ! against the dense reference y = A_dense * x.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host data
-! is moved with hipMemcpy + c_loc. alpha/beta are host scalars (by reference).
+! is moved with hipMemcpy + c_loc. alpha/beta are type(c_ptr) too, so one call
+! serves a host scalar (c_loc of a target) and a device scalar alike.
 !!!!!!!!!!!!!!
 !
 program sgebsrmv
@@ -28,7 +29,7 @@ program sgebsrmv
   real(c_float), target :: hX(4) = (/1.0, 2.0, 3.0, 4.0/)
   real(c_float), target :: hY(4) = (/0.0, 0.0, 0.0, 0.0/)
   real(c_float) :: hRef(4)
-  real(c_float) :: alpha = 1.0, beta = 0.0
+  real(c_float), target :: alpha = 1.0, beta = 0.0
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: descr = c_null_ptr
   type(c_ptr) :: dVal, dRowPtr, dColInd, dX, dY
@@ -53,7 +54,8 @@ program sgebsrmv
   call rocsparseCheck(rocsparse_create_handle(handle))
   call rocsparseCheck(rocsparse_create_mat_descr(descr))
   call rocsparseCheck(rocsparse_sgebsrmv(handle, rocsparse_direction_row, rocsparse_operation_none, &
-       mb, nb, nnzb, alpha, descr, dVal, dRowPtr, dColInd, block_dim, block_dim, dX, beta, dY))
+       mb, nb, nnzb, c_loc(alpha), descr, dVal, dRowPtr, dColInd, block_dim, block_dim, dX, &
+       c_loc(beta), dY))
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(mdim,c_size_t) * 4, hipMemcpyDeviceToHost))
 
