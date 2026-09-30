@@ -1,8 +1,9 @@
 # Tests for the hipRAND Fortran bindings.
 #
-# One executable per test, driven by CTest. The runtime tests create a generator
-# and draw numbers on a device, so they build anywhere but only pass on a machine
-# with a GPU.
+# One executable per test, driven by CTest: 23 single-source programs that each
+# check one (generator, distribution) pair, plus the FRUIT suite. All of them
+# create a generator and use a device, so they build anywhere but only pass on a
+# machine with a GPU.
 #
 # Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
 
@@ -58,15 +59,33 @@ if(NOT TARGET hip::hiprand)
   return()
 endif()
 
+# Build one test executable and register it with CTest. The sources are the
+# arguments after `name`, relative to this directory; with none given the
+# single source is `${name}.f03`, which is what the runtime tests below rely
+# on. The FRUIT driver is multi-source and passes its five files explicitly so
+# that it goes through this same link line instead of a parallel one: the three
+# link dependencies are the same for both, and two copies of them would have to
+# be kept in step by hand.
 function(hiprand_fortran_add_test name)
-  set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
-  if(NOT EXISTS "${src}")
-    message(FATAL_ERROR "Missing test source: ${src}")
+  set(srcs ${ARGN})
+  if(NOT srcs)
+    set(srcs "${name}.f03")
   endif()
+  set(abs_srcs "")
+  foreach(src IN LISTS srcs)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+      message(FATAL_ERROR "Missing test source: ${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+    endif()
+    list(APPEND abs_srcs "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+  endforeach()
   # Force language detection for .f03 in toolchains where CMake misses it.
-  set_source_files_properties("${src}" PROPERTIES LANGUAGE Fortran)
-  add_executable(hiprand_fortran_test_${name} "${src}")
-  set_target_properties(hiprand_fortran_test_${name} PROPERTIES LINKER_LANGUAGE Fortran)
+  set_source_files_properties(${abs_srcs} PROPERTIES LANGUAGE Fortran)
+  add_executable(hiprand_fortran_test_${name} ${abs_srcs})
+  # A multi-source test defines modules of its own; give each target its own
+  # directory for them so they cannot collide in the shared build directory.
+  set_target_properties(hiprand_fortran_test_${name} PROPERTIES
+    LINKER_LANGUAGE Fortran
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/${name}")
   target_link_libraries(hiprand_fortran_test_${name} PRIVATE
     hiprand_fortran hip::hip_fortran hip::hiprand)
   # The tests call EXIT, a GNU extension in gfortran.
@@ -113,4 +132,21 @@ if(_have_hip_binding)
   foreach(_t IN LISTS HIPRAND_FORTRAN_TESTS)
     hiprand_fortran_add_test(${_t})
   endforeach()
+
+  # The FRUIT suite, which used to live under test/fortran/ against the
+  # hand-written wrapper and now sits here against the generated module, so
+  # that every Fortran binding test is next to the binding it tests. It asserts
+  # on the status code of every call it makes, which is how it reaches entry
+  # points none of the tests above names: hiprandGenerate, hiprandGenerateSeeds,
+  # hiprandGenerateLongLong, hiprandCreateGeneratorHost,
+  # hiprandSetGeneratorOffset, hiprandCreatePoissonDistribution and
+  # hiprandDestroyDistribution. One executable over five sources: the two files
+  # of the vendored harness, the helper that wraps a test case in its setup and
+  # teardown, the test module and the driver program.
+  hiprand_fortran_add_test(fruit
+      fruit/fruit_util.f90
+      fruit/fruit.f90
+      fruit_helpers.f90
+      test_hiprand.f90
+      fruit_test_driver_hiprand.f90)
 endif()
