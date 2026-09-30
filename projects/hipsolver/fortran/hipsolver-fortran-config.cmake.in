@@ -13,6 +13,19 @@
 
 set(HIPSOLVER_FORTRAN_COMPILER_DIR "@HIPSOLVER_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# PACKAGE_INIT preamble above has already turned each into an absolute path
+# derived from where THIS file was found: the package keeps working after it is
+# moved, and a distro that installs to lib64 gets lib64 rather than a hardcoded
+# lib/ that names nothing. Everything below goes through these two.
+#
+# That preamble is referred to by name and never spelled with its @ delimiters,
+# here or anywhere else in this file: configure_package_config_file()
+# substitutes the token everywhere it appears, comments included, so a second
+# copy of the whole preamble would be spliced into the middle of this sentence.
+set(_hipsolver_libdir "@PACKAGE_HIPSOLVER_FORTRAN_LIBDIR@")
+set(_hipsolver_incdir "@PACKAGE_HIPSOLVER_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a hipSOLVER Fortran binding available here?" through
 # hipsolver_FORTRAN_FOUND, which is set whether this package is reached directly
 # by find_package(hipsolver-fortran) or alongside hipsolver-config.cmake, with
@@ -102,7 +115,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_hipsolver_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipsolver_fc}/hipsolver.mod")
+if(EXISTS "${_hipsolver_incdir}/${_hipsolver_fc}/hipsolver.mod")
   set(_hipsolver_dir "${_hipsolver_fc}")
 else()
   _hipsolver_dir_matches("${HIPSOLVER_FORTRAN_COMPILER_DIR}" "${_hipsolver_fc}" _hipsolver_ok)
@@ -114,12 +127,12 @@ endif()
 if(NOT _hipsolver_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _hipsolver_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _hipsolver_avail RELATIVE "${_hipsolver_incdir}"
+       "${_hipsolver_incdir}/*")
   set(hipsolver-fortran_FOUND FALSE)
   string(CONCAT hipsolver-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_hipsolver_fc}, but no hipsolver.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_hipsolver_incdir}. Available: "
       "${_hipsolver_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_hipsolver_fc}, or set "
       "HIPSOLVER_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -140,12 +153,21 @@ endif()
 # for a reason that has nothing to do with their code, after a
 # "FindThreads only works if either C or CXX language is enabled" that names
 # nothing they wrote.
-if(NOT TARGET roc::hipsolver)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+#
+# Interpolated to the literal TRUE or FALSE by the build that installed this
+# file, because the bindings can legitimately be built with no hipSOLVER in
+# sight: they compile against nothing, and the archive then carries an empty
+# link interface. There is no roc::hipsolver for the targets file to name in
+# that case, so obliging the consumer to find hipSOLVER would be an invented
+# requirement, and satisfying it would still not get them a link line.
+if(@HIPSOLVER_FORTRAN_NEEDS_C_PACKAGE@)
+  if(NOT TARGET roc::hipsolver)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(hipsolver)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(hipsolver)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/hipsolver-fortran-targets.cmake")
@@ -155,12 +177,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/hipsolver-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _hipsolver_dir STREQUAL "${HIPSOLVER_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::hipsolver_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipsolver_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_hipsolver_incdir}/${_hipsolver_dir}")
   get_target_property(_hipsolver_cfgs roc::hipsolver_fortran IMPORTED_CONFIGURATIONS)
   foreach(_hipsolver_c IN LISTS _hipsolver_cfgs)
     set_target_properties(roc::hipsolver_fortran PROPERTIES
       IMPORTED_LOCATION_${_hipsolver_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_hipsolver_dir}/libhipsolver_fortran.a")
+        "${_hipsolver_libdir}/${_hipsolver_dir}/libhipsolver_fortran.a")
   endforeach()
 endif()
 
