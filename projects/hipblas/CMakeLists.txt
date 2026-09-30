@@ -148,7 +148,13 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
   endif()
   message(STATUS "OS: ${CLIENTS_OS} ${CLIENTS_OS_VERSION}")
 
-  if(BUILD_FORTRAN_CLIENTS)
+  # HIPBLAS_HAVE_FORTRAN_BINDINGS as well as the switch, because clients/ skips
+  # its Fortran shims whenever the bindings target is absent, and this scope
+  # cannot see that: clients/ shadows BUILD_FORTRAN_CLIENTS as a plain variable
+  # in its own directory, and is added below in any case. On the cache value
+  # alone these packages would declare a libgfortran dependency for binaries
+  # that contain no Fortran at all.
+  if(BUILD_FORTRAN_CLIENTS AND HIPBLAS_HAVE_FORTRAN_BINDINGS)
     set(GFORTRAN_RPM "libgfortran4")
     set(GFORTRAN_DEB "libgfortran4")
     if(CLIENTS_OS STREQUAL "centos" OR CLIENTS_OS STREQUAL "rhel" OR CLIENTS_OS STREQUAL "almalinux")
@@ -183,7 +189,10 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
       DEPENDS
         COMPONENT clients-common)
   endif()
-  if(BUILD_FORTRAN_CLIENTS)
+  # Same condition as the GFORTRAN_RPM/GFORTRAN_DEB block above, and it has to
+  # be: those two variables are left unset when the bindings were not built, so
+  # a dependency declared here would name the empty string.
+  if(BUILD_FORTRAN_CLIENTS AND HIPBLAS_HAVE_FORTRAN_BINDINGS)
     if(BUILD_CLIENTS_TESTS)
       rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
       rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
