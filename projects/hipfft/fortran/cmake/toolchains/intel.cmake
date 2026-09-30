@@ -10,8 +10,8 @@
 # Free form and C preprocessing are requested by the CMakeLists via the
 # Fortran_FORMAT and Fortran_PREPROCESS target properties, so CMake emits
 # whichever flag this compiler expects and none is hardcoded here. No
-# line-length flag is needed either: the generated source wraps at 112 columns,
-# inside the 132 the free-form standard guarantees.
+# line-length flag is needed either: every line of the generated source fits
+# within the 132 columns the free-form standard guarantees.
 
 set(CMAKE_Fortran_COMPILER ifx CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       icx CACHE FILEPATH "C compiler")

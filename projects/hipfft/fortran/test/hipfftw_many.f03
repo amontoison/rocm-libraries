@@ -2,7 +2,7 @@
 ! GPU hipfftw test for the *_many interfaces
 ! =============================================================================
 !
-! This program validates hipfort's fftw_plan_many_dft, fftw_plan_many_dft_r2c,
+! This program validates hipFFTW's fftw_plan_many_dft, fftw_plan_many_dft_r2c,
 ! and fftw_plan_many_dft_c2r wrappers using GPU device memory.
 !
 ! KEY CONVENTION: These are the generated bindings to the FFTW C API, which

@@ -51,8 +51,10 @@ endif()
 # probe.
 option(BUILD_FORTRAN_BINDINGS "Build the hipFFT and hipFFTW Fortran bindings" ON)
 
-# The bindings' own test suites. OFF by default and guarded the same way: asking
-# for the tests when the bindings were not built is a skip, not an error.
+# The bindings' own test suites. ON by default and guarded the same way: asking
+# for the tests when the bindings were not built is a skip, not an error. ON is
+# safe because the in-tree gate further down is a floor this cannot rise above,
+# and standalone this directory IS the build, where the tests are the point.
 option(BUILD_FORTRAN_CLIENTS "Build the hipFFT and hipFFTW Fortran clients and binding tests" ON)
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
@@ -92,16 +94,20 @@ if(DEFINED HIPFFTW_BUILD_FORTRAN_CLIENTS)
   set(_hipfftw_tests ${HIPFFTW_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the modules expose. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# Which array-argument overloads the modules expose. One tri-state stands in for
+# the two macros the generated source is guarded with, which are mutually
+# exclusive: assumed-rank REPLACES the per-rank variants rather than adding to
+# them, so a build selects one tier and the tri-state is what keeps the two
+# macros from ever reaching the compiler together.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
 #   assumed-shape  + the per-rank array overloads (Fortran 2008), the default,
 #                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-rank   + the single dimension(..) overload (Fortran 2018)
+#
+# Either upper tier reaches only the subset of routines the generator emits
+# array overloads for; every other routine exposes the same plain type(c_ptr)
+# interface at all three tiers.
 #
 # hipFFTW is the one binding where the three tiers currently coincide: the FFTW
 # compatibility API takes bare pointers to already-allocated buffers, so the
@@ -368,19 +374,25 @@ if(_hipfft_bindings)
     Fortran_FORMAT FREE
     POSITION_INDEPENDENT_CODE ON)
 
-  # Translate the tri-state into the two macros the generated source is guarded
-  # with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-  # specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over
-  # the per-rank ones.
+  # Translate the tri-state into the macro the generated source is guarded with.
+  # The option value and the macro name are the same word, so there is nothing to
+  # remember here beyond the spelling. Each #ifdef selects its own tier and
+  # neither implies the other, so at most one macro is ever defined here.
+  # `none` defines neither macro and leaves the raw type(c_ptr) surface.
+  #
+  # Defining both is not an error: hipfft.F90 tests USE_ASSUMED_RANK first in
+  # both the interface region and the contained specifics, so assumed-rank wins
+  # and the module still compiles. This tri-state emits at most one all the
+  # same, so that the tier in force is the one named here rather than one that
+  # fell out of a precedence rule inside the generated source.
   if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-    target_compile_definitions(hipfft_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+    target_compile_definitions(hipfft_fortran PRIVATE USE_ASSUMED_SHAPE=1)
   elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-    target_compile_definitions(hipfft_fortran PRIVATE
-      USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+    target_compile_definitions(hipfft_fortran PRIVATE USE_ASSUMED_RANK=1)
   endif()
 
-  # No line-length flag: the generator wraps the emitted source at 112 columns,
-  # inside the 132 that free-form Fortran guarantees, so every compiler reads it
+  # No line-length flag: every line of both generated modules fits within the
+  # 132 columns the free-form standard guarantees, so every compiler reads them
   # without a vendor-specific option.
 
   target_include_directories(hipfft_fortran PUBLIC
@@ -425,13 +437,13 @@ if(_hipfftw_bindings)
     Fortran_FORMAT FREE
     POSITION_INDEPENDENT_CODE ON)
 
-  # Defined even though hipfftw.F90 uses neither macro today, so that a
-  # regenerated, guarded source needs no change here.
+  # Defined even though hipfftw.F90 references neither macro today, so that a
+  # regenerated, guarded source needs no change here. The two tiers are mutually
+  # exclusive, exactly as for hipfft_fortran above.
   if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-    target_compile_definitions(hipfftw_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+    target_compile_definitions(hipfftw_fortran PRIVATE USE_ASSUMED_SHAPE=1)
   elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-    target_compile_definitions(hipfftw_fortran PRIVATE
-      USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+    target_compile_definitions(hipfftw_fortran PRIVATE USE_ASSUMED_RANK=1)
   endif()
 
   target_include_directories(hipfftw_fortran PUBLIC
