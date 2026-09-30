@@ -15,8 +15,10 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   link `roc::hipsolver_fortran`). Built by default when a Fortran compiler is available;
   controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
   `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(hipsolver-fortran)`, installed per
-  compiler under `lib/fortran/<compiler>` and `include/fortran/<compiler>`, with the generated
-  source alongside in `share/hipsolver/fortran`.
+  compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`, with the
+  generated source alongside in `<datadir>/hipsolver/fortran` (the directories
+  `CMAKE_INSTALL_LIBDIR`, `CMAKE_INSTALL_INCLUDEDIR` and `CMAKE_INSTALL_DATADIR` resolve to,
+  so `lib64` on a distro that uses it).
 
 ### Changed
 

@@ -36,8 +36,38 @@ if(NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 endif()
 
-if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
-  set(CMAKE_Fortran_COMPILER  "gfortran")
+# Which Fortran compiler the bindings are built with. Decided HERE, before
+# anything else can answer the question: enable_language(Fortran) below resolves
+# CMAKE_Fortran_COMPILER once and freezes it for the whole tree, and fortran/ is
+# added some 250 lines further down, far too late to have a say -- its own call
+# finds the compiler already chosen and does nothing at all.
+#
+# Preferring ROCm's own amdflang is the point. A plain default of gfortran is
+# how the bindings ended up as the one component of ROCm built by a different
+# toolchain from everything else: installed under fortran/gfortran/ while the
+# documentation promises fortran/amdflang/, and exercising a compiler the
+# product does not ship with. gfortran stays as the fallback for a host with no
+# amdflang in reach, which is what this project defaulted to before.
+#
+# The macro carries the same "an explicit CMAKE_Fortran_COMPILER or $ENV{FC}
+# wins" test the fallback below repeats, so a user who named a compiler gets it
+# either way. It lives under fortran/ because that directory has to make the
+# same choice when it is configured standalone, and two copies of a
+# compiler-selection policy drift apart silently: the build succeeds either way,
+# and the only visible difference is which per-compiler directory the artifacts
+# land in.
+# Skipped outright when the Fortran track is switched off. BUILD_FORTRAN_BINDINGS
+# is declared with option() further down, after project(), so the cache is the
+# only place to read it this early; undefined means the user did not ask for
+# anything, and the default is ON. Without this test a -DBUILD_FORTRAN_BINDINGS=OFF
+# configure -- one that enables no Fortran and builds none -- would still search
+# for a compiler, run it, and leave CMAKE_Fortran_COMPILER in its cache.
+if(NOT DEFINED BUILD_FORTRAN_BINDINGS OR BUILD_FORTRAN_BINDINGS)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake)
+  rocm_fortran_prefer_amdflang()
+  if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
+    set(CMAKE_Fortran_COMPILER  "gfortran")
+  endif()
 endif()
 
 project(hipsolver LANGUAGES CXX)
@@ -102,6 +132,10 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 if(BUILD_FORTRAN_BINDINGS)
+  # This is the call that freezes CMAKE_Fortran_COMPILER for the whole tree, so
+  # the compiler it resolves is whatever was chosen above project(); see the
+  # rocm_fortran_prefer_amdflang() call there. Nothing between here and there
+  # may set it.
   enable_language(Fortran)
 endif()
 
@@ -337,12 +371,19 @@ if(WIN32)
 endif()
 
 add_subdirectory(library)
+
+include(clients/cmake/build-options.cmake)
+
 # Fortran bindings, generated from the headers above and committed next to
 # them. Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS
 # is OFF or when no Fortran compiler is available, so a C-only site is unaffected.
+#
+# Placed after the client options and before clients/ itself. It reads
+# BUILD_CLIENTS_TESTS and its siblings to decide whether to build its own test
+# executables, so those options have to be declared first; and clients/ links
+# roc::hipsolver_fortran into its Fortran shim, so the target has to exist by
+# the time that directory is added.
 add_subdirectory(fortran)
-
-include(clients/cmake/build-options.cmake)
 
 if(NOT SYSTEM_OS)
   rocm_set_os_id(SYSTEM_OS)
