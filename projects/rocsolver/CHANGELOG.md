@@ -13,6 +13,8 @@ Full documentation for rocSOLVER is available at the [rocSOLVER documentation](h
 
 * Support added for the gfx1250-strict architecture.
 
+* Generated Fortran bindings, exposed as a single `rocsolver` module: a consumer writes `use rocsolver` and links `roc::rocsolver_fortran`. Because the rocSOLVER API is spelled in rocBLAS types, the module itself says `use rocblas`, so the bindings are built whenever a Fortran compiler and the rocBLAS Fortran bindings are available. They are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(rocsolver-fortran)`, and the archive and `.mod` files are installed per compiler, in a `fortran/<compiler>` subdirectory of `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR` respectively.
+
 ### Changed
 ### Removed
 ### Optimized

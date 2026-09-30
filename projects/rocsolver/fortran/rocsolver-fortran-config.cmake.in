@@ -17,6 +17,19 @@
 
 set(ROCSOLVER_FORTRAN_COMPILER_DIR "@ROCSOLVER_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# The preamble is named rather than spelled here because
+# configure_package_config_file() substitutes its token everywhere in the
+# template, comments included, and a second copy of those twenty-odd lines
+# would be spliced into the middle of this sentence.
+set(_rocsolver_libdir "@PACKAGE_ROCSOLVER_FORTRAN_LIBDIR@")
+set(_rocsolver_incdir "@PACKAGE_ROCSOLVER_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a rocSOLVER Fortran binding available here?" through
 # rocsolver_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(rocsolver-fortran) or alongside rocsolver-config.cmake, with which it
@@ -106,7 +119,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_rocsolver_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocsolver_fc}/rocsolver.mod")
+if(EXISTS "${_rocsolver_incdir}/${_rocsolver_fc}/rocsolver.mod")
   set(_rocsolver_dir "${_rocsolver_fc}")
 else()
   _rocsolver_dir_matches("${ROCSOLVER_FORTRAN_COMPILER_DIR}" "${_rocsolver_fc}" _rocsolver_ok)
@@ -118,12 +131,12 @@ endif()
 if(NOT _rocsolver_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _rocsolver_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _rocsolver_avail RELATIVE "${_rocsolver_incdir}"
+       "${_rocsolver_incdir}/*")
   set(rocsolver-fortran_FOUND FALSE)
   string(CONCAT rocsolver-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_rocsolver_fc}, but no rocsolver.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_rocsolver_incdir}. Available: "
       "${_rocsolver_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_rocsolver_fc}, or set "
       "ROCSOLVER_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -136,6 +149,14 @@ endif()
 # roc::rocsolver and the generate step would fail. Skipped when the caller already
 # did find_package(rocsolver), which is the common case.
 #
+# The outer condition is decided at configure time by fortran/CMakeLists.txt and
+# records whether roc::rocsolver really is in the exported target's link
+# interface. The bindings can be built with no rocSOLVER installed -- they
+# compile against nothing -- and the archive then carries no link interface at
+# all, so demanding the C package here would fail a find_package for a
+# dependency this package does not have. Whoever built the bindings that way
+# links -lrocsolver themselves.
+#
 # rocsolver-config.cmake in turn does find_dependency(hip), and hip-config.cmake
 # reaches FindThreads, which hard-errors unless C or CXX is enabled. A
 # Fortran-only consumer has neither, so C is enabled here. Enabling a language
@@ -144,12 +165,14 @@ endif()
 # for a reason that has nothing to do with their code, after a
 # "FindThreads only works if either C or CXX language is enabled" that names
 # nothing they wrote.
-if(NOT TARGET roc::rocsolver)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+if(@ROCSOLVER_FORTRAN_NEEDS_C_PACKAGE@)
+  if(NOT TARGET roc::rocsolver)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(rocsolver)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(rocsolver)
 endif()
 
 # The rocBLAS BINDING, which is a different thing from the rocBLAS C library that
@@ -183,12 +206,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/rocsolver-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _rocsolver_dir STREQUAL "${ROCSOLVER_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::rocsolver_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocsolver_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_rocsolver_incdir}/${_rocsolver_dir}")
   get_target_property(_rocsolver_cfgs roc::rocsolver_fortran IMPORTED_CONFIGURATIONS)
   foreach(_rocsolver_c IN LISTS _rocsolver_cfgs)
     set_target_properties(roc::rocsolver_fortran PROPERTIES
       IMPORTED_LOCATION_${_rocsolver_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_rocsolver_dir}/librocsolver_fortran.a")
+        "${_rocsolver_libdir}/${_rocsolver_dir}/librocsolver_fortran.a")
   endforeach()
 endif()
 
