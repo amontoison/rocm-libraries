@@ -13,6 +13,19 @@
 
 set(HIPRAND_FORTRAN_COMPILER_DIR "@HIPRAND_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# Do not name that preamble by its token here. configure_package_config_file()
+# substitutes it wherever it appears, comments included, so spelling it out
+# would splice a second copy of the whole preamble into the middle of this
+# sentence.
+set(_hiprand_libdir "@PACKAGE_HIPRAND_FORTRAN_LIBDIR@")
+set(_hiprand_incdir "@PACKAGE_HIPRAND_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a hipRAND Fortran binding available here?" through
 # hiprand_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(hiprand-fortran) or alongside hiprand-config.cmake, with which it
@@ -104,7 +117,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_hiprand_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_hiprand_fc}/hiprand.mod")
+if(EXISTS "${_hiprand_incdir}/${_hiprand_fc}/hiprand.mod")
   set(_hiprand_dir "${_hiprand_fc}")
 else()
   _hiprand_dir_matches("${HIPRAND_FORTRAN_COMPILER_DIR}" "${_hiprand_fc}" _hiprand_ok)
@@ -116,12 +129,12 @@ endif()
 if(NOT _hiprand_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _hiprand_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _hiprand_avail RELATIVE "${_hiprand_incdir}"
+       "${_hiprand_incdir}/*")
   set(hiprand-fortran_FOUND FALSE)
   string(CONCAT hiprand-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_hiprand_fc}, but no hiprand.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_hiprand_incdir}. Available: "
       "${_hiprand_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_hiprand_fc}, or set "
       "HIPRAND_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -142,12 +155,22 @@ endif()
 # for a reason that has nothing to do with their code, after a
 # "FindThreads only works if either C or CXX language is enabled" that names
 # nothing they wrote.
-if(NOT TARGET hip::hiprand)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+#
+# The outer guard is substituted to a literal TRUE or FALSE by the build that
+# installed this file, and is FALSE when no hipRAND C library was in sight
+# there. That build is legitimate -- a Fortran binding compiles against nothing
+# -- and it exports a target with an empty link interface, so requiring the
+# consumer to find hipRAND would fail their configure over a package this
+# package demonstrably does not use. Such a consumer links -lhiprand itself;
+# the message the build printed says so.
+if(@HIPRAND_FORTRAN_NEEDS_C_PACKAGE@)
+  if(NOT TARGET hip::hiprand)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(hiprand)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(hiprand)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/hiprand-fortran-targets.cmake")
@@ -157,12 +180,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/hiprand-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _hiprand_dir STREQUAL "${HIPRAND_FORTRAN_COMPILER_DIR}")
   set_target_properties(hip::hiprand_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_hiprand_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_hiprand_incdir}/${_hiprand_dir}")
   get_target_property(_hiprand_cfgs hip::hiprand_fortran IMPORTED_CONFIGURATIONS)
   foreach(_hiprand_c IN LISTS _hiprand_cfgs)
     set_target_properties(hip::hiprand_fortran PROPERTIES
       IMPORTED_LOCATION_${_hiprand_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_hiprand_dir}/libhiprand_fortran.a")
+        "${_hiprand_libdir}/${_hiprand_dir}/libhiprand_fortran.a")
   endforeach()
 endif()
 
