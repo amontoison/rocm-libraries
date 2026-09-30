@@ -30,8 +30,26 @@
 # hand: regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `rocblas`, carrying
-# the interfaces, the enum constants, the derived types, the opaque handle types
-# and the rocblasCheck status helper. A consumer writes one `use rocblas`.
+# the bind(C) interfaces, the enum constants and the rocblasCheck status helper.
+# A consumer writes one `use rocblas`.
+#
+# What the module does NOT carry is as much the point as what it does. It
+# defines no derived types of its own: rocblas_handle and every other opaque C
+# object is a plain type(c_ptr), so there is no rocblas_handle_t, and no
+# rocblas_half, rocblas_bfloat16, rocblas_float_complex or
+# rocblas_double_complex either. Complex arguments use the intrinsic
+# complex(c_float_complex) and complex(c_double_complex), and the pointer-mode
+# scalars are type(c_ptr) whatever their precision. The strongly-typed _typed
+# overloads and the _dptr device-pointer specifics are likewise absent, as are
+# the _cstr string helpers, and array overloads are generated only for the
+# subset of routines the generator supports -- every other routine is reached
+# through the plain type(c_ptr) interface under every tier.
+#
+# That convenience layer is deliberately not part of the packaged track rather
+# than an omission. It is narrower than the generated module as this pull
+# request first proposed it, not narrower than anything released: the
+# hand-written binding this replaces declared plain type(c_ptr) interfaces and
+# no derived types at all, and the generated module has never shipped.
 #
 # This directory is self-contained: it builds with no dependency on the rocBLAS
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -90,16 +108,22 @@ if(DEFINED ROCBLAS_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${ROCBLAS_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# Which array-argument overloads the module exposes. One tri-state rather than
+# one boolean per tier, because the two upper tiers are alternatives, not
+# additions: assumed-rank REPLACES the per-rank specifics (see the translation
+# below).
+#
+# Array overloads are generated for the subset of routines the generator
+# supports; every other routine is reached through the plain type(c_ptr)
+# interface under every tier, so neither upper tier is "one overload per
+# routine".
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-shape  + per-rank dimension(:) specifics under those generics
+#                  (Fortran 2008): the default, and what the bindings shipped
+#                  in ROCm are built with
+#   assumed-rank   + dimension(..) specifics under the same generics
+#                  (Fortran 2018)
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -310,20 +334,28 @@ set_target_properties(rocblas_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are now the same word, and the branches
+# below define exactly one macro: the tiers are mutually exclusive, and none
+# defines neither, leaving the raw type(c_ptr) surface the generic falls back
+# to.
+#
+# Nothing here can define both. Anyone compiling rocblas.F90 by hand who does
+# gets assumed-rank: both regions of the source, the interface one and the
+# CONTAINS one, test USE_ASSUMED_RANK ahead of USE_ASSUMED_SHAPE, so the two
+# agree on which specifics exist and the module compiles. Checked with
+# amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only, which
+# is clean. Pass one macro anyway: in that combination the assumed-shape
+# request is silently ignored.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(rocblas_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(rocblas_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(rocblas_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(rocblas_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
-# No line-length flag: the generator wraps the emitted source at 112 columns,
-# inside the 132 that free-form Fortran guarantees, so every compiler reads it
-# without a vendor-specific option.
+# No line-length flag: every line of the emitted source fits within the 132
+# columns that free-form Fortran guarantees, so every compiler reads it without
+# a vendor-specific option.
 
 target_include_directories(rocblas_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
