@@ -13,6 +13,19 @@
 
 set(ROCSPARSE_FORTRAN_COMPILER_DIR "@ROCSPARSE_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# PACKAGE_INIT block above has already turned each into an absolute path derived
+# from where THIS file was found: the package keeps working after it is moved,
+# and a distro that installs to lib64 gets lib64 rather than a hardcoded lib/
+# that names nothing. Everything below goes through these two.
+#
+# That block is named here without its @ markers deliberately.
+# configure_package_config_file() substitutes EVERY occurrence of the token, a
+# comment included, so spelling it in full would stamp a second copy of the
+# whole boilerplate into the middle of the installed config.
+set(_rocsparse_libdir "@PACKAGE_ROCSPARSE_FORTRAN_LIBDIR@")
+set(_rocsparse_incdir "@PACKAGE_ROCSPARSE_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a rocSPARSE Fortran binding available here?" through
 # rocsparse_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(rocsparse-fortran) or alongside rocsparse-config.cmake, with which it
@@ -102,7 +115,7 @@ endfunction()
 # So prefer the consumer's OWN compiler when its artifacts are installed here,
 # and fall back to the recorded directory when they are not.
 set(_rocsparse_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocsparse_fc}/rocsparse.mod")
+if(EXISTS "${_rocsparse_incdir}/${_rocsparse_fc}/rocsparse.mod")
   set(_rocsparse_dir "${_rocsparse_fc}")
 else()
   _rocsparse_dir_matches("${ROCSPARSE_FORTRAN_COMPILER_DIR}" "${_rocsparse_fc}" _rocsparse_ok)
@@ -114,12 +127,12 @@ endif()
 if(NOT _rocsparse_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _rocsparse_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _rocsparse_avail RELATIVE "${_rocsparse_incdir}"
+       "${_rocsparse_incdir}/*")
   set(rocsparse-fortran_FOUND FALSE)
   string(CONCAT rocsparse-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_rocsparse_fc}, but no rocsparse.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_rocsparse_incdir}. Available: "
       "${_rocsparse_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_rocsparse_fc}, or set "
       "ROCSPARSE_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -132,6 +145,13 @@ endif()
 # roc::rocsparse and the generate step would fail. Skipped when the caller already
 # did find_package(rocsparse), which is the common case.
 #
+# The outer condition is substituted as a literal TRUE or FALSE by the build
+# that produced this file, and records whether roc::rocsparse is actually in the
+# exported archive's link interface. The bindings compile against nothing, so
+# they can legitimately be built on a machine with no rocSPARSE installed; the
+# archive then exports an empty link interface, and demanding the consumer find
+# a package this one does not reference would fail a build that has no problem.
+#
 # rocsparse-config.cmake in turn does find_dependency(hip), and hip-config.cmake
 # reaches FindThreads, which hard-errors unless C or CXX is enabled. A
 # Fortran-only consumer has neither, so C is enabled here. Enabling a language
@@ -140,12 +160,14 @@ endif()
 # for a reason that has nothing to do with their code, after a
 # "FindThreads only works if either C or CXX language is enabled" that names
 # nothing they wrote.
-if(NOT TARGET roc::rocsparse)
-  if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
-    enable_language(C)
+if(@ROCSPARSE_FORTRAN_NEEDS_C_PACKAGE@)
+  if(NOT TARGET roc::rocsparse)
+    if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
+      enable_language(C)
+    endif()
+    include(CMakeFindDependencyMacro)
+    find_dependency(rocsparse)
   endif()
-  include(CMakeFindDependencyMacro)
-  find_dependency(rocsparse)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/rocsparse-fortran-targets.cmake")
@@ -155,12 +177,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/rocsparse-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _rocsparse_dir STREQUAL "${ROCSPARSE_FORTRAN_COMPILER_DIR}")
   set_target_properties(roc::rocsparse_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_rocsparse_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_rocsparse_incdir}/${_rocsparse_dir}")
   get_target_property(_rocsparse_cfgs roc::rocsparse_fortran IMPORTED_CONFIGURATIONS)
   foreach(_rocsparse_c IN LISTS _rocsparse_cfgs)
     set_target_properties(roc::rocsparse_fortran PROPERTIES
       IMPORTED_LOCATION_${_rocsparse_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_rocsparse_dir}/librocsparse_fortran.a")
+        "${_rocsparse_libdir}/${_rocsparse_dir}/librocsparse_fortran.a")
   endforeach()
 endif()
 

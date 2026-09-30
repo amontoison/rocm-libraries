@@ -316,12 +316,6 @@ if( BUILD_CLIENTS_ONLY OR BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_
       RPM "${OPENMP_RPM}"
   )
   endif()
-  if(BUILD_FORTRAN_CLIENTS)
-    rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
-    rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
-    rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
-    rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
-  endif()
 endif()
 
 # rocSPARSE library
@@ -339,9 +333,24 @@ endif()
 # path when the in-tree target is absent. Inheriting the skip would be actively
 # broken now that clients consume this target rather than building their own:
 # BUILD_FORTRAN_CLIENTS defaults to ON, so -DBUILD_CLIENTS_ONLY=ON would skip
-# this directory and then stop in clients/CMakeLists.txt with "the
-# rocsparse_fortran target is missing".
+# this directory, clients/ would find no rocsparse_fortran, and every Fortran
+# sample would silently drop out of a build that asked for nothing but clients.
 add_subdirectory(fortran)
+
+# The libgfortran dependency belongs to the client packages only when the
+# Fortran samples are really going to be built, and that is not known until the
+# directory above has run: BUILD_FORTRAN_CLIENTS defaults to ON, while the
+# bindings can still be absent because no Fortran compiler was found, because
+# BUILD_FORTRAN_BINDINGS is off, or because ILP64 was asked for. Read from the
+# option alone, up in the component block where it used to be, a build
+# containing no Fortran at all still shipped client packages that require
+# libgfortran to install.
+if(BUILD_CLIENTS AND BUILD_FORTRAN_CLIENTS AND ROCSPARSE_HAVE_FORTRAN_BINDINGS)
+  rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
+  rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
+  rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
+  rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
+endif()
 
 # Trigger client builds if selected
 if(BUILD_CLIENTS)
