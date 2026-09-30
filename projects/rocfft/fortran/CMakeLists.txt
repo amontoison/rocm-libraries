@@ -6,8 +6,19 @@
 # it instead.
 #
 # The bindings are a single self-contained Fortran module, `rocfft`, carrying the
-# interfaces, the enum constants, the opaque handle types and the rocfftCheck
-# status helper. A consumer writes one `use rocfft`.
+# bind(C) interfaces, the enum constants and the rocfftCheck status helper. It
+# declares no derived type of its own -- rocfft.F90 contains no `type, bind(c)`
+# at all -- so the C handle types rocfft_plan, rocfft_plan_description,
+# rocfft_execution_info, rocfft_field and rocfft_brick each cross the boundary as
+# a plain type(c_ptr), which is what the C headers make them. A consumer writes
+# one `use rocfft`.
+#
+# That is the whole of the packaged track. The generator can also emit
+# derived-type wrappers, _typed strongly-typed overloads and _dptr device-pointer
+# specifics; none of them are part of what is packaged here, and rocfft.F90 is
+# generated without docstrings. rocFFT's binding never carried any of the three
+# -- no revision of rocfft.F90 in this series matches _typed, _dptr or
+# `type, bind(c)` -- so the packaged track drops nothing rocFFT had.
 #
 # This directory is self-contained: it builds with no dependency on the rocFFT C
 # target, because a Fortran binding compiles against nothing (it only declares
@@ -53,16 +64,26 @@ if(DEFINED ROCFFT_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${ROCFFT_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
+# Which array-argument overloads the module exposes. One tri-state stands in for
+# the two macros the generated source is guarded with (USE_ASSUMED_SHAPE /
+# USE_ASSUMED_RANK), which are mutually exclusive: an assumed-rank dummy is not
 # distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
 # the per-rank variants rather than adding to them.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
 #   assumed-shape  + the per-rank array overloads (Fortran 2008), the default,
 #                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-rank   + one dimension(..) overload in their place (Fortran 2018)
+#
+# Array overloads are generated for the subset of routines the generator
+# supports; every other routine exposes the plain type(c_ptr) interface under
+# every tier. For rocFFT that subset is rocfft_plan_create and
+# rocfft_plan_description_set_data_layout: they are the only named generic
+# interfaces in rocfft.F90, the only place the USE_ASSUMED_* guards appear, and
+# the upper two tiers add specifics to them alone. The tier is still worth
+# choosing, because the arguments those specifics take as Fortran arrays are the
+# integer(c_size_t) length, offset and stride vectors a caller builds on the
+# host.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -277,15 +298,26 @@ set_target_properties(rocfft_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, and the two upper tiers
+# are mutually exclusive: an assumed-rank dummy is not distinguishable by rank
+# from the per-rank specifics, so the two cannot legally coexist in one generic
+# and each tier selects itself. `none` defines neither and leaves the raw
+# type(c_ptr) surface.
+#
+# The branch below therefore defines exactly one macro and never both. Both at
+# once is nevertheless not an error: the two guarded regions of rocfft.F90 -- the
+# module-procedure list inside each generic, and the bodies in the contains
+# section -- agree on precedence and test USE_ASSUMED_RANK first, so assumed-rank
+# wins and the assumed-shape specifics are simply not emitted. amdflang -cpp
+# -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only rocfft.F90 succeeds,
+# and -E under both macros is byte-identical to -E under USE_ASSUMED_RANK alone.
+# The tri-state still never asks for both; that is a well-defined state rather
+# than a supported one.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(rocfft_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(rocfft_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(rocfft_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(rocfft_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,
