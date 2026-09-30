@@ -5,12 +5,6 @@ Documentation for rocRAND is available at
 
 ## rocRAND 5.2.0 for ROCm 10.2.0
 
-### Optimized
-
-* Added `__restrict__` qualifiers to the device API benchmark, enabling better compiler optimization.
-
-## rocRAND 5.1.0 for ROCm 10.1.0
-
 ### Added
 
 * Generated Fortran bindings for rocRAND, as a single self-contained `rocrand` module
@@ -20,15 +14,42 @@ Documentation for rocRAND is available at
   `find_package(rocrand-fortran)` and installs per compiler under
   `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and
   `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
+  The module exports the `bind(C)` interfaces, the enum constants, the `uint4` and
+  `rocrand_discrete_distribution_st` C-layout structs and the `rocrandCheck` status helper.
+  Array overloads are generated for the subset of routines the generator supports; every
+  other routine exposes the plain `type(c_ptr)` interface under each tier, and that raw
+  surface stays available in all tiers.
+* Note on the scope of the packaged track, all of it intentional and none of it a change to
+  anything previously released, since these bindings are new here. Opaque handles have no
+  Fortran wrapper type: a generator and a discrete distribution are `type(c_ptr)`. The
+  derived-type handle wrapper `rocrand_generator_t`, the strongly-typed `_typed` overloads
+  and the `_dptr` device-pointer specifics that earlier drafts of this module carried are not
+  part of the packaged track, and the module is generated without docstrings.
+
+### Changed
+
+* The FRUIT-based Fortran test suite moved from `test/fortran/` to `fortran/test/`, beside
+  the binding it exercises, and was ported to the generated bindings: it says `use rocrand`
+  and `use hip` where it said `use rocrand_m` and `use hipfor`, and declares a generator and
+  a discrete distribution as `type(c_ptr)` rather than `integer(kind=8)`. It builds as one
+  executable and registers as the CTest test `rocrand_fortran_fruit`, labelled `gpu` like the
+  rest of the Fortran binding tests. The vendored FRUIT harness under `fortran/test/fruit/`
+  is unmodified and keeps its own `LICENSE.txt`.
 
 ### Removed
 
-* The deprecated hand-written Fortran wrapper (`library/src/fortran/rocrand_m.f90`), its
-  `BUILD_FORTRAN_WRAPPER` option and its FRUIT-based test suite, superseded by the generated
-  bindings above. The wrapper was deprecated in favour of hipfort in rocRAND 4.0.0 (ROCm 7.0)
-  and was never shipped enabled, so `rocrand_FORTRAN_FOUND` was already `NOTFOUND` and
-  `rocrand_FORTRAN_SRC_DIRS` was never set in a released package. Source builds that passed
-  `-DBUILD_FORTRAN_WRAPPER=ON` are affected and should move to `use rocrand`.
+* The deprecated hand-written Fortran wrapper (`library/src/fortran/rocrand_m.f90`) and its
+  `BUILD_FORTRAN_WRAPPER` option, superseded by the generated bindings above. The wrapper was
+  deprecated in favour of hipfort in rocRAND 4.0.0 (ROCm 7.0) and was never shipped enabled,
+  so `rocrand_FORTRAN_FOUND` was already `NOTFOUND` and `rocrand_FORTRAN_SRC_DIRS` was never
+  set in a released package. Source builds that passed `-DBUILD_FORTRAN_WRAPPER=ON` are
+  affected and should move to `use rocrand`.
+
+### Optimized
+
+* Added `__restrict__` qualifiers to the device API benchmark, enabling better compiler optimization.
+
+## rocRAND 5.1.0 for ROCm 10.1.0
 
 ### Optimized
 

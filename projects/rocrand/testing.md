@@ -66,7 +66,7 @@ Because engines and distributions are decoupled, `test/internal/` includes libra
 | C++ wrapper | `test/test_rocrand_cpp_wrapper.cpp`, `test_rocrand_cpp_basic.cpp`, `test/cpp_wrapper/` | Validate the `rocrand.hpp` C++ interface builds and behaves | Yes | PR / Nightly |
 | cuRAND parity | `test/parity/` | Compare rocRAND output/stream against cuRAND | Yes (CUDA backend) | as available |
 | hipGraph capture | `test/test_rocrand_hipgraphs.cpp` | Validate generation under HIP graph capture/replay | Yes | PR / Nightly |
-| Fortran wrapper | `test/fortran/` | Validate Fortran bindings (FRUIT) | Yes | Nightly |
+| Fortran bindings | `fortran/test/` | Validate the generated `rocrand` module: one `.f03` test per (generator, distribution) pair, plus the FRUIT suite under `fortran/test/fruit/` | Yes | Nightly |
 | Package / install | `test/package/` | Post-install smoke test via `find_package(rocrand)` | Yes | Release / packaging |
 
 * **What requires GPU hardware:** all of the above except pure host-side compilation/linkage checks.
