@@ -6,8 +6,20 @@
 # hand: regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `hipblas`, carrying
-# the interfaces, the enum constants, the opaque handle types and the
-# hipblasCheck status helper. A consumer writes one `use hipblas`.
+# the bind(C) interfaces, the enum constants and the hipblasCheck status
+# helper. A consumer writes one `use hipblas`.
+#
+# The module declares no derived type of its own. Every opaque handle,
+# hipblasHandle_t among them, is a plain type(c_ptr), which is what the packaged
+# track binds them as; the same goes for the pointer-mode scalars.
+#
+# The packaged track is deliberately narrow. Beyond the bind(C) interfaces, the
+# enum constants and hipblasCheck, it exports nothing: no derived-type wrappers,
+# no _typed strongly-typed overloads, no _dptr device-pointer specifics, and no
+# docstrings. Array overloads are generated only for the subset of routines the
+# generator supports; every other routine exposes the plain type(c_ptr)
+# interface under every tier. This is the intended shape, and it is not an API
+# break: the binding is new in this pull request and has never shipped.
 #
 # This directory is self-contained: it builds with no dependency on the hipBLAS
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -63,16 +75,25 @@ if(DEFINED HIPBLAS_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${HIPBLAS_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
+# Which array-argument overloads the module exposes. One tri-state drives the
+# two macros the generated source is guarded with, USE_ASSUMED_SHAPE and
+# USE_ASSUMED_RANK, which are mutually exclusive: an assumed-rank dummy is not
 # distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
 # the per-rank variants rather than adding to them.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
 #   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
 #                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-rank   + one dimension(..) overload in place of that per-rank set
+#                  (Fortran 2018)
+#
+# The tiers reach a subset of the module: a routine gains a generic only where
+# the generator could give its array argument a Fortran type, which rules out
+# the void* arguments of the _ex family (hipblasAxpyEx and its neighbours take
+# x and y as void*, so they get no generic even though both are arrays). Every
+# routine outside that subset is published as a single explicit interface under
+# its own name, with type(c_ptr) array arguments, and reads the same in all
+# three tiers.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -283,15 +304,25 @@ set_target_properties(hipblas_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, and each tier selects
+# itself: the two are mutually exclusive because an assumed-rank dummy is not
+# distinguishable by rank from the per-rank specifics, so they cannot legally
+# coexist in one generic. The branches below are therefore exclusive too, and
+# define exactly one macro; `none` defines neither and leaves the raw
+# type(c_ptr) surface.
+#
+# Defining both is not an error: the generated source now tests USE_ASSUMED_RANK
+# first in BOTH of its regions, the interface blocks and the contains region, so
+# assumed-rank simply wins and assumed-shape is ignored. Preprocessing the file
+# with both macros defined yields text identical to preprocessing it with
+# USE_ASSUMED_RANK alone, and amdflang -fsyntax-only accepts it. The branches
+# below still define exactly one macro, because a build should say which tier it
+# meant rather than rely on that precedence.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(hipblas_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(hipblas_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(hipblas_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(hipblas_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,
@@ -347,10 +378,11 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
 # No fortran/test/ here. hipBLAS already drives this binding from clients/:
-# hipblas_fortran.f90 wraps the API for the gtest suite and `use hipblas`s the
-# generated module, which is broader coverage than the hipFORT-derived tests
-# would add and is already in CI. The nine libraries with no such path keep
-# theirs.
+# clients/include/hipblas_fortran_module.f90 `use hipblas`s the generated module
+# and includes hipblas_fortran_blas.f90, hipblas_fortran_blas_64.f90 and
+# hipblas_fortran_solver.f90, which wrap the API for the gtest suite. That is
+# broader coverage than the hipFORT-derived tests would add and is already in
+# CI. The nine libraries with no such path keep theirs.
 
 include(CMakePackageConfigHelpers)
 
