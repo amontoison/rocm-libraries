@@ -26,6 +26,28 @@ rocBLAS documentation is available at
   unchanged, but `use rocblas_enums` should become `use rocblas`. Rather than shipping a
   `.f90` source to compile yourself, a compiled archive and `.mod` are installed; link
   `roc::rocblas_fortran`.
+* The `rocblas` module exports the `bind(C)` interfaces and the enum constants, plus the
+  `rocblasCheck` status helper. The Fortran-side convenience layer that the generated
+  module carried when this change was first proposed is not part of the packaged track:
+  the strongly-typed `_typed` wrappers, the `_dptr` device-pointer specifics, the derived
+  types (`rocblas_handle_t`, `rocblas_half`, `rocblas_bfloat16`, `rocblas_float_complex`,
+  `rocblas_double_complex`) and the `_cstr` string helpers
+  (`rocblas_get_version_string_cstr`, `rocblas_get_commit_hash_string_cstr`) are not
+  emitted, and array overloads are generated only for the subset of routines the generator
+  supports -- every other routine is reached through the plain `type(c_ptr)` interface
+  under every tier. Handles and other opaque objects are `type(c_ptr)`, complex arguments
+  use the intrinsic `complex(c_float_complex)` and `complex(c_double_complex)`, and
+  pointer-mode scalars such as `alpha` and `beta` are `type(c_ptr)` so that one binding
+  covers both host and device pointer mode. This is a reduction relative to the binding as
+  first proposed during this release cycle, not to any released API: the hand-written
+  `rocblas_module.f90` it replaces declared plain `type(c_ptr)` interfaces and no derived
+  types of its own, and the generated module has never shipped.
+* Two `bind(C)` interfaces that the first draft of the generated module declared are not
+  emitted: `rocblas_device_malloc_alloc` and `rocblas_set_optimal_device_memory_size_impl`.
+  Both are variadic in the public headers and marked internal there, and a `bind(C)`
+  interface with a fixed argument list does not describe a variadic callee, so neither was
+  correctly callable. Neither appeared in the hand-written `rocblas_module.f90`, so no
+  released binding is affected.
 
 ## rocBLAS 5.7.0 for ROCm 10.1.0
 
