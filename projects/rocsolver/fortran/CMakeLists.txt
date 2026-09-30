@@ -5,15 +5,26 @@
 # change and its binding travel in the same pull request. Do not edit it by
 # hand: regenerate it instead.
 #
-# The bindings are a single Fortran module, `rocsolver`, carrying the interfaces,
-# the enum constants, the derived types, the opaque handle types and the
-# rocsolverCheck status helper. A consumer writes one `use rocsolver`.
+# The bindings are a single Fortran module, `rocsolver`, carrying the bind(C)
+# interfaces, the enum constants and the rocsolverCheck status helper. A consumer
+# writes one `use rocsolver`. There are no derived types and no opaque handle
+# types: every handle, rocsolver_rfinfo included, is a bare type(c_ptr), so there
+# is no wrapper type a caller has to declare.
+#
+# That is the whole packaged track, and it is narrower on purpose. The generator
+# can also emit derived-type wrappers, strongly-typed overloads and separate
+# device-pointer specifics, and it can carry the C documentation across as
+# Fortran docstrings; none of that is shipped here. What a caller gets is the
+# bind(C) surface, the enum constants, the status helper and -- for the routines
+# the generator supports -- the array overloads selected below.
 #
 # UNLIKE every other library's binding in this monorepo, this one is not
 # self-contained at COMPILE time. rocsolver-functions.h includes rocblas.h and the
-# rocSOLVER API is spelled in rocBLAS types, so the generated module opens with
+# rocSOLVER API is spelled in rocBLAS enumerators, so the generated module opens
+# with
 #
-#   use rocblas, only: rocblas_handle_t, rocblas_fill_upper, ...
+#   use rocblas, only: rocblas_diagonal_non_unit, rocblas_fill_upper, &
+#     rocblas_operation_none, rocblas_side_left, rocblas_status_success
 #
 # and rocblas.mod, built by the SAME compiler, must exist before this archive can
 # be compiled. That dependency is resolved below, and it is PUBLIC: a consumer
@@ -68,15 +79,25 @@ if(DEFINED ROCSOLVER_BUILD_FORTRAN_CLIENTS)
 endif()
 
 # Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# pair of booleans hipFORT used, which were nested: the assumed-rank one only
+# took effect once the master switch was also defined, so asking for assumed rank
+# alone -- the switch whose name was exactly what one wanted -- produced no
+# overloads at all. The two upper tiers do not add up either, since an
+# assumed-rank dummy is not distinguishable by rank from the per-rank specifics,
+# so assumed-rank REPLACES the per-rank variants rather than joining them. One
+# value here therefore names exactly one tier.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-shape  + per-rank array overloads, wherever the generator emits
+#                  any (Fortran 2008): the default, and what the bindings
+#                  shipped in ROCm are built with
+#   assumed-rank   the same overloads spelled dimension(..) (Fortran 2018)
+#
+# The qualification on those two lines is the point: neither upper tier covers
+# the whole library. Overloads exist only for the subset of routines the
+# generator supports, and every other routine is reachable solely through its
+# plain bind(C) declaration, under an unchanged name, at every value of this
+# option. Raising the tier therefore widens part of the API, not all of it.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -315,15 +336,26 @@ set_target_properties(rocsolver_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro that selects the matching tier in the
+# generated source. The option value and the macro name are the same word, so
+# there is nothing to remember: assumed-shape is USE_ASSUMED_SHAPE, assumed-rank
+# is USE_ASSUMED_RANK.
+#
+# The branches below define exactly one of the two. The tiers are mutually
+# exclusive because an assumed-rank dummy is not distinguishable by rank from the
+# per-rank specifics, so the two cannot coexist in one generic. The generated
+# source settles that itself, and it settles it the same way in both of the
+# regions it guards: the interface blocks and the contains section each test
+# USE_ASSUMED_RANK first and fall back to USE_ASSUMED_SHAPE. Defining both is
+# therefore not an error -- assumed-rank wins and the per-rank specifics are
+# neither declared nor compiled. Checked with amdflang: rocsolver.F90 passes
+# -fsyntax-only with neither macro, with either one alone, and with both.
+#
+# none defines neither and leaves the raw type(c_ptr) surface.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(rocsolver_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(rocsolver_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(rocsolver_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(rocsolver_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,
