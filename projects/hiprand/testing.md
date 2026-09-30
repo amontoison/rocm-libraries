@@ -36,12 +36,12 @@ The sequence a developer follows from writing code to getting it merged:
   * `test/test_hiprand_cpp_wrapper.cpp` — the `hiprand.hpp` C++ interface, using typed suites over engine types (`hiprand_cpp_wrapper`, `_32`, `_64`, `_prng`, `_qrng`, `_offset`).
   * `test/test_hiprand_kernel.cpp` — the header-only device API (in-kernel generators, state init, Sobol direction vectors); the largest suite.
   * `test/linkage/` — multiple-translation-unit linkage / version checks (host-only).
-  * `fortran/test/` — tests for the generated Fortran bindings, gated by `BUILD_FORTRAN_CLIENTS`: one runtime program per (generator, distribution) pair.
+  * `fortran/test/` — tests for the generated Fortran bindings, gated by `BUILD_FORTRAN_CLIENTS` and, in an in-tree build, by `BUILD_TEST` as well: one runtime program per (generator, distribution) pair, plus `test_hiprand.f90`, the FRUIT suite moved here from `test/fortran/` when the hand-written wrapper it used to test was removed. It checks the status code of every generator lifecycle and seeding call; its vendored harness sits under `fortran/test/fruit/`.
   * `test/package/` — post-install smoke test via `find_package(hiprand)`.
   * `python/hiprand/tests/hiprand_test.py` — Python binding tests (`unittest`): version, constructor validation, PRNG/QRNG parameter getters/setters, and generation.
   * Shared helpers in `test/test_common.hpp` (`HIP_CHECK`, `HIPRAND_CHECK`, `hipMallocHelper`).
-* **Naming convention:** `test_hiprand_<area>.cpp` producing a matching binary (e.g. `test_hiprand_api`, `test_hiprand_kernel`); the Fortran tests register as `hiprand_fortran_<generator>_<distribution>`. Tests use `TYPED_TEST_SUITE` over engine types and `INSTANTIATE_TEST_SUITE_P(... ValuesIn(hiprand_rng_types))` for enum/ordering variation. There is **no `.cpp.in` sharding** (the suite is small enough not to need it).
-* **How to run:** `ctest --output-on-failure`, or run a binary directly. Fortran: build with `BUILD_FORTRAN_CLIENTS=ON` and run `ctest`; the runtime tests carry the `gpu` label, so `ctest -LE gpu` is meaningful on a machine without a GPU. Python: run `python -m unittest` against `python/hiprand/tests/`.
+* **Naming convention:** `test_hiprand_<area>.cpp` producing a matching binary (e.g. `test_hiprand_api`, `test_hiprand_kernel`); the Fortran tests register as `hiprand_fortran_<generator>_<distribution>`, and the FRUIT driver as `hiprand_fortran_fruit`. Tests use `TYPED_TEST_SUITE` over engine types and `INSTANTIATE_TEST_SUITE_P(... ValuesIn(hiprand_rng_types))` for enum/ordering variation. There is **no `.cpp.in` sharding** (the suite is small enough not to need it).
+* **How to run:** `ctest --output-on-failure`, or run a binary directly. Fortran: in-tree the binding tests follow the library's own test switch, so build with `BUILD_TEST=ON` (`BUILD_FORTRAN_CLIENTS` is already ON by default) and run `ctest`; the runtime tests carry the `gpu` label, so `ctest -LE gpu` is meaningful on a machine without a GPU. Python: run `python -m unittest` against `python/hiprand/tests/`.
 * **Reproducibility / seeding:** tests use fixed seeds via `hiprandSetPseudoRandomGeneratorSeed()` for determinism (and `hiprandGenerateSeeds()` where random seeding is exercised); offsets via `hiprandSetGeneratorOffset()` for engines that support them. `HIPRAND_USE_HMM=1` switches test allocations to managed memory.
 * **Not covered by unit tests:** backend engine correctness/statistics themselves (owned by rocRAND/cuRAND), throughput/performance, and the NVIDIA/cuRAND path (not routinely exercised in this repo's CI).
 
@@ -65,7 +65,7 @@ The sequence a developer follows from writing code to getting it merged:
 | Host C API | `test/test_hiprand_api.cpp` | Validate host generation across engines/distributions | Yes | PR / Nightly |
 | Device / kernel API | `test/test_hiprand_kernel.cpp` | Validate in-kernel generators and state init | Yes | PR / Nightly |
 | C++ wrapper | `test/test_hiprand_cpp_wrapper.cpp` | Validate the `hiprand.hpp` interface across engine types | Yes | PR / Nightly |
-| Fortran bindings | `fortran/test/` | Validate the generated Fortran bindings (CTest) | Yes, except the `symbols` test | Nightly / opt-in |
+| Fortran bindings | `fortran/test/` | Validate the generated Fortran bindings (CTest) | Yes | Nightly / opt-in |
 | Python bindings | `python/hiprand/tests/` | Validate Python interface (unittest) | Yes | Nightly / opt-in |
 | Linkage / version | `test/linkage/` | Confirm library links across TUs and reports version | Minimal | PR / Nightly |
 | Package / install | `test/package/` | Post-install smoke check via `find_package(hiprand)` | Yes | Release / packaging |

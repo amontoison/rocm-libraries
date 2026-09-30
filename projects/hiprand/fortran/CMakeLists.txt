@@ -6,8 +6,12 @@
 # hand: regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `hiprand`, carrying
-# the interfaces, the enum constants, the derived types, the opaque handle types
-# and the hiprandCheck status helper. A consumer writes one `use hiprand`.
+# one bind(C) interface per hipRAND C entry point, the enum constants and the
+# hiprandCheck status helper. It declares no derived types: the opaque handles
+# are passed as type(c_ptr) rather than through a one-member wrapper type, and
+# the strongly-typed overloads and the device-pointer specifics are not part of
+# the packaged track either. That is the shape the packaged track generates, not
+# an omission. A consumer writes one `use hiprand`.
 #
 # This directory is self-contained: it builds with no dependency on the hipRAND
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -63,15 +67,21 @@ if(DEFINED HIPRAND_BUILD_FORTRAN_CLIENTS)
 endif()
 
 # Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# two booleans hipFORT used, because the two upper tiers are alternatives rather
+# than a switch plus a modifier: the generated source selects between them with
+# #ifdef/#else, so assumed-rank REPLACES the per-rank variants rather than
+# adding to them.
+#
+# The tiers only affect the subset of routines the generator emits array
+# overloads for. Every other entry point is the same plain bind(C) interface
+# under every tier.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-shape  + the per-rank overloads, on that subset of routines
+#                  (Fortran 2008): the default, and what the bindings shipped
+#                  in ROCm are built with
+#   assumed-rank   + one dimension(..) overload instead, same routines
+#                  (Fortran 2018)
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -282,15 +292,29 @@ set_target_properties(hiprand_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, one tier each, and the
+# branches below define exactly one of them and never both.
+#
+# The tiers are alternatives rather than a switch plus a modifier, but defining
+# both is not an error. The generic-interface region and the CONTAINS region of
+# hiprand.F90 test the two macros in the SAME order, so assumed-rank wins in
+# both and the module still compiles:
+#
+#   amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only \
+#            hiprand.F90
+#
+# succeeds, and the preprocessed source it reads contains no per-rank specific
+# at all. Defining one macro is still how a build asks for a tier, which is why
+# the branches below never define both: it keeps the tier a build gets the tier
+# it asked for.
+#
+# none defines neither and leaves the raw type(c_ptr) surface, which every tier
+# keeps: the overloads are added beside it, never in place of it.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(hiprand_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(hiprand_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(hiprand_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(hiprand_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,
