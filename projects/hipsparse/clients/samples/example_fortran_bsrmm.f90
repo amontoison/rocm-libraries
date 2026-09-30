@@ -126,7 +126,7 @@ program example_fortran_bsrmm
     type(c_ptr) :: handle
     type(c_ptr) :: descr
 
-    integer :: version
+    integer(c_int), target :: version
 
     character(len=12) :: rev
 
@@ -205,7 +205,7 @@ program example_fortran_bsrmm
     call HIPSPARSE_CHECK(hipsparseCreate(handle))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &

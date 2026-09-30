@@ -6,8 +6,14 @@
 # hand: regenerate it instead.
 #
 # The bindings are a single self-contained Fortran module, `hipsparse`, carrying
-# the interfaces, the enum constants, the derived types, the opaque handle types
-# and the hipsparseCheck status helper. A consumer writes one `use hipsparse`.
+# the bind(C) interfaces, the enum constants and the hipsparseCheck status
+# helper, and nothing beyond them: the module declares no derived types of its
+# own (grep finds no `type, bind(c)`), no strongly-typed `_typed` overloads and
+# no `_dptr` device-pointer specifics, and it carries no docstrings, the C
+# headers being the single place that prose lives. Every hipSPARSE handle,
+# descriptor and info object stays the opaque type(c_ptr) the C API hands back,
+# so there is nothing to keep in step with the headers beyond the interfaces
+# themselves. A consumer writes one `use hipsparse`.
 #
 # This directory is self-contained: it builds with no dependency on the hipSPARSE
 # C target, because a Fortran binding compiles against nothing (it only declares
@@ -65,16 +71,21 @@ if(DEFINED HIPSPARSE_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${HIPSPARSE_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# two booleans hipFORT used (USE_FPOINTER_INTERFACES / ASSUMED_RANK), because the
-# two upper tiers cannot legally coexist: an assumed-rank dummy is not
-# distinguishable by rank from the per-rank specifics, so assumed-rank REPLACES
-# the per-rank variants rather than adding to them.
+# Which array-argument overloads the module exposes. One tri-state rather than a
+# pair of independent booleans, because the two upper tiers are alternatives and
+# not layers: the generator emits the assumed-rank specific INSTEAD OF the
+# per-rank ones, so there is no combination in which both sets exist and no
+# second boolean to offer.
+#
+# Array overloads are generated for the subset of routines the generator
+# supports; every other routine exposes the same plain type(c_ptr) interface
+# under all three settings.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
 #   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
 #                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload per routine (Fortran 2018)
+#   assumed-rank   + one dimension(..) overload per overloaded routine
+#                  (Fortran 2018)
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -239,15 +250,26 @@ set_target_properties(hipsparse_fortran PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the two macros the generated source is guarded
-# with. assumed-rank implies the F2008 tier: in the source the assumed-rank
-# specific is nested inside USE_FPOINTER_INTERFACES, and selects itself over the
-# per-rank ones.
+# Translate the tri-state into the macro the generated source is guarded with.
+# The option value and the macro name are the same word, and the two tiers are
+# mutually exclusive, so exactly one macro is defined below and never both:
+# none defines neither and leaves the raw type(c_ptr) surface the C API is
+# bound to.
+#
+# Defining both is not a supported combination, but it is not a trap either:
+# the generated file guards its interface region and its CONTAINS region in the
+# same order, testing USE_ASSUMED_RANK first in both, so with both defined the
+# assumed-rank specifics win and the module still compiles. Checked with
+#
+#     amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 \
+#       -fsyntax-only hipsparse.F90
+#
+# which accepts the module. This file asks for exactly one either way, so which
+# tier wins is never in question here.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
-  target_compile_definitions(hipsparse_fortran PRIVATE USE_FPOINTER_INTERFACES=1)
+  target_compile_definitions(hipsparse_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
-  target_compile_definitions(hipsparse_fortran PRIVATE
-    USE_FPOINTER_INTERFACES=1 USE_ASSUMED_RANK_INTERFACES=1)
+  target_compile_definitions(hipsparse_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,

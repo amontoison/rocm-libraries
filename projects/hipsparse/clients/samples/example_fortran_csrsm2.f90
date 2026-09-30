@@ -131,7 +131,7 @@ program example_fortran_csrsm
     type(c_ptr) :: descr
     type(c_ptr) :: info
 
-    integer :: version
+    integer(c_int), target :: version
 
 !   Input data
 
@@ -175,7 +175,7 @@ program example_fortran_csrsm
     call HIPSPARSE_CHECK(hipsparseCreate(handle))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &
@@ -210,7 +210,7 @@ program example_fortran_csrsm
                                                         ldb, &
                                                         info, &
                                                         HIPSPARSE_SOLVE_POLICY_USE_LEVEL, &
-                                                        c_loc(buffer_size)))
+                                                        buffer_size))
 
 !   Allocate temporary buffer
     write(*,fmt='(A,I0,A)') 'Allocating ', buffer_size / 1024, 'kB temporary storage buffer'
