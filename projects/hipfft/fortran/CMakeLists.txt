@@ -59,7 +59,16 @@ option(BUILD_FORTRAN_CLIENTS "Build the hipFFT and hipFFTW Fortran clients and b
 # every library in the monorepo, which is what you want for the common case:
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
 # a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which wins when it is set.
+# so each library also honours a name of its own, which overrides the shared
+# default.
+#
+# That override is the last word for the BINDINGS only. For the CLIENTS, the
+# gate further down is a floor an in-tree build cannot rise above: the binding
+# tests are GPU test executables, they belong to hipFFT's own client/test track,
+# and a library-only build produces none of them however
+# HIPFFT_BUILD_FORTRAN_CLIENTS is set. The per-library name still picks the
+# tests apart from each other, and still decides on its own standalone, where
+# there is no client track to belong to.
 #
 # This directory builds TWO libraries' bindings, so it honours two pairs:
 # HIPFFT_* selects the hipfft target, HIPFFTW_* the hipfftw one. Either can be
@@ -233,6 +242,13 @@ endif()
 
 enable_language(Fortran)
 
+# Pulled in here rather than beside the install() rules below because the
+# install layout is also baked into each target's INSTALL_INTERFACE include
+# directory, which is set well before them. Nothing must hardcode lib/ or
+# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
+# and a literal lib/fortran then names a directory that does not exist.
+include(GNUInstallDirs)
+
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
   message(FATAL_ERROR
     "FORTRAN_ARRAY_INTERFACES must be none, assumed-shape or assumed-rank, "
@@ -369,7 +385,7 @@ if(_hipfft_bindings)
 
   target_include_directories(hipfft_fortran PUBLIC
     "$<BUILD_INTERFACE:${_moddir}>"
-    "$<INSTALL_INTERFACE:include/fortran/${HIPFFT_FORTRAN_COMPILER_DIR}>")
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPFFT_FORTRAN_COMPILER_DIR}>")
 
   # Link interface only: needed to link an executable, not to build this archive.
   if(TARGET hip::hipfft)
@@ -420,7 +436,7 @@ if(_hipfftw_bindings)
 
   target_include_directories(hipfftw_fortran PUBLIC
     "$<BUILD_INTERFACE:${_moddir}>"
-    "$<INSTALL_INTERFACE:include/fortran/${HIPFFTW_FORTRAN_COMPILER_DIR}>")
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPFFTW_FORTRAN_COMPILER_DIR}>")
 
   # hip::hipfftw and never hip::hipfft: the FFTW compatibility surface is its own
   # shared library, and a program on it links libhipfftw alone.
@@ -434,6 +450,35 @@ if(_hipfftw_bindings)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(HIPFFTW_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
   endif()
+endif()
+
+# The binding tests are GPU runtime executables, so in-tree they belong to the
+# client/test track and have to follow the library's own switch: a library-only
+# build has no business producing test binaries, and would be made to link a GPU
+# runtime it never asked for. The condition is the one hipFFT guards
+# add_subdirectory( clients ) with, so the two cannot disagree, plus BUILD_CLIENTS
+# itself: that umbrella turns the other three on, but it does so BELOW
+# add_subdirectory( fortran ), so reading only the three here would skip the
+# tests of a -DBUILD_CLIENTS=ON build.
+#
+# Standalone, this directory IS the build and the tests are the point, so the
+# library's switches do not exist and the two flags stand on their own. Turning
+# them off here rather than BUILD_FORTRAN_CLIENTS is what keeps the decision
+# local: that cache entry is one switch shared by every library in the monorepo,
+# and must not be written back from a single library's subdirectory.
+#
+# Placed at the point the flags are READ, not up beside the options, so that a
+# configure that never reaches here -- -DBUILD_FORTRAN_BINDINGS=OFF, or a host
+# with no Fortran compiler, both of which return above -- does not announce a
+# skip of tests that were never going to be configured in the first place.
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
+   AND (_hipfft_tests OR _hipfftw_tests)
+   AND NOT (BUILD_CLIENTS OR BUILD_CLIENTS_BENCH OR BUILD_CLIENTS_SAMPLES
+            OR BUILD_CLIENTS_TESTS))
+  message(STATUS
+    "hipFFT: clients are not being built, skipping the Fortran binding tests.")
+  set(_hipfft_tests OFF)
+  set(_hipfftw_tests OFF)
 endif()
 
 if(_hipfft_tests OR _hipfftw_tests)
@@ -460,7 +505,6 @@ if(_hipfft_tests OR _hipfftw_tests)
   add_subdirectory(test)
 endif()
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # The version both Fortran packages are stamped with, so that
@@ -516,11 +560,38 @@ if(NOT _fortran_version)
     "find_package(hipfftw-fortran <version>) will not match.")
 endif()
 
+# COMPONENT devel on every rule below, because everything this directory
+# installs -- two static archives, a set of .mod files, the generated sources and
+# the CMake packages -- is a development artifact: nothing here is needed to RUN
+# a program, only to build one against the bindings. devel is also what
+# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
+# it. Without it these files land in the runtime component instead, and the
+# hipfft-devel package a Fortran consumer installs would not carry the bindings
+# at all.
+#
+# Plain install(), not rocm_install(): this directory must also configure
+# standalone, where rocm-cmake was never loaded and those commands do not exist.
+#
 # One install(DIRECTORY) covers both modules: only the .mod files of the targets
 # that were really compiled exist in _moddir.
 install(DIRECTORY "${_moddir}/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fortran/${HIPFFT_FORTRAN_COMPILER_DIR}"
+        COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
+
+# The two directories each config package has to name, kept out of the templates
+# so that neither side spells lib/ or include/ literally. A literal lib/fortran
+# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
+# the consumer an IMPORTED_LOCATION that does not exist.
+#
+# HIPFFTW_* mirrors HIPFFT_* for the same reason HIPFFTW_FORTRAN_COMPILER_DIR
+# does: both halves install into one layout out of one package, and the mirror
+# exists only so that hipfftw-fortran-config.cmake.in can substitute names of
+# its own.
+set(HIPFFT_FORTRAN_LIBDIR      "${CMAKE_INSTALL_LIBDIR}/fortran")
+set(HIPFFT_FORTRAN_INCLUDEDIR  "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
+set(HIPFFTW_FORTRAN_LIBDIR     "${HIPFFT_FORTRAN_LIBDIR}")
+set(HIPFFTW_FORTRAN_INCLUDEDIR "${HIPFFT_FORTRAN_INCLUDEDIR}")
 
 # Two export sets and two config packages, not one of each. The two bindings are
 # found independently (find_package(hipfft-fortran) vs
@@ -535,11 +606,13 @@ install(DIRECTORY "${_moddir}/"
 if(_hipfft_bindings)
   install(TARGETS hipfft_fortran
           EXPORT hipfft-fortran-targets
-          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPFFT_FORTRAN_COMPILER_DIR}")
+          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPFFT_FORTRAN_COMPILER_DIR}"
+                  COMPONENT devel)
   install(EXPORT hipfft-fortran-targets
           FILE hipfft-fortran-targets.cmake
           NAMESPACE hip::
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+          COMPONENT devel)
 
   # The generated source, so that a user on a compiler ROCm ships no .mod for can
   # rebuild the binding without fetching a monorepo to get one file. Source
@@ -554,19 +627,23 @@ if(_hipfft_bindings)
   # directory to report which compilers are installed, and would list hipfft.F90
   # among them.
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipfft.F90"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran")
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran"
+          COMPONENT devel)
 
   configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/hipfft-fortran-config.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config.cmake"
-    # No PATH_VARS: it only creates PACKAGE_<var>, and the template interpolates
-    # @HIPFFT_FORTRAN_COMPILER_DIR@ directly. Passing it was a dead argument, and
-    # worse than dead if anyone later switched the template to the PACKAGE_ form,
-    # since PATH_VARS would then resolve this relative value as a path under the
-    # install prefix.
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+    # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
+    # an absolute path computed from where the config file was FOUND, so the
+    # package survives being relocated and gets lib64 right without the template
+    # knowing which layout it was built for. HIPFFT_FORTRAN_COMPILER_DIR stays a
+    # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
+    # and PATH_VARS would resolve it as one, under the install prefix.
+    PATH_VARS HIPFFT_FORTRAN_LIBDIR HIPFFT_FORTRAN_INCLUDEDIR)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+          COMPONENT devel)
 
   # find_package(hipfft-fortran), the documented spelling, searches
   # lib/cmake/hipfft-fortran*, which lib/cmake/hipfft does not match, so on its
@@ -582,7 +659,8 @@ if(_hipfft_bindings)
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfft-fortran-config.cmake\")
 ")
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/hipfft-fortran-config.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft-fortran"
+          COMPONENT devel)
 
   # SameMajorVersion because the module's bind(C) surface tracks the C API's
   # compatibility promise.
@@ -599,34 +677,41 @@ include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfft-fortran-config.cmake\")
     # fails with "could not find a configuration file compatible with requested
     # version" even though the config is right there and the version matches.
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config-version.cmake"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+            COMPONENT devel)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config-version.cmake"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft-fortran")
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft-fortran"
+            COMPONENT devel)
   endif()
 endif()
 
 if(_hipfftw_bindings)
   install(TARGETS hipfftw_fortran
           EXPORT hipfftw-fortran-targets
-          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPFFTW_FORTRAN_COMPILER_DIR}")
+          ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${HIPFFTW_FORTRAN_COMPILER_DIR}"
+                  COMPONENT devel)
   install(EXPORT hipfftw-fortran-targets
           FILE hipfftw-fortran-targets.cmake
           NAMESPACE hip::
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+          COMPONENT devel)
 
   # The generated source, for the same reason as hipfft.F90 above, and under the
   # same share/hipfft/fortran: hipFFTW is packaged with hipFFT and has no
   # directory of its own anywhere else in the layout, so it has none here either.
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipfftw.F90"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran")
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran"
+          COMPONENT devel)
 
   configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/hipfftw-fortran-config.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/hipfftw-fortran-config.cmake"
-    # No PATH_VARS, for the same reason as hipfft above.
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+    # PATH_VARS, for the same reason as hipfft above.
+    PATH_VARS HIPFFTW_FORTRAN_LIBDIR HIPFFTW_FORTRAN_INCLUDEDIR)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfftw-fortran-config.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+          COMPONENT devel)
 
   # Same forwarder, for the same reason: lib/cmake/hipfft matches neither
   # hipfft-fortran* nor hipfftw-fortran*.
@@ -637,7 +722,8 @@ if(_hipfftw_bindings)
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfftw-fortran-config.cmake\")
 ")
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/hipfftw-fortran-config.cmake"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfftw-fortran")
+          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfftw-fortran"
+          COMPONENT devel)
 
   # A version file of its own, carrying hipFFT's number, and installed in both
   # of ITS package directories for the same reason as hipfft's above: the
@@ -649,8 +735,10 @@ include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfftw-fortran-config.cmake\")
       VERSION "${_fortran_version}"
       COMPATIBILITY SameMajorVersion)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfftw-fortran-config-version.cmake"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft")
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
+            COMPONENT devel)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfftw-fortran-config-version.cmake"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfftw-fortran")
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfftw-fortran"
+            COMPONENT devel)
   endif()
 endif()

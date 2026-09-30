@@ -5,6 +5,10 @@ Documentation for hipFFT is available at
 
 ## (Unreleased) hipFFT 1.0.27
 
+### Added
+
+* Added generated Fortran bindings, exposed as two self-contained modules: a consumer writes `use hipfft` and links `hip::hipfft_fortran` for the hipFFT API, or `use hipfftw` and links `hip::hipfftw_fortran` for the FFTW compatibility API. The two are independent, so a program on the FFTW surface never touches the hipFFT binding. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the modules expose); the `HIPFFT_*` and `HIPFFTW_*` spellings of the first two switch either half on its own. The binding tests are GPU executables, so in an in-tree build they also follow hipFFT's own `BUILD_CLIENTS*` switches and are skipped in a library-only build. The packages are found with `find_package(hipfft-fortran)` and `find_package(hipfftw-fortran)`, and the archives and `.mod` files are installed per compiler, under `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
+
 ## hipFFT 1.0.26 for ROCm 10.1
 
 ### Added

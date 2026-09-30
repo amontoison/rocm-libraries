@@ -20,6 +20,19 @@
 
 set(HIPFFT_FORTRAN_COMPILER_DIR "@HIPFFT_FORTRAN_COMPILER_DIR@")
 
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# preamble above has already turned each into an absolute path derived from
+# where THIS file was found: the package keeps working after it is moved, and a
+# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
+# names nothing. Everything below goes through these two.
+#
+# That preamble is referred to and never named: configure_package_config_file()
+# substitutes its token wherever the token appears, comments included, so
+# spelling it out here would splice a second copy of the whole preamble, macro
+# definitions and all, into the middle of this sentence.
+set(_hipfft_libdir "@PACKAGE_HIPFFT_FORTRAN_LIBDIR@")
+set(_hipfft_incdir "@PACKAGE_HIPFFT_FORTRAN_INCLUDEDIR@")
+
 # A consumer asks "is a hipFFT Fortran binding available here?" through
 # hipfft_FORTRAN_FOUND, which is set whether this package is reached directly by
 # find_package(hipfft-fortran) or through an OPTIONAL include at the end of
@@ -120,7 +133,7 @@ endfunction()
 # switchable on its own), so a directory that exists proves nothing about THIS
 # binding.
 set(_hipfft_dir "")
-if(EXISTS "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipfft_fc}/hipfft.mod")
+if(EXISTS "${_hipfft_incdir}/${_hipfft_fc}/hipfft.mod")
   set(_hipfft_dir "${_hipfft_fc}")
 else()
   _hipfft_dir_matches("${HIPFFT_FORTRAN_COMPILER_DIR}" "${_hipfft_fc}" _hipfft_ok)
@@ -132,12 +145,12 @@ endif()
 if(NOT _hipfft_dir)
   # Name what IS installed, so the reader can see whether they need to rebuild
   # or merely point at an existing directory.
-  file(GLOB _hipfft_avail RELATIVE "${PACKAGE_PREFIX_DIR}/include/fortran"
-       "${PACKAGE_PREFIX_DIR}/include/fortran/*")
+  file(GLOB _hipfft_avail RELATIVE "${_hipfft_incdir}"
+       "${_hipfft_incdir}/*")
   set(hipfft-fortran_FOUND FALSE)
   string(CONCAT hipfft-fortran_NOT_FOUND_MESSAGE
       "This project builds with ${_hipfft_fc}, but no hipfft.mod for it is "
-      "installed under ${PACKAGE_PREFIX_DIR}/include/fortran. Available: "
+      "installed under ${_hipfft_incdir}. Available: "
       "${_hipfft_avail}. A Fortran .mod cannot be shared across compilers; "
       "rebuild the bindings with ${_hipfft_fc}, or set "
       "HIPFFT_FORTRAN_COMPILER_DIR to the directory to use.")
@@ -176,12 +189,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/hipfft-fortran-targets.cmake")
 # target at it, otherwise the .mod found and the archive linked would disagree.
 if(NOT _hipfft_dir STREQUAL "${HIPFFT_FORTRAN_COMPILER_DIR}")
   set_target_properties(hip::hipfft_fortran PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include/fortran/${_hipfft_dir}")
+    INTERFACE_INCLUDE_DIRECTORIES "${_hipfft_incdir}/${_hipfft_dir}")
   get_target_property(_hipfft_cfgs hip::hipfft_fortran IMPORTED_CONFIGURATIONS)
   foreach(_hipfft_c IN LISTS _hipfft_cfgs)
     set_target_properties(hip::hipfft_fortran PROPERTIES
       IMPORTED_LOCATION_${_hipfft_c}
-        "${PACKAGE_PREFIX_DIR}/lib/fortran/${_hipfft_dir}/libhipfft_fortran.a")
+        "${_hipfft_libdir}/${_hipfft_dir}/libhipfft_fortran.a")
   endforeach()
 endif()
 
