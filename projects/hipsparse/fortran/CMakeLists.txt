@@ -43,7 +43,17 @@ endif()
 # configure and build the C library. The monorepo root already probes once and
 # publishes ROCM_HAVE_FORTRAN; a standalone hipSPARSE build falls back to its own
 # probe.
-option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings" ON)
+#
+# "${UNIX}" rather than ON, because Windows is not such a site: ROCm ships no
+# Fortran compiler there at all. TheRock puts flang in LLVM_ENABLE_PROJECTS
+# only in the non-WIN32 branch of compiler/pre_hook_amd-llvm.cmake, so the
+# amdflang preference below finds nothing, the probe falls through to whatever
+# gfortran happens to be on PATH, and enable_language(Fortran) then fails to
+# identify it. hipSPARSE already gates HIPSPARSE_ENABLE_FORTRAN this way in its
+# root, which is what keeps the root's own enable_language(Fortran) off
+# Windows. A default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still works
+# wherever a usable compiler exists.
+option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings" "${UNIX}")
 
 # The bindings' own test suite, and the Fortran clients where a library has
 # them: one switch rather than two neighbouring ones. ON by default, and
