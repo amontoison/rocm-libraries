@@ -62,7 +62,13 @@ option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
 # Declared here as well as in fortran/, so that print_configuration_summary()
 # below, which runs before add_subdirectory(fortran), has a value to report.
 # The second option() call in the subdirectory reuses this cache entry.
-option(BUILD_FORTRAN_BINDINGS "Build the hipRAND Fortran bindings" ON)
+#
+# "${UNIX}": OFF on Windows, where ROCm ships no Fortran compiler at all --
+# TheRock builds LLVM without flang there. This is the declaration that wins,
+# since it creates the cache entry first; fortran/ carries the same default so
+# that a standalone configure of that directory agrees. The full reasoning is
+# in fortran/CMakeLists.txt.
+option(BUILD_FORTRAN_BINDINGS "Build the hipRAND Fortran bindings" "${UNIX}")
 option(BUILD_TEST "Build tests (requires googletest)" OFF)
 option(EXTERNAL_DEPS_FORCE_DOWNLOAD "Download non-ROCm dependencies and do not search for packages" OFF)
 option(DISABLE_WERROR "Disable building with Werror" ON)
