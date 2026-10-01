@@ -62,9 +62,40 @@ endif()
 # anything, and the default is ON. Without this test a -DBUILD_FORTRAN_BINDINGS=OFF
 # configure -- one that enables no Fortran and builds none -- would still search
 # for a compiler, run it, and leave CMAKE_Fortran_COMPILER in its cache.
+#
+# Not on the CUDA backend, where gfortran is the answer and amdflang is wrong.
+# The invariant the clients rely on is that the LAPACK they link was built by
+# the same Fortran toolchain as this project. On the ROCm side that holds by
+# construction: HIPSOLVER_INTERNAL_LAPACK_BUILD compiles OpenBLAS in-tree with
+# this very compiler, so the two agree whatever it is. The CUDA backend does not
+# build it (see the HIP_PLATFORM test ~120 lines below -- cuSOLVER has geev), so
+# the clients link the host's LAPACK instead, and on every Linux image that is a
+# gfortran build. Nothing else puts a Fortran runtime on those link lines: it
+# comes from this compiler, through hipsolver_fortran_client. Choose amdflang
+# and liblapack.a's own objects (xerbla, sgesvd, sormbr) are left with none, so
+# hipsolver-test and hipsolver-bench fail to link on undefined _gfortran_*.
+#
+# It is also the honest answer for a build that wraps cuSOLVER: the reason to
+# prefer amdflang is that ROCm should not have one component built by a foreign
+# toolchain, and on this backend there is no ROCm toolchain to be consistent
+# with.
+#
+# HIP_PLATFORM cannot be read here -- it is resolved after project() and
+# find_package(hip), and this block has to run before project(). So this repeats
+# the explicit inputs that resolution starts from. It deliberately does NOT
+# cover the implicit nvidia fallback taken when hip is not found (the hip < 6.0
+# path): that is unknowable this early, and a CUDA build reaching nvidia that
+# way rather than naming the platform will still pick amdflang.
+set(_hipsolver_cuda_backend OFF)
+if(USE_CUDA OR "$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+  set(_hipsolver_cuda_backend ON)
+endif()
+
 if(NOT DEFINED BUILD_FORTRAN_BINDINGS OR BUILD_FORTRAN_BINDINGS)
-  include(${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake)
-  rocm_fortran_prefer_amdflang()
+  if(NOT _hipsolver_cuda_backend)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake)
+    rocm_fortran_prefer_amdflang()
+  endif()
   if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
     set(CMAKE_Fortran_COMPILER  "gfortran")
   endif()
