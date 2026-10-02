@@ -132,6 +132,7 @@ set(ROCRAND_FORTRAN_TESTS
     philox_poisson
     philox_uniform
     philox_uniform_double
+    rocrand_version
     sobol32_normal
     sobol32_normal_double
     sobol32_uniform
