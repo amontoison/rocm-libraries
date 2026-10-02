@@ -93,7 +93,42 @@ if(HIPSPARSE_ENABLE_FORTRAN)
     # that the two cannot drift apart.
     include("${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake")
     rocm_fortran_prefer_amdflang()
-    enable_language(Fortran)
+
+    # PROBE before enabling. enable_language(Fortran) is fatal when no compiler
+    # is found, so calling it unconditionally makes -DHIPSPARSE_ENABLE_CLIENT=ON
+    # die at configure time on a machine that has no Fortran compiler -- the C
+    # library and the C++ clients would build perfectly well there, and the only
+    # thing missing is a Fortran track nobody asked for by name. check_language()
+    # answers the same question without failing, so the Fortran clients can be
+    # dropped instead. AFTER rocm_fortran_prefer_amdflang(), which has to get
+    # the first word: check_language() is a no-op once CMAKE_Fortran_COMPILER is
+    # defined, so whatever the macro leaves behind is what the probe reports.
+    #
+    # The save/set/restore around the probe is the same one fortran/CMakeLists.txt
+    # uses, and for the same reason: check_language() answers by writing the CACHE
+    # entry CMAKE_Fortran_COMPILER, and rocm-cmake's ROCMChecks arms a
+    # variable_watch on exactly that name, which cannot tell a compiler probe
+    # apart from a project writing a toolchain variable behind the toolchain
+    # file's back. Unsilenced it is a stray banner by default and a hard failure
+    # under -DROCM_ERROR_TOOLCHAIN_VAR=ON, which CI turns on.
+    set(_hipsparse_warn_toolchain_var "${ROCM_WARN_TOOLCHAIN_VAR}")
+    set(_hipsparse_error_toolchain_var "${ROCM_ERROR_TOOLCHAIN_VAR}")
+    set(ROCM_WARN_TOOLCHAIN_VAR OFF)
+    set(ROCM_ERROR_TOOLCHAIN_VAR OFF)
+    include(CheckLanguage)
+    check_language(Fortran)
+    set(ROCM_WARN_TOOLCHAIN_VAR "${_hipsparse_warn_toolchain_var}")
+    set(ROCM_ERROR_TOOLCHAIN_VAR "${_hipsparse_error_toolchain_var}")
+    unset(_hipsparse_warn_toolchain_var)
+    unset(_hipsparse_error_toolchain_var)
+
+    if(CMAKE_Fortran_COMPILER)
+        enable_language(Fortran)
+    else()
+        message(STATUS
+            "hipSPARSE: no Fortran compiler found, disabling the Fortran clients.")
+        set(HIPSPARSE_ENABLE_FORTRAN OFF)
+    endif()
 endif()
 
 # --- Dependency Setup ---
@@ -139,7 +174,10 @@ add_subdirectory(fortran)
 # The Fortran samples used to compile the hand-written module themselves; they
 # now link roc::hipsparse_fortran, so they cannot be built when the bindings
 # were not. Turning the option off here rather than failing keeps
-# -DHIPSPARSE_ENABLE_CLIENT=ON working on a machine with no Fortran compiler.
+# -DHIPSPARSE_ENABLE_CLIENT=ON working wherever the bindings were deliberately
+# declined: an explicit -DBUILD_FORTRAN_BINDINGS=OFF, or the CUDA-backend
+# default (see fortran/CMakeLists.txt). The no-compiler case never reaches here
+# -- the probe above has already turned HIPSPARSE_ENABLE_FORTRAN off.
 if(HIPSPARSE_ENABLE_FORTRAN AND NOT HIPSPARSE_HAVE_FORTRAN_BINDINGS)
     message(STATUS
         "hipSPARSE: the Fortran bindings were not built, skipping the Fortran "
