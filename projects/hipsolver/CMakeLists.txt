@@ -153,7 +153,37 @@ option(HIPSOLVER_FIND_PACKAGE_LAPACK_CONFIG "Skip module mode search for LAPACK"
 # export set. The generated binding has an export set of its own
 # (hipsolver-fortran-targets) and a config package of its own, so the choice no
 # longer exists. BUILD_FORTRAN_BINDINGS below still turns the whole track off.
-option(BUILD_FORTRAN_BINDINGS "Build the Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that is about the GENERATED SOURCE rather than
+# about the compiler. hipsolver.F90 is produced from the ROCm code path and is
+# exercised only there: no CI job builds or runs it against a cuSOLVER-backed
+# libhipsolver, so nothing in this tree says the binding is correct on that
+# backend. Shipping it on by default would publish an untested artefact, so it
+# is off there and has to be asked for by name. ${UNIX} otherwise, because ROCm
+# ships no Fortran compiler on Windows at all.
+#
+# _hipsolver_cuda_backend is the backend test computed above project(), reused
+# rather than repeated: one place decides what "CUDA backend" means for this
+# project and both readers agree by construction. It carries that block's
+# documented limit -- the implicit nvidia fallback taken when hip is not found
+# is unknowable this early -- which is the right trade here too, a default being
+# a default and not a veto.
+#
+# This is the FIRST of the two option(BUILD_FORTRAN_BINDINGS) calls in hipSOLVER
+# and so the one that fixes the cache entry for an in-tree build; the one in
+# fortran/CMakeLists.txt is a no-op here and is live only when that directory is
+# configured standalone. The root needs the answer this early because
+# enable_language(Fortran) just below depends on it, long before
+# add_subdirectory(fortran). The two are kept from disagreeing by computing the
+# same default from the same variable.
+if(_hipsolver_cuda_backend)
+  set(_hipsolver_fortran_default OFF)
+else()
+  set(_hipsolver_fortran_default "${UNIX}")
+endif()
+option(BUILD_FORTRAN_BINDINGS "Build the Fortran bindings"
+       "${_hipsolver_fortran_default}")
+unset(_hipsolver_fortran_default)
 
 # Feature flags
 option(HIPSOLVER_ENABLE_EIGENSOLVERS_64 "Enable the 64-bit eigensolver API (syev/heev/syevd/heevd)" ON)

@@ -49,11 +49,35 @@ endif()
 # only in the non-WIN32 branch of compiler/pre_hook_amd-llvm.cmake, so the
 # amdflang preference below finds nothing, the probe falls through to whatever
 # gfortran happens to be on PATH, and enable_language(Fortran) then fails to
-# identify it. hipSOLVER's own root already declares this option as "${UNIX}";
+# identify it. hipSOLVER's own root already declares this option the same way;
 # repeating it here keeps a standalone configure of this directory in step. A
 # default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still works wherever a
 # usable compiler exists.
-option(BUILD_FORTRAN_BINDINGS "Build the hipSOLVER Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
+# than about the compiler. hipsolver.F90 is produced from the ROCm code path and
+# is exercised only there: no CI job builds or runs it against a cuSOLVER-backed
+# libhipsolver, so nothing in this tree says the binding is correct on that
+# backend. Shipping it on by default would publish an untested artefact, so it
+# is off there and has to be asked for by name.
+#
+# _hipsolver_cuda_backend is the root's own backend test, computed above its
+# project() call and inherited here, so the detection lives in one place.
+# Standalone it is simply undefined and the default falls back to ${UNIX}, which
+# is correct: a standalone build of the bindings has no backend of its own.
+#
+# This option() call is the SECOND in an in-tree build -- the root's runs first,
+# because enable_language(Fortran) there needs the answer before this directory
+# is added -- so it is a no-op then, and live only standalone. Both compute the
+# same default from the same variable, so the two can never read as disagreeing.
+if(_hipsolver_cuda_backend)
+  set(_hipsolver_fortran_default OFF)
+else()
+  set(_hipsolver_fortran_default "${UNIX}")
+endif()
+option(BUILD_FORTRAN_BINDINGS "Build the hipSOLVER Fortran bindings"
+       "${_hipsolver_fortran_default}")
+unset(_hipsolver_fortran_default)
 
 # The bindings' own test suite, and the Fortran clients where a library has
 # them: one switch rather than two neighbouring ones. ON by default, and
@@ -117,6 +141,20 @@ endif()
 
 if(NOT BUILD_FORTRAN_BINDINGS)
   return()
+endif()
+
+# Reached on the CUDA backend only when the default above was overridden by
+# hand. Warn rather than fail: the bindings DO build and link there, since the
+# public hipSOLVER headers carry no CUDART_VERSION guard on their entry points
+# and library/src/nvidia_detail/ defines every symbol the module references.
+# What is missing is evidence, not symbols, so an explicit request is honoured
+# and the warning says exactly what the user is taking on.
+if(_hipsolver_cuda_backend)
+  message(WARNING
+    "hipSOLVER: the Fortran bindings were requested on the CUDA backend. "
+    "hipsolver.F90 is generated from the ROCm code path and is not tested "
+    "against a cuSOLVER-backed libhipsolver, which is why it is off by default "
+    "there. Building it is supported; vouching for it is not.")
 endif()
 
 # Probing for a Fortran compiler is not free, and every library in a monorepo
