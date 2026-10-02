@@ -132,7 +132,7 @@ program example_fortran_bsrmm
 !   the destination is an interoperable character array rather than a Fortran
 !   string. The C side writes a NUL-terminated revision, so the buffer is one
 !   byte longer than the text printed from it.
-    character(kind=c_char), target :: rev_buf(13)
+    character(kind=c_char), target :: rev_buf(64)
     character(len=12) :: rev
 
 !   Input data
