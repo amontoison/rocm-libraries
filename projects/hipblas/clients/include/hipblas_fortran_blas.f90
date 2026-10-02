@@ -179,7 +179,7 @@ function hipblasGetAtomicsModeFortran(handle, atomics_mode) &
     implicit none
     integer(kind(HIPBLAS_STATUS_SUCCESS)) :: hipblasGetAtomicsModeFortran
     type(c_ptr), value :: handle
-    type(c_ptr), value :: atomics_mode
+    integer(kind(HIPBLAS_ATOMICS_ALLOWED)) :: atomics_mode
             hipblasGetAtomicsModeFortran = &
         hipblasGetAtomicsMode(handle, atomics_mode)
 end function hipblasGetAtomicsModeFortran
