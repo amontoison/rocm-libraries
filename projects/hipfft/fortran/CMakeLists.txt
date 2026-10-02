@@ -57,7 +57,37 @@ endif()
 # gfortran happens to be on PATH, and enable_language(Fortran) then fails to
 # identify it. A default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still
 # works wherever a usable compiler exists.
-option(BUILD_FORTRAN_BINDINGS "Build the hipFFT and hipFFTW Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
+# than about the compiler. hipfft.F90 and hipfftw.F90 are produced from the ROCm
+# code path and are exercised only there: no CI job builds or runs them against
+# a cuFFT-backed libhipfft, so nothing in this tree says the bindings are
+# correct on that backend. Shipping them on by default would publish an untested
+# artefact, so they are off there and have to be asked for by name.
+#
+# BUILD_WITH_LIB is hipFFT's own backend switch, a cache string the root
+# declares and then normalises with string(TOUPPER), and the root also forces it
+# to CUDA when the compiler resolved to HIP-NVCC. Both happen before this
+# directory is added, so the value has settled by the time this is evaluated.
+# Standalone it is simply undefined and the default falls back to ${UNIX}, which
+# is correct: a standalone build of the bindings has no backend of its own.
+#
+# One option for both modules. hipFFT and hipFFTW are separate targets, and the
+# per-library HIPFFT_/HIPFFTW_ overrides further down still single either out,
+# but the reason to default off is the same for the two and splitting it would
+# only invite them to drift.
+if(BUILD_WITH_LIB STREQUAL "CUDA")
+  set(_hipfft_fortran_default OFF)
+else()
+  set(_hipfft_fortran_default "${UNIX}")
+endif()
+# The ONLY option(BUILD_FORTRAN_BINDINGS) in hipFFT, deliberately: the first
+# option() call in a CMake run fixes the cache entry, so a second one in the
+# root with a different default would be silently ignored by whichever ran
+# second and the two would read as disagreeing.
+option(BUILD_FORTRAN_BINDINGS "Build the hipFFT and hipFFTW Fortran bindings"
+       "${_hipfft_fortran_default}")
+unset(_hipfft_fortran_default)
 
 # The bindings' own test suites. ON by default and guarded the same way: asking
 # for the tests when the bindings were not built is a skip, not an error. ON is
@@ -139,6 +169,20 @@ endif()
 
 if(NOT _hipfft_bindings AND NOT _hipfftw_bindings)
   return()
+endif()
+
+# Reached on the CUDA backend only when the default above was overridden by
+# hand. Warn rather than fail: the bindings DO build and link there, since the
+# public hipFFT headers carry no CUDART_VERSION guard on their entry points and
+# library/src/nvidia_detail/ defines every symbol the modules reference. What is
+# missing is evidence, not symbols, so an explicit request is honoured and the
+# warning says exactly what the user is taking on.
+if(BUILD_WITH_LIB STREQUAL "CUDA")
+  message(WARNING
+    "hipFFT: the Fortran bindings were requested on the CUDA backend. "
+    "hipfft.F90 and hipfftw.F90 are generated from the ROCm code path and are "
+    "not tested against a cuFFT-backed libhipfft, which is why they are off by "
+    "default there. Building them is supported; vouching for them is not.")
 endif()
 
 # Probing for a Fortran compiler is not free, and every library in a monorepo
