@@ -94,6 +94,7 @@ endfunction()
 # sygvdx/hegvdx, sytrd, sterf) and the SVDs (gesvd, gesvdj), each across the
 # s/d/c/z types the API defines them for.
 set(ROCSOLVER_FORTRAN_TESTS
+    rocsolver_alg_mode
     rocsolver_cgebrd
     rocsolver_cgels
     rocsolver_cgeqrf
@@ -158,6 +159,7 @@ set(ROCSOLVER_FORTRAN_TESTS
     rocsolver_ssygvdx
     rocsolver_ssytrf
     rocsolver_ssytrs
+    rocsolver_version
     rocsolver_zgebrd
     rocsolver_zgels
     rocsolver_zgeqrf
