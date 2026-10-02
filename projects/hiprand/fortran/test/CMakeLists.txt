@@ -119,6 +119,7 @@ set(HIPRAND_FORTRAN_TESTS
     philox_poisson
     philox_uniform
     philox_uniform_double
+    hiprand_version
     sobol32_normal
     sobol32_normal_double
     sobol32_uniform
