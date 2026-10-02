@@ -1,3 +1,28 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+!
+! SPDX-License-Identifier: MIT
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in
+! all copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+! THE SOFTWARE.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !!!!!!!!!!!!!!
 ! chegvdx example (complex partial generalized Hermitian-definite eigensolver, Fortran 2003)
 ! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
@@ -22,7 +47,7 @@ program hipsolver_chegvdx
        (2.,0.),(0.,0.),(0.,0.), (0.,0.),(2.,0.),(0.,0.), (0.,0.),(0.,0.),(2.,0.) /), (/3,3/))
   complex(c_float_complex) :: hA0(3,3), hB0(3,3)
   real(c_float), target :: hW(3)
-  integer(c_int), target :: hNev, nevBuf
+  integer(c_int) :: hNev, nevBuf
   complex(c_float_complex) :: lhs(3), rhs(3)
 
   integer(c_size_t) :: sizeA = 9, sizeB = 9, sizeW = 3
@@ -56,7 +81,7 @@ program hipsolver_chegvdx
 
   call hipsolverCheck(hipsolverChegvdx(handle, HIPSOLVER_EIG_TYPE_1, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_EIG_RANGE_ALL, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dB, ldb, &
-       0.0, 0.0, 1, N, c_loc(hNev), dW, dWork, lwork, c_loc(dInfo(1))))
+       0.0, 0.0, 1, N, hNev, dW, dWork, lwork, c_loc(dInfo(1))))
 
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 8, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hW(1)), dW, sizeW * 4, hipMemcpyDeviceToHost))
