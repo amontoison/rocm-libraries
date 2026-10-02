@@ -111,8 +111,17 @@ else()
         hipfft_planmany_2d_z2z
         hipfft_r2c_c2r_1d_d
         hipfft_r2c_c2r_1d_s
-        hipfft_setstream_z
-        hipfft_version)
+        hipfft_setstream_z)
+
+    # hipfft_version passes its output scalars straight to hipfftGetProperty.
+    # That generic only resolves through the assumed-shape/assumed-rank module
+    # procedures; with FORTRAN_ARRAY_INTERFACES=none the interface is reduced to
+    # the raw bind(C) specific, whose dummy is type(c_ptr),value, so the call has
+    # no matching specific and the test does not compile. Register it only for
+    # the tiers that provide the generic.
+    if(NOT FORTRAN_ARRAY_INTERFACES STREQUAL "none")
+      list(APPEND HIPFFT_FORTRAN_TESTS hipfft_version)
+    endif()
 
     foreach(_t IN LISTS HIPFFT_FORTRAN_TESTS)
       hipfft_fortran_add_test(${_t})
