@@ -229,9 +229,9 @@ module hipblas
     function hipblasGetPointerMode(handle, mode) &
        result(GetPointerMode) &
        bind(C, name="hipblasGetPointerMode")
-       import :: c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: c_ptr, HIPBLAS_POINTER_MODE_HOST, HIPBLAS_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: mode
+       integer(kind(HIPBLAS_POINTER_MODE_HOST)) :: mode
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetPointerMode
     end function hipblasGetPointerMode
 
@@ -253,9 +253,9 @@ module hipblas
     function hipblasGetMathMode(handle, mode) &
        result(GetMathMode) &
        bind(C, name="hipblasGetMathMode")
-       import :: c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: c_ptr, HIPBLAS_DEFAULT_MATH, HIPBLAS_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: mode
+       integer(kind(HIPBLAS_DEFAULT_MATH)) :: mode
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetMathMode
     end function hipblasGetMathMode
 
@@ -290,9 +290,9 @@ module hipblas
     function hipblasGetAtomicsMode(handle, atomics_mode) &
        result(GetAtomicsMode) &
        bind(C, name="hipblasGetAtomicsMode")
-       import :: c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: c_ptr, HIPBLAS_ATOMICS_NOT_ALLOWED, HIPBLAS_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: atomics_mode
+       integer(kind(HIPBLAS_ATOMICS_NOT_ALLOWED)) :: atomics_mode
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetAtomicsMode
     end function hipblasGetAtomicsMode
 
