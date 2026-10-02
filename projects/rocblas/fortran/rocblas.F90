@@ -231,9 +231,9 @@ module rocblas
     function rocblas_get_pointer_mode(handle, pointer_mode) &
        result(get_pointer_mode) &
        bind(C, name="rocblas_get_pointer_mode")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, rocblas_pointer_mode_host, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: pointer_mode
+       integer(kind(rocblas_pointer_mode_host)) :: pointer_mode
        integer(kind(rocblas_status_success)) :: get_pointer_mode
     end function rocblas_get_pointer_mode
 
@@ -255,9 +255,9 @@ module rocblas
     function rocblas_get_atomics_mode(handle, atomics_mode) &
        result(get_atomics_mode) &
        bind(C, name="rocblas_get_atomics_mode")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, rocblas_atomics_not_allowed, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: atomics_mode
+       integer(kind(rocblas_atomics_not_allowed)) :: atomics_mode
        integer(kind(rocblas_status_success)) :: get_atomics_mode
     end function rocblas_get_atomics_mode
 
@@ -279,9 +279,9 @@ module rocblas
     function rocblas_get_batch_alpha_stride(handle, alpha_stride) &
        result(get_batch_alpha_stride) &
        bind(C, name="rocblas_get_batch_alpha_stride")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, c_int64_t, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: alpha_stride
+       integer(c_int64_t) :: alpha_stride
        integer(kind(rocblas_status_success)) :: get_batch_alpha_stride
     end function rocblas_get_batch_alpha_stride
 
@@ -303,9 +303,9 @@ module rocblas
     function rocblas_get_batch_beta_stride(handle, beta_stride) &
        result(get_batch_beta_stride) &
        bind(C, name="rocblas_get_batch_beta_stride")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, c_int64_t, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: beta_stride
+       integer(c_int64_t) :: beta_stride
        integer(kind(rocblas_status_success)) :: get_batch_beta_stride
     end function rocblas_get_batch_beta_stride
 
@@ -327,9 +327,9 @@ module rocblas
     function rocblas_get_math_mode(handle, math_mode) &
        result(get_math_mode) &
        bind(C, name="rocblas_get_math_mode")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, rocblas_default_math, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: math_mode
+       integer(kind(rocblas_default_math)) :: math_mode
        integer(kind(rocblas_status_success)) :: get_math_mode
     end function rocblas_get_math_mode
 
@@ -523,9 +523,9 @@ module rocblas
     function rocblas_get_performance_metric(handle, metric) &
        result(get_performance_metric) &
        bind(C, name="rocblas_get_performance_metric")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, rocblas_default_performance_metric, rocblas_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: metric
+       integer(kind(rocblas_default_performance_metric)) :: metric
        integer(kind(rocblas_status_success)) :: get_performance_metric
     end function rocblas_get_performance_metric
 
