@@ -53,7 +53,36 @@ endif()
 # root, which is what keeps the root's own enable_language(Fortran) off
 # Windows. A default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still works
 # wherever a usable compiler exists.
-option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
+# than about the compiler. hipsparse.F90 is generated from the ROCm path through
+# the public headers and declares all 557 entry points, but those headers are
+# CUDART_VERSION-conditional (59 of them, mirrored by 57 files under
+# library/src/nvidia_detail/), so a cuSPARSE-backed libhipsparse implements only
+# a subset. At the default assumed-shape tier the module object REFERENCES 361
+# of the entry points -- the CONTAINS wrappers call the bind(c) interfaces --
+# and roughly 119 of those are absent from a CUDA 12.x libhipsparse (44 on CUDA
+# 11.8, 242 on CUDA 13). hipsparseCheck lives in that same object, so merely
+# saying `use hipsparse` drags in every dead reference and the link fails. The
+# none tier emits no such references and is the one safe setting there; the
+# warning further down says so.
+#
+# HIPSPARSE_ENABLE_CUDA is hipSPARSE's own backend switch, set by the root
+# before this directory is added. Standalone it is simply undefined and the
+# default falls back to ${UNIX}, which is correct: a standalone build of the
+# bindings has no backend of its own.
+if(HIPSPARSE_ENABLE_CUDA)
+  set(_hipsparse_fortran_default OFF)
+else()
+  set(_hipsparse_fortran_default "${UNIX}")
+endif()
+# The ONLY option(BUILD_FORTRAN_BINDINGS) in hipSPARSE, deliberately: the first
+# option() call in a CMake run fixes the cache entry, so a second one in the
+# root with a different default would be silently ignored by whichever ran
+# second and the two would read as disagreeing.
+option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings"
+       "${_hipsparse_fortran_default}")
+unset(_hipsparse_fortran_default)
 
 # The bindings' own test suite, and the Fortran clients where a library has
 # them: one switch rather than two neighbouring ones. ON by default, and
@@ -116,6 +145,23 @@ endif()
 
 if(NOT BUILD_FORTRAN_BINDINGS)
   return()
+endif()
+
+# Reached on the CUDA backend only when the default above was overridden by
+# hand. Warn rather than fail: the bindings DO build there, and at the none tier
+# they also link, so an explicit request is honoured. The two upper tiers emit
+# CONTAINS wrappers that reference entry points a cuSPARSE-backed libhipsparse
+# does not define, and because hipsparseCheck shares that object every consumer
+# of the module inherits them.
+if(HIPSPARSE_ENABLE_CUDA AND NOT FORTRAN_ARRAY_INTERFACES STREQUAL "none")
+  message(WARNING
+    "hipSPARSE: the Fortran bindings were requested on the CUDA backend. "
+    "hipsparse.F90 is generated from the ROCm path and the "
+    "'${FORTRAN_ARRAY_INTERFACES}' tier references 361 entry points, around "
+    "119 of which a CUDA 12.x libhipsparse does not define (44 on CUDA 11.8, "
+    "242 on CUDA 13); anything that uses the module will fail to link. "
+    "Configure with -DFORTRAN_ARRAY_INTERFACES=none, which emits no such "
+    "references, or leave BUILD_FORTRAN_BINDINGS at its default.")
 endif()
 
 # Probing for a Fortran compiler is not free, and every library in a monorepo
