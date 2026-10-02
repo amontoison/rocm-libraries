@@ -56,6 +56,18 @@ endif()
 project(hipRAND CXX)
 
 # Build options
+
+# The backend selector comes FIRST, ahead of the option() block below, because
+# BUILD_FORTRAN_BINDINGS's default is computed from it. It used to sit after
+# that block, which was harmless while every option had a constant default and
+# is not any more: option() only honours its default when it creates the cache
+# entry, so a BUILD_WITH_LIB read before this line would have been empty and the
+# Fortran default would silently have been the ROCm one on every backend.
+# Nothing between here and its old position used it, so this is a move and not a
+# change.
+set(BUILD_WITH_LIB "ROCM" CACHE STRING "Select backend library to build with (ROCM or CUDA)")
+set_property(CACHE BUILD_WITH_LIB PROPERTY STRINGS "ROCM" "CUDA")
+
 option(BUILD_ADDRESS_SANITIZER "Build with address sanitizer enabled" OFF)
 option(BUILD_BENCHMARK "Build benchmarks" OFF)
 option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
@@ -68,16 +80,29 @@ option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
 # since it creates the cache entry first; fortran/ carries the same default so
 # that a standalone configure of that directory agrees. The full reasoning is
 # in fortran/CMakeLists.txt.
-option(BUILD_FORTRAN_BINDINGS "Build the hipRAND Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
+# than about the compiler. hiprand.F90 is produced from the ROCm code path and
+# is exercised only there: no CI job builds or runs it against a cuRAND-backed
+# libhiprand, so nothing in this tree says the binding is correct on that
+# backend. Shipping it on by default would publish an untested artefact, so it
+# is off there and has to be asked for by name. BUILD_WITH_LIB is hipRAND's own
+# backend switch, moved above this block for the purpose; the warning that fires
+# when the bindings are asked for anyway is in fortran/CMakeLists.txt.
+if(BUILD_WITH_LIB STREQUAL "CUDA")
+  set(_hiprand_fortran_default OFF)
+else()
+  set(_hiprand_fortran_default "${UNIX}")
+endif()
+option(BUILD_FORTRAN_BINDINGS "Build the hipRAND Fortran bindings"
+       "${_hiprand_fortran_default}")
+unset(_hiprand_fortran_default)
 option(BUILD_TEST "Build tests (requires googletest)" OFF)
 option(EXTERNAL_DEPS_FORCE_DOWNLOAD "Download non-ROCm dependencies and do not search for packages" OFF)
 option(DISABLE_WERROR "Disable building with Werror" ON)
 option(DOWNLOAD_ROCRAND "Download rocRAND if it is not found in the default install directory or the manually-specified directory" OFF)
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 option(BUILD_SHARED_LIBS "Build shared" ON)
-
-set(BUILD_WITH_LIB "ROCM" CACHE STRING "Select backend library to build with (ROCM or CUDA)")
-set_property(CACHE BUILD_WITH_LIB PROPERTY STRINGS "ROCM" "CUDA")
 
 # Set up options for obtaining dependency rocPRIM.
 # PACKAGE: Search for an install package that contains the dependency.
