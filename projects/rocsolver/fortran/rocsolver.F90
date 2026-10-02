@@ -269,10 +269,10 @@ module rocsolver
     function rocsolver_get_alg_mode(handle, func, mode) &
        result(get_alg_mode) &
        bind(C, name="rocsolver_get_alg_mode")
-       import :: c_ptr, rocsolver_function_bdsqr, rocblas_status_success
+       import :: c_ptr, rocsolver_function_bdsqr, rocsolver_alg_mode_gpu, rocblas_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsolver_function_bdsqr)), value :: func
-       type(c_ptr), value :: mode
+       integer(kind(rocsolver_alg_mode_gpu)) :: mode
        integer(kind(rocblas_status_success)) :: get_alg_mode
     end function rocsolver_get_alg_mode
 
@@ -20815,9 +20815,9 @@ module rocsolver
     function rocsolver_get_rfinfo_mode(rfinfo, mode) &
        result(get_rfinfo_mode) &
        bind(C, name="rocsolver_get_rfinfo_mode")
-       import :: c_ptr, rocblas_status_success
+       import :: c_ptr, rocsolver_rfinfo_mode_lu, rocblas_status_success
        type(c_ptr), value :: rfinfo
-       type(c_ptr), value :: mode
+       integer(kind(rocsolver_rfinfo_mode_lu)) :: mode
        integer(kind(rocblas_status_success)) :: get_rfinfo_mode
     end function rocsolver_get_rfinfo_mode
 
