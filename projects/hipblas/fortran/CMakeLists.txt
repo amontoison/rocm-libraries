@@ -58,7 +58,36 @@ endif()
 # with cmake_dependent_option(... "NOT WIN32" OFF) in
 # clients/cmake/build-options.cmake. A default and not a veto:
 # -DBUILD_FORTRAN_BINDINGS=ON still works wherever a usable compiler exists.
-option(BUILD_FORTRAN_BINDINGS "Build the hipBLAS Fortran bindings" "${UNIX}")
+#
+# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
+# than about the compiler. hipblas.F90 is produced from the ROCm code path and
+# is exercised only there: no CI job builds or runs it against a cuBLAS-backed
+# libhipblas, so nothing in this tree says the binding is correct on that
+# backend. Shipping it on by default would publish an untested artefact, so it
+# is off there and has to be asked for by name.
+#
+# hipBLAS has no backend variable of its own: the root sets ENV{HIP_PLATFORM} to
+# nvidia for the deprecated -DUSE_CUDA=ON, and again when find_package(hip)
+# fails and the HIP MODULE path takes over, and only then gives the plain
+# HIP_PLATFORM variable a value. Both spellings are read because either can be
+# the one that carries the answer: the environment variable when the platform
+# came in through the environment, the plain variable when the root or the user
+# set it directly. Both blocks run before add_subdirectory(fortran), so the
+# value has settled by the time this is evaluated. Standalone, neither is
+# defined and the default falls back to ${UNIX}, which is correct: a standalone
+# build of the bindings has no backend of its own.
+if("$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+  set(_hipblas_fortran_default OFF)
+else()
+  set(_hipblas_fortran_default "${UNIX}")
+endif()
+# The ONLY option(BUILD_FORTRAN_BINDINGS) in hipBLAS, deliberately: the first
+# option() call in a CMake run fixes the cache entry, so a second one in the
+# root with a different default would be silently ignored by whichever ran
+# second and the two would read as disagreeing.
+option(BUILD_FORTRAN_BINDINGS "Build the hipBLAS Fortran bindings"
+       "${_hipblas_fortran_default}")
+unset(_hipblas_fortran_default)
 
 # The bindings' own test suite, and the Fortran clients where a library has
 # them: one switch rather than two neighbouring ones. ON by default, and
@@ -124,6 +153,20 @@ endif()
 
 if(NOT BUILD_FORTRAN_BINDINGS)
   return()
+endif()
+
+# Reached on the CUDA backend only when the default above was overridden by
+# hand. Warn rather than fail: the bindings DO build and link there, since the
+# public hipBLAS headers carry no CUDART_VERSION guard on their entry points and
+# library/src/nvidia_detail/ defines every symbol the module references. What is
+# missing is evidence, not symbols, so an explicit request is honoured and the
+# warning says exactly what the user is taking on.
+if("$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+  message(WARNING
+    "hipBLAS: the Fortran bindings were requested on the CUDA backend. "
+    "hipblas.F90 is generated from the ROCm code path and is not tested "
+    "against a cuBLAS-backed libhipblas, which is why it is off by default "
+    "there. Building it is supported; vouching for it is not.")
 endif()
 
 # Probing for a Fortran compiler is not free, and every library in a monorepo
