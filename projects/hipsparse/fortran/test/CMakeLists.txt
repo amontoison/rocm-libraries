@@ -103,6 +103,7 @@ set(HIPSPARSE_FORTRAN_TESTS
     hipsparse_dcsrgemm
     hipsparse_dcsrilu02
     hipsparse_dcsrsv2
+    hipsparse_descr_get
     hipsparse_dgemvi
     hipsparse_dgthr
     hipsparse_dsctr
@@ -111,6 +112,7 @@ set(HIPSPARSE_FORTRAN_TESTS
     hipsparse_dspmv
     hipsparse_dsptrsm
     hipsparse_dsptrsv
+    hipsparse_pointer_mode
     hipsparse_scsrgemm
     hipsparse_scsrilu02
     hipsparse_scsrsv2
@@ -122,6 +124,7 @@ set(HIPSPARSE_FORTRAN_TESTS
     hipsparse_sspmv
     hipsparse_ssptrsm
     hipsparse_ssptrsv
+    hipsparse_version
     hipsparse_xcoo2csr
     hipsparse_xcsr2coo
     hipsparse_zcsr2csc

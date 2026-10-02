@@ -58,8 +58,8 @@ program example_fortran_auxiliary
     type(c_ptr) :: descr_A
     type(c_ptr) :: descr_B
 
-    integer(c_int), target :: version
-    integer(c_int), target :: pointer_mode
+    integer(c_int) :: version
+    integer(kind(HIPSPARSE_POINTER_MODE_HOST)) :: pointer_mode
     integer :: index_base
     integer :: mat_type
     integer :: fill_mode
@@ -69,7 +69,7 @@ program example_fortran_auxiliary
     call HIPSPARSE_CHECK(hipsparseCreate(handle))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &
@@ -77,11 +77,11 @@ program example_fortran_auxiliary
 
 !   Pointer mode
     call HIPSPARSE_CHECK(hipsparseSetPointerMode(handle, HIPSPARSE_POINTER_MODE_HOST))
-    call HIPSPARSE_CHECK(hipsparseGetPointerMode(handle, c_loc(pointer_mode)))
+    call HIPSPARSE_CHECK(hipsparseGetPointerMode(handle, pointer_mode))
     call COMPARE_EQUAL(pointer_mode, HIPSPARSE_POINTER_MODE_HOST);
 
     call HIPSPARSE_CHECK(hipsparseSetPointerMode(handle, HIPSPARSE_POINTER_MODE_DEVICE))
-    call HIPSPARSE_CHECK(hipsparseGetPointerMode(handle, c_loc(pointer_mode)))
+    call HIPSPARSE_CHECK(hipsparseGetPointerMode(handle, pointer_mode))
     call COMPARE_EQUAL(pointer_mode, HIPSPARSE_POINTER_MODE_DEVICE);
 
 !   Matrix descriptor
