@@ -283,9 +283,9 @@ module hipsparse
     function hipsparseGetVersion(handle, version) &
        result(GetVersion) &
        bind(C, name="hipsparseGetVersion")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: version
+       integer(c_int) :: version
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: GetVersion
     end function hipsparseGetVersion
 
@@ -343,9 +343,9 @@ module hipsparse
     function hipsparseGetPointerMode(handle, mode) &
        result(GetPointerMode) &
        bind(C, name="hipsparseGetPointerMode")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, HIPSPARSE_POINTER_MODE_HOST, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: mode
+       integer(kind(HIPSPARSE_POINTER_MODE_HOST)) :: mode
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: GetPointerMode
     end function hipsparseGetPointerMode
 
@@ -1514,15 +1514,16 @@ module hipsparse
                                valueType) &
        result(SpVecGet) &
        bind(C, name="hipsparseSpVecGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spVecDescr
        type(c_ptr), value :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
-       type(c_ptr), value :: idxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: idxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpVecGet
     end function hipsparseSpVecGet
 
@@ -1533,15 +1534,16 @@ module hipsparse
                                     valueType) &
        result(ConstSpVecGet) &
        bind(C, name="hipsparseConstSpVecGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spVecDescr
        type(c_ptr), value :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
-       type(c_ptr), value :: idxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: idxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstSpVecGet
     end function hipsparseConstSpVecGet
 
@@ -1551,9 +1553,9 @@ module hipsparse
     function hipsparseSpVecGetIndexBase(spVecDescr, idxBase) &
        result(SpVecGetIndexBase) &
        bind(C, name="hipsparseSpVecGetIndexBase")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, HIPSPARSE_INDEX_BASE_ZERO, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spVecDescr
-       type(c_ptr), value :: idxBase
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpVecGetIndexBase
     end function hipsparseSpVecGetIndexBase
 
@@ -1921,7 +1923,8 @@ module hipsparse
                              idxType, idxBase, valueType) &
        result(CooGet) &
        bind(C, name="hipsparseCooGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -1929,9 +1932,9 @@ module hipsparse
        type(c_ptr) :: cooRowInd
        type(c_ptr) :: cooColInd
        type(c_ptr) :: cooValues
-       type(c_ptr), value :: idxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: idxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: CooGet
     end function hipsparseCooGet
 
@@ -1942,7 +1945,8 @@ module hipsparse
                                   idxType, idxBase, valueType) &
        result(ConstCooGet) &
        bind(C, name="hipsparseConstCooGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -1950,9 +1954,9 @@ module hipsparse
        type(c_ptr) :: cooRowInd
        type(c_ptr) :: cooColInd
        type(c_ptr) :: cooValues
-       type(c_ptr), value :: idxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: idxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstCooGet
     end function hipsparseConstCooGet
 
@@ -1963,16 +1967,17 @@ module hipsparse
                                 valueType) &
        result(CooAoSGet) &
        bind(C, name="hipsparseCooAoSGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(c_int64_t) :: nnz
        type(c_ptr) :: cooInd
        type(c_ptr) :: cooValues
-       type(c_ptr), value :: idxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: idxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: CooAoSGet
     end function hipsparseCooAoSGet
 
@@ -1983,7 +1988,8 @@ module hipsparse
                              csrRowOffsetsType, csrColIndType, idxBase, valueType) &
        result(CsrGet) &
        bind(C, name="hipsparseCsrGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -1991,10 +1997,10 @@ module hipsparse
        type(c_ptr) :: csrRowOffsets
        type(c_ptr) :: csrColInd
        type(c_ptr) :: csrValues
-       type(c_ptr), value :: csrRowOffsetsType
-       type(c_ptr), value :: csrColIndType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: csrRowOffsetsType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: csrColIndType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: CsrGet
     end function hipsparseCsrGet
 
@@ -2005,7 +2011,8 @@ module hipsparse
                                   csrValues, csrRowOffsetsType, csrColIndType, idxBase, valueType) &
        result(ConstCsrGet) &
        bind(C, name="hipsparseConstCsrGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2013,10 +2020,10 @@ module hipsparse
        type(c_ptr) :: csrRowOffsets
        type(c_ptr) :: csrColInd
        type(c_ptr) :: csrValues
-       type(c_ptr), value :: csrRowOffsetsType
-       type(c_ptr), value :: csrColIndType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: csrRowOffsetsType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: csrColIndType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstCsrGet
     end function hipsparseConstCsrGet
 
@@ -2027,7 +2034,8 @@ module hipsparse
                              cscColOffsetsType, cscRowIndType, idxBase, valueType) &
        result(CscGet) &
        bind(C, name="hipsparseCscGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2035,10 +2043,10 @@ module hipsparse
        type(c_ptr) :: cscColOffsets
        type(c_ptr) :: cscRowInd
        type(c_ptr) :: cscValues
-       type(c_ptr), value :: cscColOffsetsType
-       type(c_ptr), value :: cscRowIndType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: cscColOffsetsType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: cscRowIndType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: CscGet
     end function hipsparseCscGet
 
@@ -2049,7 +2057,8 @@ module hipsparse
                                   cscValues, cscColOffsetsType, cscRowIndType, idxBase, valueType) &
        result(ConstCscGet) &
        bind(C, name="hipsparseConstCscGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2057,10 +2066,10 @@ module hipsparse
        type(c_ptr) :: cscColOffsets
        type(c_ptr) :: cscRowInd
        type(c_ptr) :: cscValues
-       type(c_ptr), value :: cscColOffsetsType
-       type(c_ptr), value :: cscRowIndType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: cscColOffsetsType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: cscRowIndType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstCscGet
     end function hipsparseConstCscGet
 
@@ -2071,7 +2080,8 @@ module hipsparse
                                     ellValue, ellIdxType, idxBase, valueType) &
        result(BlockedEllGet) &
        bind(C, name="hipsparseBlockedEllGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2079,9 +2089,9 @@ module hipsparse
        type(c_ptr), value :: ellCols
        type(c_ptr) :: ellColInd
        type(c_ptr) :: ellValue
-       type(c_ptr), value :: ellIdxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: ellIdxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: BlockedEllGet
     end function hipsparseBlockedEllGet
 
@@ -2092,7 +2102,8 @@ module hipsparse
                                          ellValue, ellIdxType, idxBase, valueType) &
        result(ConstBlockedEllGet) &
        bind(C, name="hipsparseConstBlockedEllGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPSPARSE_INDEX_16U, HIPSPARSE_INDEX_BASE_ZERO, c_int, &
+                 HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2100,9 +2111,9 @@ module hipsparse
        type(c_ptr), value :: ellCols
        type(c_ptr) :: ellColInd
        type(c_ptr) :: ellValue
-       type(c_ptr), value :: ellIdxType
-       type(c_ptr), value :: idxBase
-       type(c_ptr), value :: valueType
+       integer(kind(HIPSPARSE_INDEX_16U)) :: ellIdxType
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstBlockedEllGet
     end function hipsparseConstBlockedEllGet
 
@@ -2181,9 +2192,9 @@ module hipsparse
     function hipsparseSpMatGetFormat(spMatDescr, myFormat) &
        result(SpMatGetFormat) &
        bind(C, name="hipsparseSpMatGetFormat")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, HIPSPARSE_FORMAT_CSR, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
-       type(c_ptr), value :: myFormat
+       integer(kind(HIPSPARSE_FORMAT_CSR)) :: myFormat
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpMatGetFormat
     end function hipsparseSpMatGetFormat
 
@@ -2193,9 +2204,9 @@ module hipsparse
     function hipsparseSpMatGetIndexBase(spMatDescr, idxBase) &
        result(SpMatGetIndexBase) &
        bind(C, name="hipsparseSpMatGetIndexBase")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, HIPSPARSE_INDEX_BASE_ZERO, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: spMatDescr
-       type(c_ptr), value :: idxBase
+       integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: idxBase
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpMatGetIndexBase
     end function hipsparseSpMatGetIndexBase
 
@@ -2360,11 +2371,11 @@ module hipsparse
     function hipsparseDnVecGet(dnVecDescr, mySize, values, valueType) &
        result(DnVecGet) &
        bind(C, name="hipsparseDnVecGet")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: dnVecDescr
        type(c_ptr), value :: mySize
        type(c_ptr) :: values
-       type(c_ptr), value :: valueType
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: DnVecGet
     end function hipsparseDnVecGet
 
@@ -2374,11 +2385,11 @@ module hipsparse
     function hipsparseConstDnVecGet(dnVecDescr, mySize, values, valueType) &
        result(ConstDnVecGet) &
        bind(C, name="hipsparseConstDnVecGet")
-       import :: c_ptr, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: dnVecDescr
        type(c_ptr), value :: mySize
        type(c_ptr) :: values
-       type(c_ptr), value :: valueType
+       integer(c_int) :: valueType
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstDnVecGet
     end function hipsparseConstDnVecGet
 
@@ -2469,14 +2480,14 @@ module hipsparse
     function hipsparseDnMatGet(dnMatDescr, rows, cols, ld, values, valueType, order) &
        result(DnMatGet) &
        bind(C, name="hipsparseDnMatGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, c_int, HIPSPARSE_ORDER_COLUMN, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: dnMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr), value :: ld
        type(c_ptr) :: values
-       type(c_ptr), value :: valueType
-       type(c_ptr), value :: order
+       integer(c_int) :: valueType
+       integer(kind(HIPSPARSE_ORDER_COLUMN)) :: order
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: DnMatGet
     end function hipsparseDnMatGet
 
@@ -2486,14 +2497,14 @@ module hipsparse
     function hipsparseConstDnMatGet(dnMatDescr, rows, cols, ld, values, valueType, order) &
        result(ConstDnMatGet) &
        bind(C, name="hipsparseConstDnMatGet")
-       import :: c_ptr, c_int64_t, HIPSPARSE_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, c_int, HIPSPARSE_ORDER_COLUMN, HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: dnMatDescr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr), value :: ld
        type(c_ptr) :: values
-       type(c_ptr), value :: valueType
-       type(c_ptr), value :: order
+       integer(c_int) :: valueType
+       integer(kind(HIPSPARSE_ORDER_COLUMN)) :: order
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: ConstDnMatGet
     end function hipsparseConstDnMatGet
 
@@ -2882,7 +2893,7 @@ module hipsparse
                                             externalBuffer1) &
        result(SpGEMM_workEstimation) &
        bind(C, name="hipsparseSpGEMM_workEstimation")
-       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, c_int, HIPSPARSE_SPGEMM_DEFAULT, &
+       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, c_int, HIPSPARSE_SPGEMM_DEFAULT, c_size_t, &
                  HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSPARSE_OPERATION_NON_TRANSPOSE)), value :: opA
@@ -2895,7 +2906,7 @@ module hipsparse
        integer(c_int), value :: computeType
        integer(kind(HIPSPARSE_SPGEMM_DEFAULT)), value :: alg
        type(c_ptr), value :: spgemmDescr
-       type(c_ptr), value :: bufferSize1
+       integer(c_size_t) :: bufferSize1
        type(c_ptr), value :: externalBuffer1
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpGEMM_workEstimation
     end function hipsparseSpGEMM_workEstimation
@@ -2907,7 +2918,7 @@ module hipsparse
                                      alg, spgemmDescr, bufferSize2, externalBuffer2) &
        result(SpGEMM_compute) &
        bind(C, name="hipsparseSpGEMM_compute")
-       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, c_int, HIPSPARSE_SPGEMM_DEFAULT, &
+       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, c_int, HIPSPARSE_SPGEMM_DEFAULT, c_size_t, &
                  HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSPARSE_OPERATION_NON_TRANSPOSE)), value :: opA
@@ -2920,7 +2931,7 @@ module hipsparse
        integer(c_int), value :: computeType
        integer(kind(HIPSPARSE_SPGEMM_DEFAULT)), value :: alg
        type(c_ptr), value :: spgemmDescr
-       type(c_ptr), value :: bufferSize2
+       integer(c_size_t) :: bufferSize2
        type(c_ptr), value :: externalBuffer2
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpGEMM_compute
     end function hipsparseSpGEMM_compute
@@ -2955,7 +2966,7 @@ module hipsparse
                                                  spgemmDescr, bufferSize1, externalBuffer1) &
        result(SpGEMMreuse_workEstimation) &
        bind(C, name="hipsparseSpGEMMreuse_workEstimation")
-       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, &
+       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, c_size_t, &
                  HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSPARSE_OPERATION_NON_TRANSPOSE)), value :: opA
@@ -2965,7 +2976,7 @@ module hipsparse
        type(c_ptr), value :: matC
        integer(kind(HIPSPARSE_SPGEMM_DEFAULT)), value :: alg
        type(c_ptr), value :: spgemmDescr
-       type(c_ptr), value :: bufferSize1
+       integer(c_size_t) :: bufferSize1
        type(c_ptr), value :: externalBuffer1
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpGEMMreuse_workEstimation
     end function hipsparseSpGEMMreuse_workEstimation
@@ -2978,7 +2989,7 @@ module hipsparse
                                       bufferSize4, externalBuffer4) &
        result(SpGEMMreuse_nnz) &
        bind(C, name="hipsparseSpGEMMreuse_nnz")
-       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, &
+       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, c_size_t, &
                  HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSPARSE_OPERATION_NON_TRANSPOSE)), value :: opA
@@ -2988,11 +2999,11 @@ module hipsparse
        type(c_ptr), value :: matC
        integer(kind(HIPSPARSE_SPGEMM_DEFAULT)), value :: alg
        type(c_ptr), value :: spgemmDescr
-       type(c_ptr), value :: bufferSize2
+       integer(c_size_t) :: bufferSize2
        type(c_ptr), value :: externalBuffer2
-       type(c_ptr), value :: bufferSize3
+       integer(c_size_t) :: bufferSize3
        type(c_ptr), value :: externalBuffer3
-       type(c_ptr), value :: bufferSize4
+       integer(c_size_t) :: bufferSize4
        type(c_ptr), value :: externalBuffer4
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpGEMMreuse_nnz
     end function hipsparseSpGEMMreuse_nnz
@@ -3004,7 +3015,7 @@ module hipsparse
                                        bufferSize5, externalBuffer5) &
        result(SpGEMMreuse_copy) &
        bind(C, name="hipsparseSpGEMMreuse_copy")
-       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, &
+       import :: c_ptr, HIPSPARSE_OPERATION_NON_TRANSPOSE, HIPSPARSE_SPGEMM_DEFAULT, c_size_t, &
                  HIPSPARSE_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSPARSE_OPERATION_NON_TRANSPOSE)), value :: opA
@@ -3014,7 +3025,7 @@ module hipsparse
        type(c_ptr), value :: matC
        integer(kind(HIPSPARSE_SPGEMM_DEFAULT)), value :: alg
        type(c_ptr), value :: spgemmDescr
-       type(c_ptr), value :: bufferSize5
+       integer(c_size_t) :: bufferSize5
        type(c_ptr), value :: externalBuffer5
        integer(kind(HIPSPARSE_STATUS_SUCCESS)) :: SpGEMMreuse_copy
     end function hipsparseSpGEMMreuse_copy

@@ -98,7 +98,7 @@ program example_fortran_hybmv
 
     type(c_ptr) :: handle, descr_a, hyb_a
 
-    integer(c_int), target :: version
+    integer(c_int) :: version
 
 !   Input data
     m = 4
@@ -138,7 +138,7 @@ program example_fortran_hybmv
     call HIPSPARSE_CHECK(hipsparseCreateMatDescr(descr_a))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &
         mod(version / 100, 1000), '.', mod(version, 100)
 

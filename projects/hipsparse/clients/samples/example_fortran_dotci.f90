@@ -123,7 +123,7 @@ program example_fortran_roti
 
     type(c_ptr) :: handle
 
-    integer(c_int), target :: version
+    integer(c_int) :: version
 
 !   Input data
 
@@ -155,7 +155,7 @@ program example_fortran_roti
     call HIPSPARSE_CHECK(hipsparseSetPointerMode(handle, HIPSPARSE_POINTER_MODE_DEVICE))
 
 !   Get hipSPARSE version
-    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, c_loc(version)))
+    call HIPSPARSE_CHECK(hipsparseGetVersion(handle, version))
 
 !   Print version on screen
     write(*,fmt='(A,I0,A,I0,A,I0)') 'hipSPARSE version: ', version / 100000, '.', &
