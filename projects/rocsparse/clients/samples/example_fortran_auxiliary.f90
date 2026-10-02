@@ -58,8 +58,8 @@ program example_fortran_auxiliary
     type(c_ptr) :: descr_A
     type(c_ptr) :: descr_B
 
-    integer(c_int), target :: version
-    integer(c_int), target :: pointer_mode
+    integer(c_int) :: version
+    integer(kind(rocsparse_pointer_mode_host)) :: pointer_mode
     integer :: index_base
     integer :: mat_type
     integer :: fill_mode
@@ -76,7 +76,7 @@ program example_fortran_auxiliary
     call ROCSPARSE_CHECK(rocsparse_create_handle(handle))
 
 !   Get rocSPARSE version
-    call ROCSPARSE_CHECK(rocsparse_get_version(handle, c_loc(version)))
+    call ROCSPARSE_CHECK(rocsparse_get_version(handle, version))
 !   Zero-fill first: the C side writes only as many bytes as the revision needs,
 !   and the transfer below copies a fixed 12, so any byte it does not write must
 !   already hold a NUL rather than whatever was on the stack.
@@ -93,11 +93,11 @@ program example_fortran_auxiliary
 
 !   Pointer mode
     call ROCSPARSE_CHECK(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_host))
-    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, c_loc(pointer_mode)))
+    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, pointer_mode))
     call COMPARE_EQUAL(pointer_mode, rocsparse_pointer_mode_host);
 
     call ROCSPARSE_CHECK(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_device))
-    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, c_loc(pointer_mode)))
+    call ROCSPARSE_CHECK(rocsparse_get_pointer_mode(handle, pointer_mode))
     call COMPARE_EQUAL(pointer_mode, rocsparse_pointer_mode_device);
 
 !   Matrix descriptor

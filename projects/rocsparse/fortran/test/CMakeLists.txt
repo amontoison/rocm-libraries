@@ -111,6 +111,7 @@ set(ROCSPARSE_FORTRAN_TESTS
 #   rocsparse_dcsrgemm
     rocsparse_dcsric0
     rocsparse_dcsrilu0
+    rocsparse_descr_get
     rocsparse_dgebsrmv
     rocsparse_dgemvi
     rocsparse_dgthr
@@ -120,6 +121,7 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_dspmv
     rocsparse_dsptrsm
     rocsparse_dsptrsv
+    rocsparse_pointer_mode
     rocsparse_sbsrmv
     rocsparse_scsr2csc
 #   rocsparse_scsrgeam
@@ -136,6 +138,7 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_sspmv
     rocsparse_ssptrsm
     rocsparse_ssptrsv
+    rocsparse_version
     rocsparse_zbsrmv
     rocsparse_zcsr2csc
 #   rocsparse_zcsrgeam

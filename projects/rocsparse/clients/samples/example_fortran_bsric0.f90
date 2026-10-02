@@ -128,7 +128,7 @@ program example_fortran_bsric0
     type(c_ptr) :: descr
     type(c_ptr) :: info
 
-    integer(c_int), target :: version
+    integer(c_int) :: version
 
 !   rocsparse_get_git_rev takes a char*, so the binding takes a type(c_ptr) and
 !   the destination is an interoperable character array rather than a Fortran
@@ -180,7 +180,7 @@ program example_fortran_bsric0
     call ROCSPARSE_CHECK(rocsparse_create_handle(handle))
 
 !   Get rocSPARSE version
-    call ROCSPARSE_CHECK(rocsparse_get_version(handle, c_loc(version)))
+    call ROCSPARSE_CHECK(rocsparse_get_version(handle, version))
 !   Zero-fill first: the C side writes only as many bytes as the revision needs,
 !   and the transfer below copies a fixed 12, so any byte it does not write must
 !   already hold a NUL rather than whatever was on the stack.

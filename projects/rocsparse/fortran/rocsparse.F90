@@ -709,9 +709,9 @@ module rocsparse
     function rocsparse_get_pointer_mode(handle, pointer_mode) &
        result(get_pointer_mode) &
        bind(C, name="rocsparse_get_pointer_mode")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_pointer_mode_host, rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: pointer_mode
+       integer(kind(rocsparse_pointer_mode_host)) :: pointer_mode
        integer(kind(rocsparse_status_success)) :: get_pointer_mode
     end function rocsparse_get_pointer_mode
 
@@ -721,9 +721,9 @@ module rocsparse
     function rocsparse_get_version(handle, version) &
        result(get_version) &
        bind(C, name="rocsparse_get_version")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_int, rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: version
+       integer(c_int) :: version
        integer(kind(rocsparse_status_success)) :: get_version
     end function rocsparse_get_version
 
@@ -1048,15 +1048,16 @@ module rocsparse
                                  data_type) &
        result(spvec_get) &
        bind(C, name="rocsparse_spvec_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: spvec_get
     end function rocsparse_spvec_get
 
@@ -1067,15 +1068,16 @@ module rocsparse
                                        data_type) &
        result(const_spvec_get) &
        bind(C, name="rocsparse_const_spvec_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_spvec_get
     end function rocsparse_const_spvec_get
 
@@ -1085,9 +1087,9 @@ module rocsparse
     function rocsparse_spvec_get_index_base(descr, idx_base) &
        result(spvec_get_index_base) &
        bind(C, name="rocsparse_spvec_get_index_base")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_index_base_zero, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: idx_base
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
        integer(kind(rocsparse_status_success)) :: spvec_get_index_base
     end function rocsparse_spvec_get_index_base
 
@@ -1950,7 +1952,8 @@ module rocsparse
                                idx_type, idx_base, data_type) &
        result(coo_get) &
        bind(C, name="rocsparse_coo_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -1958,9 +1961,9 @@ module rocsparse
        type(c_ptr) :: coo_row_ind
        type(c_ptr) :: coo_col_ind
        type(c_ptr) :: coo_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: coo_get
     end function rocsparse_coo_get
 
@@ -1971,7 +1974,8 @@ module rocsparse
                                      idx_type, idx_base, data_type) &
        result(const_coo_get) &
        bind(C, name="rocsparse_const_coo_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -1979,9 +1983,9 @@ module rocsparse
        type(c_ptr) :: coo_row_ind
        type(c_ptr) :: coo_col_ind
        type(c_ptr) :: coo_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_coo_get
     end function rocsparse_const_coo_get
 
@@ -1992,16 +1996,17 @@ module rocsparse
                                    data_type) &
        result(coo_aos_get) &
        bind(C, name="rocsparse_coo_aos_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(c_int64_t) :: nnz
        type(c_ptr) :: coo_ind
        type(c_ptr) :: coo_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: coo_aos_get
     end function rocsparse_coo_aos_get
 
@@ -2012,16 +2017,17 @@ module rocsparse
                                          idx_base, data_type) &
        result(const_coo_aos_get) &
        bind(C, name="rocsparse_const_coo_aos_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(c_int64_t) :: nnz
        type(c_ptr) :: coo_ind
        type(c_ptr) :: coo_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_coo_aos_get
     end function rocsparse_const_coo_aos_get
 
@@ -2032,7 +2038,8 @@ module rocsparse
                                row_ptr_type, col_ind_type, idx_base, data_type) &
        result(csr_get) &
        bind(C, name="rocsparse_csr_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2040,10 +2047,10 @@ module rocsparse
        type(c_ptr) :: csr_row_ptr
        type(c_ptr) :: csr_col_ind
        type(c_ptr) :: csr_val
-       type(c_ptr), value :: row_ptr_type
-       type(c_ptr), value :: col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: csr_get
     end function rocsparse_csr_get
 
@@ -2054,7 +2061,8 @@ module rocsparse
                                      row_ptr_type, col_ind_type, idx_base, data_type) &
        result(const_csr_get) &
        bind(C, name="rocsparse_const_csr_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2062,10 +2070,10 @@ module rocsparse
        type(c_ptr) :: csr_row_ptr
        type(c_ptr) :: csr_col_ind
        type(c_ptr) :: csr_val
-       type(c_ptr), value :: row_ptr_type
-       type(c_ptr), value :: col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_csr_get
     end function rocsparse_const_csr_get
 
@@ -2076,7 +2084,8 @@ module rocsparse
                                col_ptr_type, row_ind_type, idx_base, data_type) &
        result(csc_get) &
        bind(C, name="rocsparse_csc_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2084,10 +2093,10 @@ module rocsparse
        type(c_ptr) :: csc_col_ptr
        type(c_ptr) :: csc_row_ind
        type(c_ptr) :: csc_val
-       type(c_ptr), value :: col_ptr_type
-       type(c_ptr), value :: row_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: csc_get
     end function rocsparse_csc_get
 
@@ -2098,7 +2107,8 @@ module rocsparse
                                      col_ptr_type, row_ind_type, idx_base, data_type) &
        result(const_csc_get) &
        bind(C, name="rocsparse_const_csc_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2106,10 +2116,10 @@ module rocsparse
        type(c_ptr) :: csc_col_ptr
        type(c_ptr) :: csc_row_ind
        type(c_ptr) :: csc_val
-       type(c_ptr), value :: col_ptr_type
-       type(c_ptr), value :: row_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_csc_get
     end function rocsparse_const_csc_get
 
@@ -2120,16 +2130,17 @@ module rocsparse
                                idx_base, data_type) &
        result(ell_get) &
        bind(C, name="rocsparse_ell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
        type(c_ptr), value :: ell_width
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: ell_get
     end function rocsparse_ell_get
 
@@ -2140,16 +2151,17 @@ module rocsparse
                                      idx_base, data_type) &
        result(const_ell_get) &
        bind(C, name="rocsparse_const_ell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
        type(c_ptr), value :: ell_width
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_ell_get
     end function rocsparse_const_ell_get
 
@@ -2160,18 +2172,19 @@ module rocsparse
                                 ell_col_ind, ell_val, idx_type, idx_base, data_type) &
        result(bell_get) &
        bind(C, name="rocsparse_bell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_direction_row, rocsparse_indextype_i32, &
+                 rocsparse_index_base_zero, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
-       type(c_ptr), value :: ell_block_dir
+       integer(kind(rocsparse_direction_row)) :: ell_block_dir
        type(c_ptr), value :: ell_block_dim
        type(c_ptr), value :: ell_cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: bell_get
     end function rocsparse_bell_get
 
@@ -2182,18 +2195,19 @@ module rocsparse
                                       ell_col_ind, ell_val, idx_type, idx_base, data_type) &
        result(const_bell_get) &
        bind(C, name="rocsparse_const_bell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_direction_row, rocsparse_indextype_i32, &
+                 rocsparse_index_base_zero, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
-       type(c_ptr), value :: ell_block_dir
+       integer(kind(rocsparse_direction_row)) :: ell_block_dir
        type(c_ptr), value :: ell_block_dim
        type(c_ptr), value :: ell_cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
-       type(c_ptr), value :: idx_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: idx_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_bell_get
     end function rocsparse_const_bell_get
 
@@ -2205,7 +2219,8 @@ module rocsparse
                                 sell_slice_offsets_type, sell_col_ind_type, idx_base, data_type) &
        result(sell_get) &
        bind(C, name="rocsparse_sell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2215,10 +2230,10 @@ module rocsparse
        type(c_ptr) :: sell_slice_offsets
        type(c_ptr) :: sell_col_ind
        type(c_ptr) :: sell_val
-       type(c_ptr), value :: sell_slice_offsets_type
-       type(c_ptr), value :: sell_col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: sell_slice_offsets_type
+       integer(kind(rocsparse_indextype_i32)) :: sell_col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: sell_get
     end function rocsparse_sell_get
 
@@ -2231,7 +2246,8 @@ module rocsparse
                                       data_type) &
        result(const_sell_get) &
        bind(C, name="rocsparse_const_sell_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
@@ -2241,10 +2257,10 @@ module rocsparse
        type(c_ptr) :: sell_slice_offsets
        type(c_ptr) :: sell_col_ind
        type(c_ptr) :: sell_val
-       type(c_ptr), value :: sell_slice_offsets_type
-       type(c_ptr), value :: sell_col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: sell_slice_offsets_type
+       integer(kind(rocsparse_indextype_i32)) :: sell_col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_sell_get
     end function rocsparse_const_sell_get
 
@@ -2256,20 +2272,21 @@ module rocsparse
                                data_type) &
        result(bsr_get) &
        bind(C, name="rocsparse_bsr_get")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_direction_row, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: brows
        type(c_ptr), value :: bcols
        type(c_ptr), value :: bnnz
-       type(c_ptr), value :: block_dir
+       integer(kind(rocsparse_direction_row)) :: block_dir
        type(c_ptr), value :: block_dim
        type(c_ptr) :: bsr_row_ptr
        type(c_ptr) :: bsr_col_ind
        type(c_ptr) :: bsr_val
-       type(c_ptr), value :: row_ptr_type
-       type(c_ptr), value :: col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: bsr_get
     end function rocsparse_bsr_get
 
@@ -2281,20 +2298,21 @@ module rocsparse
                                      data_type) &
        result(const_bsr_get) &
        bind(C, name="rocsparse_const_bsr_get")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_direction_row, rocsparse_indextype_i32, rocsparse_index_base_zero, &
+                 rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: brows
        type(c_ptr), value :: bcols
        type(c_ptr), value :: bnnz
-       type(c_ptr), value :: block_dir
+       integer(kind(rocsparse_direction_row)) :: block_dir
        type(c_ptr), value :: block_dim
        type(c_ptr) :: bsr_row_ptr
        type(c_ptr) :: bsr_col_ind
        type(c_ptr) :: bsr_val
-       type(c_ptr), value :: row_ptr_type
-       type(c_ptr), value :: col_ind_type
-       type(c_ptr), value :: idx_base
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_indextype_i32)) :: row_ptr_type
+       integer(kind(rocsparse_indextype_i32)) :: col_ind_type
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_bsr_get
     end function rocsparse_const_bsr_get
 
@@ -2413,9 +2431,9 @@ module rocsparse
     function rocsparse_spmat_get_format(descr, myFormat) &
        result(spmat_get_format) &
        bind(C, name="rocsparse_spmat_get_format")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_format_coo, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: myFormat
+       integer(kind(rocsparse_format_coo)) :: myFormat
        integer(kind(rocsparse_status_success)) :: spmat_get_format
     end function rocsparse_spmat_get_format
 
@@ -2425,9 +2443,9 @@ module rocsparse
     function rocsparse_spmat_get_index_base(descr, idx_base) &
        result(spmat_get_index_base) &
        bind(C, name="rocsparse_spmat_get_index_base")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_index_base_zero, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: idx_base
+       integer(kind(rocsparse_index_base_zero)) :: idx_base
        integer(kind(rocsparse_status_success)) :: spmat_get_index_base
     end function rocsparse_spmat_get_index_base
 
@@ -2663,11 +2681,11 @@ module rocsparse
     function rocsparse_dnvec_get(descr, mySize, values, data_type) &
        result(dnvec_get) &
        bind(C, name="rocsparse_dnvec_get")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: mySize
        type(c_ptr) :: values
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: dnvec_get
     end function rocsparse_dnvec_get
 
@@ -2677,11 +2695,11 @@ module rocsparse
     function rocsparse_const_dnvec_get(descr, mySize, values, data_type) &
        result(const_dnvec_get) &
        bind(C, name="rocsparse_const_dnvec_get")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
        type(c_ptr), value :: mySize
        type(c_ptr) :: values
-       type(c_ptr), value :: data_type
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_dnvec_get
     end function rocsparse_const_dnvec_get
 
@@ -2774,14 +2792,15 @@ module rocsparse
     function rocsparse_dnmat_get(descr, rows, cols, ld, values, data_type, order) &
        result(dnmat_get) &
        bind(C, name="rocsparse_dnmat_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_datatype_f16_r, rocsparse_order_row, &
+                 rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr), value :: ld
        type(c_ptr) :: values
-       type(c_ptr), value :: data_type
-       type(c_ptr), value :: order
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
+       integer(kind(rocsparse_order_row)) :: order
        integer(kind(rocsparse_status_success)) :: dnmat_get
     end function rocsparse_dnmat_get
 
@@ -2791,14 +2810,15 @@ module rocsparse
     function rocsparse_const_dnmat_get(descr, rows, cols, ld, values, data_type, order) &
        result(const_dnmat_get) &
        bind(C, name="rocsparse_const_dnmat_get")
-       import :: c_ptr, c_int64_t, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_datatype_f16_r, rocsparse_order_row, &
+                 rocsparse_status_success
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        type(c_ptr), value :: ld
        type(c_ptr) :: values
-       type(c_ptr), value :: data_type
-       type(c_ptr), value :: order
+       integer(kind(rocsparse_datatype_f16_r)) :: data_type
+       integer(kind(rocsparse_order_row)) :: order
        integer(kind(rocsparse_status_success)) :: const_dnmat_get
     end function rocsparse_const_dnmat_get
 
@@ -4205,10 +4225,11 @@ module rocsparse
     function rocsparse_check_spmat(handle, mat, data_status, stage, buffer_size, temp_buffer) &
        result(check_spmat) &
        bind(C, name="rocsparse_check_spmat")
-       import :: c_ptr, rocsparse_check_spmat_stage_buffer_size, c_size_t, rocsparse_status_success
+       import :: c_ptr, rocsparse_data_status_success, rocsparse_check_spmat_stage_buffer_size, &
+                 c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: mat
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        integer(kind(rocsparse_check_spmat_stage_buffer_size)), value :: stage
        integer(c_size_t) :: buffer_size
        type(c_ptr), value :: temp_buffer
@@ -4238,13 +4259,13 @@ module rocsparse
                                            buffer_size_in_bytes) &
        result(extract_buffer_size) &
        bind(C, name="rocsparse_extract_buffer_size")
-       import :: c_ptr, rocsparse_extract_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_extract_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: descr
        type(c_ptr), value :: source
        type(c_ptr), value :: target
        integer(kind(rocsparse_extract_stage_analysis)), value :: stage
-       type(c_ptr), value :: buffer_size_in_bytes
+       integer(c_size_t) :: buffer_size_in_bytes
        integer(kind(rocsparse_status_success)) :: extract_buffer_size
     end function rocsparse_extract_buffer_size
 
@@ -4411,13 +4432,14 @@ module rocsparse
                                                     buffer_size_in_bytes) &
        result(sparse_to_sparse_buffer_size) &
        bind(C, name="rocsparse_sparse_to_sparse_buffer_size")
-       import :: c_ptr, rocsparse_sparse_to_sparse_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_sparse_to_sparse_stage_analysis, c_size_t, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: descr
        type(c_ptr), value :: source
        type(c_ptr), value :: target
        integer(kind(rocsparse_sparse_to_sparse_stage_analysis)), value :: stage
-       type(c_ptr), value :: buffer_size_in_bytes
+       integer(c_size_t) :: buffer_size_in_bytes
        integer(kind(rocsparse_status_success)) :: sparse_to_sparse_buffer_size
     end function rocsparse_sparse_to_sparse_buffer_size
 
@@ -4513,13 +4535,13 @@ module rocsparse
                                          p_buffer_size_in_bytes, p_error) &
        result(spic0_buffer_size) &
        bind(C, name="rocsparse_spic0_buffer_size")
-       import :: c_ptr, rocsparse_spic0_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_spic0_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spic0_descr
        type(c_ptr), value :: A
        type(c_ptr), value :: P
        integer(kind(rocsparse_spic0_stage_analysis)), value :: spic0_stage
-       type(c_ptr), value :: p_buffer_size_in_bytes
+       integer(c_size_t) :: p_buffer_size_in_bytes
        type(c_ptr) :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_buffer_size
     end function rocsparse_spic0_buffer_size
@@ -4565,13 +4587,13 @@ module rocsparse
                                             p_buffer_size_in_bytes, p_error) &
        result(spildlt0_buffer_size) &
        bind(C, name="rocsparse_spildlt0_buffer_size")
-       import :: c_ptr, rocsparse_spildlt0_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_spildlt0_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spildlt0_descr
        type(c_ptr), value :: A
        type(c_ptr), value :: P
        integer(kind(rocsparse_spildlt0_stage_analysis)), value :: spildlt0_stage
-       type(c_ptr), value :: p_buffer_size_in_bytes
+       integer(c_size_t) :: p_buffer_size_in_bytes
        type(c_ptr) :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_buffer_size
     end function rocsparse_spildlt0_buffer_size
@@ -4602,13 +4624,13 @@ module rocsparse
                                           p_buffer_size_in_bytes, p_error) &
        result(spilu0_buffer_size) &
        bind(C, name="rocsparse_spilu0_buffer_size")
-       import :: c_ptr, rocsparse_spilu0_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_spilu0_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spilu0_descr
        type(c_ptr), value :: A
        type(c_ptr), value :: P
        integer(kind(rocsparse_spilu0_stage_analysis)), value :: spilu0_stage
-       type(c_ptr), value :: p_buffer_size_in_bytes
+       integer(c_size_t) :: p_buffer_size_in_bytes
        type(c_ptr) :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_buffer_size
     end function rocsparse_spilu0_buffer_size
@@ -4766,14 +4788,14 @@ module rocsparse
                                           buffer_size_in_bytes, p_error) &
        result(sptrsm_buffer_size) &
        bind(C, name="rocsparse_sptrsm_buffer_size")
-       import :: c_ptr, rocsparse_sptrsm_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_sptrsm_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: sptrsm_descr
        type(c_ptr), value :: A
        type(c_ptr), value :: X
        type(c_ptr), value :: Y
        integer(kind(rocsparse_sptrsm_stage_analysis)), value :: sptrsm_stage
-       type(c_ptr), value :: buffer_size_in_bytes
+       integer(c_size_t) :: buffer_size_in_bytes
        type(c_ptr) :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsm_buffer_size
     end function rocsparse_sptrsm_buffer_size
@@ -4805,14 +4827,14 @@ module rocsparse
                                           buffer_size_in_bytes, p_error) &
        result(sptrsv_buffer_size) &
        bind(C, name="rocsparse_sptrsv_buffer_size")
-       import :: c_ptr, rocsparse_sptrsv_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_sptrsv_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: sptrsv_descr
        type(c_ptr), value :: spmat_descr
        type(c_ptr), value :: x
        type(c_ptr), value :: y
        integer(kind(rocsparse_sptrsv_stage_analysis)), value :: sptrsv_stage
-       type(c_ptr), value :: buffer_size_in_bytes
+       integer(c_size_t) :: buffer_size_in_bytes
        type(c_ptr) :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_buffer_size
     end function rocsparse_sptrsv_buffer_size
@@ -4863,14 +4885,14 @@ module rocsparse
                                            error) &
        result(v2_spmv_buffer_size) &
        bind(C, name="rocsparse_v2_spmv_buffer_size")
-       import :: c_ptr, rocsparse_v2_spmv_stage_analysis, rocsparse_status_success
+       import :: c_ptr, rocsparse_v2_spmv_stage_analysis, c_size_t, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: descr
        type(c_ptr), value :: mat
        type(c_ptr), value :: x
        type(c_ptr), value :: y
        integer(kind(rocsparse_v2_spmv_stage_analysis)), value :: stage
-       type(c_ptr), value :: buffer_size_in_bytes
+       integer(c_size_t) :: buffer_size_in_bytes
        type(c_ptr) :: error
        integer(kind(rocsparse_status_success)) :: v2_spmv_buffer_size
     end function rocsparse_v2_spmv_buffer_size
@@ -5852,10 +5874,10 @@ module rocsparse
     function rocsparse_csric0_get_tolerance(handle, myInfo, tolerance) &
        result(csric0_get_tolerance) &
        bind(C, name="rocsparse_csric0_get_tolerance")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_double, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: myInfo
-       type(c_ptr), value :: tolerance
+       real(c_double) :: tolerance
        integer(kind(rocsparse_status_success)) :: csric0_get_tolerance
     end function rocsparse_csric0_get_tolerance
 
@@ -5903,10 +5925,10 @@ module rocsparse
     function rocsparse_csrilu0_get_tolerance(handle, myInfo, tolerance) &
        result(csrilu0_get_tolerance) &
        bind(C, name="rocsparse_csrilu0_get_tolerance")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_double, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: myInfo
-       type(c_ptr), value :: tolerance
+       real(c_double) :: tolerance
        integer(kind(rocsparse_status_success)) :: csrilu0_get_tolerance
     end function rocsparse_csrilu0_get_tolerance
 
@@ -6641,7 +6663,8 @@ module rocsparse
        result(scheck_matrix_coo) &
        bind(C, name="rocsparse_scheck_matrix_coo")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6653,7 +6676,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_coo
     end function rocsparse_scheck_matrix_coo
@@ -6667,7 +6690,8 @@ module rocsparse
        result(dcheck_matrix_coo) &
        bind(C, name="rocsparse_dcheck_matrix_coo")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6679,7 +6703,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_coo
     end function rocsparse_dcheck_matrix_coo
@@ -6693,7 +6717,8 @@ module rocsparse
        result(ccheck_matrix_coo) &
        bind(C, name="rocsparse_ccheck_matrix_coo")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6705,7 +6730,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_coo
     end function rocsparse_ccheck_matrix_coo
@@ -6719,7 +6744,8 @@ module rocsparse
        result(zcheck_matrix_coo) &
        bind(C, name="rocsparse_zcheck_matrix_coo")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6731,7 +6757,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_coo
     end function rocsparse_zcheck_matrix_coo
@@ -6849,7 +6875,8 @@ module rocsparse
        result(scheck_matrix_csc) &
        bind(C, name="rocsparse_scheck_matrix_csc")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6861,7 +6888,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_csc
     end function rocsparse_scheck_matrix_csc
@@ -6875,7 +6902,8 @@ module rocsparse
        result(dcheck_matrix_csc) &
        bind(C, name="rocsparse_dcheck_matrix_csc")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6887,7 +6915,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_csc
     end function rocsparse_dcheck_matrix_csc
@@ -6901,7 +6929,8 @@ module rocsparse
        result(ccheck_matrix_csc) &
        bind(C, name="rocsparse_ccheck_matrix_csc")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6913,7 +6942,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_csc
     end function rocsparse_ccheck_matrix_csc
@@ -6927,7 +6956,8 @@ module rocsparse
        result(zcheck_matrix_csc) &
        bind(C, name="rocsparse_zcheck_matrix_csc")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -6939,7 +6969,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_csc
     end function rocsparse_zcheck_matrix_csc
@@ -7057,7 +7087,8 @@ module rocsparse
        result(scheck_matrix_csr) &
        bind(C, name="rocsparse_scheck_matrix_csr")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7069,7 +7100,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_csr
     end function rocsparse_scheck_matrix_csr
@@ -7083,7 +7114,8 @@ module rocsparse
        result(dcheck_matrix_csr) &
        bind(C, name="rocsparse_dcheck_matrix_csr")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7095,7 +7127,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_csr
     end function rocsparse_dcheck_matrix_csr
@@ -7109,7 +7141,8 @@ module rocsparse
        result(ccheck_matrix_csr) &
        bind(C, name="rocsparse_ccheck_matrix_csr")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7121,7 +7154,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_csr
     end function rocsparse_ccheck_matrix_csr
@@ -7135,7 +7168,8 @@ module rocsparse
        result(zcheck_matrix_csr) &
        bind(C, name="rocsparse_zcheck_matrix_csr")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7147,7 +7181,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_csr
     end function rocsparse_zcheck_matrix_csr
@@ -7260,7 +7294,8 @@ module rocsparse
        result(scheck_matrix_ell) &
        bind(C, name="rocsparse_scheck_matrix_ell")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7271,7 +7306,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_ell
     end function rocsparse_scheck_matrix_ell
@@ -7284,7 +7319,8 @@ module rocsparse
        result(dcheck_matrix_ell) &
        bind(C, name="rocsparse_dcheck_matrix_ell")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7295,7 +7331,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_ell
     end function rocsparse_dcheck_matrix_ell
@@ -7308,7 +7344,8 @@ module rocsparse
        result(ccheck_matrix_ell) &
        bind(C, name="rocsparse_ccheck_matrix_ell")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7319,7 +7356,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_ell
     end function rocsparse_ccheck_matrix_ell
@@ -7332,7 +7369,8 @@ module rocsparse
        result(zcheck_matrix_ell) &
        bind(C, name="rocsparse_zcheck_matrix_ell")
        import :: c_ptr, c_int, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        integer(c_int), value :: m
        integer(c_int), value :: n
@@ -7343,7 +7381,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_ell
     end function rocsparse_zcheck_matrix_ell
@@ -7479,7 +7517,8 @@ module rocsparse
        bind(C, name="rocsparse_scheck_matrix_gebsc")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7494,7 +7533,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_gebsc
     end function rocsparse_scheck_matrix_gebsc
@@ -7510,7 +7549,8 @@ module rocsparse
        bind(C, name="rocsparse_dcheck_matrix_gebsc")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7525,7 +7565,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_gebsc
     end function rocsparse_dcheck_matrix_gebsc
@@ -7541,7 +7581,8 @@ module rocsparse
        bind(C, name="rocsparse_ccheck_matrix_gebsc")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7556,7 +7597,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_gebsc
     end function rocsparse_ccheck_matrix_gebsc
@@ -7572,7 +7613,8 @@ module rocsparse
        bind(C, name="rocsparse_zcheck_matrix_gebsc")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7587,7 +7629,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_gebsc
     end function rocsparse_zcheck_matrix_gebsc
@@ -7723,7 +7765,8 @@ module rocsparse
        bind(C, name="rocsparse_scheck_matrix_gebsr")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7738,7 +7781,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: scheck_matrix_gebsr
     end function rocsparse_scheck_matrix_gebsr
@@ -7754,7 +7797,8 @@ module rocsparse
        bind(C, name="rocsparse_dcheck_matrix_gebsr")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7769,7 +7813,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: dcheck_matrix_gebsr
     end function rocsparse_dcheck_matrix_gebsr
@@ -7785,7 +7829,8 @@ module rocsparse
        bind(C, name="rocsparse_ccheck_matrix_gebsr")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7800,7 +7845,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: ccheck_matrix_gebsr
     end function rocsparse_ccheck_matrix_gebsr
@@ -7816,7 +7861,8 @@ module rocsparse
        bind(C, name="rocsparse_zcheck_matrix_gebsr")
        import :: c_ptr, rocsparse_direction_row, c_int, rocsparse_index_base_zero, &
                  rocsparse_matrix_type_general, rocsparse_fill_mode_lower, &
-                 rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_storage_mode_sorted, rocsparse_data_status_success, &
+                 rocsparse_status_success
        type(c_ptr), value :: handle
        integer(kind(rocsparse_direction_row)), value :: dir
        integer(c_int), value :: mb
@@ -7831,7 +7877,7 @@ module rocsparse
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: zcheck_matrix_gebsr
     end function rocsparse_zcheck_matrix_gebsr
@@ -7864,14 +7910,15 @@ module rocsparse
        result(check_matrix_hyb) &
        bind(C, name="rocsparse_check_matrix_hyb")
        import :: c_ptr, rocsparse_index_base_zero, rocsparse_matrix_type_general, &
-                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, rocsparse_status_success
+                 rocsparse_fill_mode_lower, rocsparse_storage_mode_sorted, &
+                 rocsparse_data_status_success, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: hyb
        integer(kind(rocsparse_index_base_zero)), value :: idx_base
        integer(kind(rocsparse_matrix_type_general)), value :: matrix_type
        integer(kind(rocsparse_fill_mode_lower)), value :: uplo
        integer(kind(rocsparse_storage_mode_sorted)), value :: storage
-       type(c_ptr), value :: data_status
+       integer(kind(rocsparse_data_status_success)) :: data_status
        type(c_ptr), value :: temp_buffer
        integer(kind(rocsparse_status_success)) :: check_matrix_hyb
     end function rocsparse_check_matrix_hyb
@@ -10397,7 +10444,7 @@ module rocsparse
       type(c_ptr),value :: bsr_col_ind
       integer(c_int),value :: row_block_dim
       integer(c_int),value :: col_block_dim
-      type(c_ptr),value :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
     end function
 
 #ifdef USE_ASSUMED_RANK
@@ -10428,7 +10475,7 @@ module rocsparse
       type(c_ptr),value :: bsr_col_ind
       integer(c_int),value :: row_block_dim
       integer(c_int),value :: col_block_dim
-      type(c_ptr),value :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
     end function
 
 #ifdef USE_ASSUMED_RANK
@@ -10459,7 +10506,7 @@ module rocsparse
       type(c_ptr),value :: bsr_col_ind
       integer(c_int),value :: row_block_dim
       integer(c_int),value :: col_block_dim
-      type(c_ptr),value :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
     end function
 
 #ifdef USE_ASSUMED_RANK
@@ -10490,7 +10537,7 @@ module rocsparse
       type(c_ptr),value :: bsr_col_ind
       integer(c_int),value :: row_block_dim
       integer(c_int),value :: col_block_dim
-      type(c_ptr),value :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
     end function
 
 #ifdef USE_ASSUMED_RANK
@@ -25061,7 +25108,7 @@ module rocsparse
       integer(c_int),target,contiguous,dimension(..) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_sgebsr2gebsc_buffer_size_assumed_rank = rocsparse_sgebsr2gebsc_buffer_size_( &
         handle,mb,nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim, &
@@ -25083,7 +25130,7 @@ module rocsparse
       integer(c_int),target :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_sgebsr2gebsc_buffer_size_rank_0 = rocsparse_sgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25104,7 +25151,7 @@ module rocsparse
       integer(c_int),target,dimension(:) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_sgebsr2gebsc_buffer_size_rank_1 = rocsparse_sgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25127,7 +25174,7 @@ module rocsparse
       integer(c_int),target,contiguous,dimension(..) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_dgebsr2gebsc_buffer_size_assumed_rank = rocsparse_dgebsr2gebsc_buffer_size_( &
         handle,mb,nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim, &
@@ -25149,7 +25196,7 @@ module rocsparse
       integer(c_int),target :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_dgebsr2gebsc_buffer_size_rank_0 = rocsparse_dgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25170,7 +25217,7 @@ module rocsparse
       integer(c_int),target,dimension(:) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_dgebsr2gebsc_buffer_size_rank_1 = rocsparse_dgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25193,7 +25240,7 @@ module rocsparse
       integer(c_int),target,contiguous,dimension(..) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_cgebsr2gebsc_buffer_size_assumed_rank = rocsparse_cgebsr2gebsc_buffer_size_( &
         handle,mb,nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim, &
@@ -25215,7 +25262,7 @@ module rocsparse
       integer(c_int),target :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_cgebsr2gebsc_buffer_size_rank_0 = rocsparse_cgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25236,7 +25283,7 @@ module rocsparse
       integer(c_int),target,dimension(:) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_cgebsr2gebsc_buffer_size_rank_1 = rocsparse_cgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25259,7 +25306,7 @@ module rocsparse
       integer(c_int),target,contiguous,dimension(..) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_zgebsr2gebsc_buffer_size_assumed_rank = rocsparse_zgebsr2gebsc_buffer_size_( &
         handle,mb,nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim, &
@@ -25281,7 +25328,7 @@ module rocsparse
       integer(c_int),target :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_zgebsr2gebsc_buffer_size_rank_0 = rocsparse_zgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
@@ -25302,7 +25349,7 @@ module rocsparse
       integer(c_int),target,dimension(:) :: bsr_col_ind
       integer(c_int) :: row_block_dim
       integer(c_int) :: col_block_dim
-      type(c_ptr) :: p_buffer_size
+      integer(c_size_t) :: p_buffer_size
       !
       rocsparse_zgebsr2gebsc_buffer_size_rank_1 = rocsparse_zgebsr2gebsc_buffer_size_(handle,mb, &
         nb,nnzb,c_loc(bsr_val),c_loc(bsr_row_ptr),c_loc(bsr_col_ind),row_block_dim,col_block_dim, &
