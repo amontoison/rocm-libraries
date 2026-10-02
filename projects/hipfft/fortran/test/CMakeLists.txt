@@ -111,7 +111,8 @@ else()
         hipfft_planmany_2d_z2z
         hipfft_r2c_c2r_1d_d
         hipfft_r2c_c2r_1d_s
-        hipfft_setstream_z)
+        hipfft_setstream_z
+        hipfft_version)
 
     foreach(_t IN LISTS HIPFFT_FORTRAN_TESTS)
       hipfft_fortran_add_test(${_t})
