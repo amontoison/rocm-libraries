@@ -330,27 +330,23 @@ endif()
 # Outside the BUILD_CLIENTS_ONLY branch on purpose, and not merely for symmetry
 # with the other libraries. That branch decides whether librocsparse is BUILT
 # here; the bindings need it linked, not built, and resolve it from the prefix
-# path when the in-tree target is absent. Inheriting the skip would be actively
-# broken now that clients consume this target rather than building their own:
-# BUILD_FORTRAN_CLIENTS defaults to ON, so -DBUILD_CLIENTS_ONLY=ON would skip
-# this directory, clients/ would find no rocsparse_fortran, and every Fortran
-# sample would silently drop out of a build that asked for nothing but clients.
+# path when the in-tree target is absent.
+#
+# Inheriting the skip would drop a client artifact from a clients-only build:
+# the bindings' own test suite lives in fortran/test, is gated on
+# BUILD_FORTRAN_CLIENTS (which defaults to ON), and is the only thing that
+# exercises the generated module. -DBUILD_CLIENTS_ONLY=ON would skip this
+# directory and silently build no binding tests at all. The Fortran samples
+# under clients/samples are NOT the reason: that block is gated on
+# `if(TARGET rocsparse)`, and a clients-only build has only the imported
+# roc::rocsparse, so those samples never build there either way.
+#
+# The cost is that a clients-only build also emits this directory's devel
+# install rules -- the rocsparse_fortran archive, the .mod files, the shipped
+# rocsparse.F90 and the rocsparse-fortran package config. They are the same
+# rules a library build emits, writing the same files, so a clients-only
+# install simply lays down the bindings alongside the clients.
 add_subdirectory(fortran)
-
-# The libgfortran dependency belongs to the client packages only when the
-# Fortran samples are really going to be built, and that is not known until the
-# directory above has run: BUILD_FORTRAN_CLIENTS defaults to ON, while the
-# bindings can still be absent because no Fortran compiler was found, because
-# BUILD_FORTRAN_BINDINGS is off, or because ILP64 was asked for. Read from the
-# option alone, up in the component block where it used to be, a build
-# containing no Fortran at all still shipped client packages that require
-# libgfortran to install.
-if(BUILD_CLIENTS AND BUILD_FORTRAN_CLIENTS AND ROCSPARSE_HAVE_FORTRAN_BINDINGS)
-  rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
-  rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
-  rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
-  rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
-endif()
 
 # Trigger client builds if selected
 if(BUILD_CLIENTS)

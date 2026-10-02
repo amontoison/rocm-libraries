@@ -473,9 +473,13 @@ rocSPARSE ships its own Fortran bindings, generated from the rocSPARSE C headers
 exposed as a single self-contained module. A consumer writes ``use rocsparse`` and links
 ``roc::rocsparse_fortran``; the package is found with ``find_package(rocsparse-fortran)``.
 
-The bindings are built whenever a Fortran compiler is available, and are controlled by:
+On Linux the bindings are built whenever a Fortran compiler is available; on Windows they
+are off by default, because the Windows toolchain ships no Fortran compiler. They are
+controlled by:
 
-* ``BUILD_FORTRAN_BINDINGS`` (default ``ON``): the bindings themselves.
+* ``BUILD_FORTRAN_BINDINGS`` (default ``ON`` on Linux, ``OFF`` on Windows): the bindings
+  themselves. The Windows default is a default and not a veto:
+  ``-DBUILD_FORTRAN_BINDINGS=ON`` still works wherever a usable compiler exists.
 * ``BUILD_FORTRAN_CLIENTS`` (default ``ON``): the Fortran samples and the binding tests.
   In an in-tree build this is forced off unless the rocSPARSE clients are also being built.
 * ``FORTRAN_ARRAY_INTERFACES`` (default ``assumed-shape``): which array-argument overloads
