@@ -89,6 +89,10 @@ endfunction()
 # eigensolvers (syevd/heevd, syevdx/heevdx, syevj, sygvd/hegvd, sygvdx/hegvdx)
 # and the SVDs (gesvd, gesvdj), each across the s/d/c/z types the API defines
 # them for.
+#
+# Plus a few that are not tied to one routine family and exercise the query
+# routines, whose outputs the C API fills by reference: the deterministic mode,
+# the hipsolverRf parameters and the syevj info.
 set(HIPSOLVER_FORTRAN_TESTS
     hipsolver_cgeqrf
     hipsolver_cgesvd
@@ -102,6 +106,7 @@ set(HIPSOLVER_FORTRAN_TESTS
     hipsolver_cpotrs
     hipsolver_cungqr
     hipsolver_cunmqr
+    hipsolver_deterministic_mode
     hipsolver_dgeqrf
     hipsolver_dgesvdj
     hipsolver_dgetrf
@@ -113,6 +118,7 @@ set(HIPSOLVER_FORTRAN_TESTS
     hipsolver_dsyevj
     hipsolver_dsygvd
     hipsolver_dsygvdx
+    hipsolver_rf_params
     hipsolver_sgeqrf
     hipsolver_sgesvd
     hipsolver_sgesvdj
@@ -126,6 +132,7 @@ set(HIPSOLVER_FORTRAN_TESTS
     hipsolver_ssyevj
     hipsolver_ssygvd
     hipsolver_ssygvdx
+    hipsolver_syevj_info
     hipsolver_zgeqrf
     hipsolver_zgesvd
     hipsolver_zgesvdj

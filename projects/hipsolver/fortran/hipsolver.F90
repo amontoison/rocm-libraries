@@ -232,9 +232,9 @@ module hipsolver
     function hipsolverGetDeterministicMode(handle, mode) &
        result(GetDeterministicMode) &
        bind(C, name="hipsolverGetDeterministicMode")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVER_DETERMINISTIC_RESULTS, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: mode
+       integer(kind(HIPSOLVER_DETERMINISTIC_RESULTS)) :: mode
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: GetDeterministicMode
     end function hipsolverGetDeterministicMode
 
@@ -3998,7 +3998,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4026,7 +4026,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4054,7 +4054,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4082,7 +4082,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4769,7 +4769,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4800,7 +4800,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4831,7 +4831,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -4862,7 +4862,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -5430,9 +5430,9 @@ module hipsolver
     function hipsolverDnGetDeterministicMode(handle, mode) &
        result(DnGetDeterministicMode) &
        bind(C, name="hipsolverDnGetDeterministicMode")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVER_DETERMINISTIC_RESULTS, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: mode
+       integer(kind(HIPSOLVER_DETERMINISTIC_RESULTS)) :: mode
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnGetDeterministicMode
     end function hipsolverDnGetDeterministicMode
 
@@ -8944,7 +8944,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -8972,7 +8972,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9000,7 +9000,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9028,7 +9028,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9715,7 +9715,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9746,7 +9746,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9777,7 +9777,7 @@ module hipsolver
        real(c_float), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -9808,7 +9808,7 @@ module hipsolver
        real(c_double), value :: vu
        integer(c_int), value :: il
        integer(c_int), value :: iu
-       type(c_ptr), value :: nev
+       integer(c_int) :: nev
        type(c_ptr), value :: W
        type(c_ptr), value :: work
        integer(c_int), value :: lwork
@@ -10355,7 +10355,8 @@ module hipsolver
                                          computeType, lworkOnDevice, lworkOnHost) &
        result(DnXgeev_bufferSize) &
        bind(C, name="hipsolverDnXgeev_bufferSize")
-       import :: c_ptr, HIPSOLVER_EIG_MODE_NOVECTOR, c_int64_t, c_int, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVER_EIG_MODE_NOVECTOR, c_int64_t, c_int, c_size_t, &
+                 HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobvl
@@ -10373,8 +10374,8 @@ module hipsolver
        type(c_ptr), value :: VR
        integer(c_int64_t), value :: ldvr
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXgeev_bufferSize
     end function hipsolverDnXgeev_bufferSize
 
@@ -10420,7 +10421,7 @@ module hipsolver
                                           tau, computeType, lworkOnDevice, lworkOnHost) &
        result(DnXgeqrf_bufferSize) &
        bind(C, name="hipsolverDnXgeqrf_bufferSize")
-       import :: c_ptr, c_int64_t, c_int, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, c_int, c_size_t, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(c_int64_t), value :: m
@@ -10431,8 +10432,8 @@ module hipsolver
        integer(c_int), value :: dataTypeTau
        type(c_ptr), value :: tau
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXgeqrf_bufferSize
     end function hipsolverDnXgeqrf_bufferSize
 
@@ -10479,7 +10480,7 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int64_t), value :: lda
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
+       integer(c_size_t) :: lworkOnDevice
        integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXgetrf_bufferSize
     end function hipsolverDnXgetrf_bufferSize
@@ -10602,7 +10603,8 @@ module hipsolver
                                           lworkOnDevice, lworkOnHost) &
        result(DnXpotrf_bufferSize) &
        bind(C, name="hipsolverDnXpotrf_bufferSize")
-       import :: c_ptr, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, c_size_t, &
+                 HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(kind(HIPSOLVER_FILL_MODE_UPPER)), value :: uplo
@@ -10611,8 +10613,8 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int64_t), value :: lda
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXpotrf_bufferSize
     end function hipsolverDnXpotrf_bufferSize
 
@@ -10672,7 +10674,7 @@ module hipsolver
        result(DnXsyevd_bufferSize) &
        bind(C, name="hipsolverDnXsyevd_bufferSize")
        import :: c_ptr, HIPSOLVER_EIG_MODE_NOVECTOR, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, &
-                 HIPSOLVER_STATUS_SUCCESS
+                 c_size_t, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -10684,8 +10686,8 @@ module hipsolver
        integer(c_int), value :: dataTypeW
        type(c_ptr), value :: W
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXsyevd_bufferSize
     end function hipsolverDnXsyevd_bufferSize
 
@@ -10727,7 +10729,7 @@ module hipsolver
        result(DnXsyevBatched_bufferSize) &
        bind(C, name="hipsolverDnXsyevBatched_bufferSize")
        import :: c_ptr, HIPSOLVER_EIG_MODE_NOVECTOR, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, &
-                 HIPSOLVER_STATUS_SUCCESS
+                 c_size_t, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(kind(HIPSOLVER_EIG_MODE_NOVECTOR)), value :: jobz
@@ -10739,8 +10741,8 @@ module hipsolver
        integer(c_int), value :: dataTypeW
        type(c_ptr), value :: W
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(c_int64_t), value :: batchSize
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXsyevBatched_bufferSize
     end function hipsolverDnXsyevBatched_bufferSize
@@ -10782,7 +10784,8 @@ module hipsolver
                                           dataTypeB, B, ldb, lworkOnDevice, lworkOnHost) &
        result(DnXsytrs_bufferSize) &
        bind(C, name="hipsolverDnXsytrs_bufferSize")
-       import :: c_ptr, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVER_FILL_MODE_UPPER, c_int64_t, c_int, c_size_t, &
+                 HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        integer(kind(HIPSOLVER_FILL_MODE_UPPER)), value :: uplo
        integer(c_int64_t), value :: n
@@ -10794,8 +10797,8 @@ module hipsolver
        integer(c_int), value :: dataTypeB
        type(c_ptr), value :: B
        integer(c_int64_t), value :: ldb
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXsytrs_bufferSize
     end function hipsolverDnXsytrs_bufferSize
 
@@ -10911,9 +10914,9 @@ module hipsolver
     function hipsolverRfAccessBundledFactorsDevice(handle, nnzM, Mp, Mi, Mx) &
        result(RfAccessBundledFactorsDevice) &
        bind(C, name="hipsolverRfAccessBundledFactorsDevice")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: nnzM
+       integer(c_int) :: nnzM
        type(c_ptr) :: Mp
        type(c_ptr) :: Mi
        type(c_ptr) :: Mx
@@ -10937,9 +10940,9 @@ module hipsolver
     function hipsolverRfExtractBundledFactorsHost(handle, h_nnzM, h_Mp, h_Mi, h_Mx) &
        result(RfExtractBundledFactorsHost) &
        bind(C, name="hipsolverRfExtractBundledFactorsHost")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: h_nnzM
+       integer(c_int) :: h_nnzM
        type(c_ptr) :: h_Mp
        type(c_ptr) :: h_Mi
        type(c_ptr) :: h_Mx
@@ -10953,13 +10956,13 @@ module hipsolver
                                                 h_Ui, h_Ux) &
        result(RfExtractSplitFactorsHost) &
        bind(C, name="hipsolverRfExtractSplitFactorsHost")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, c_int, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: h_nnzL
+       integer(c_int) :: h_nnzL
        type(c_ptr) :: h_Lp
        type(c_ptr) :: h_Li
        type(c_ptr) :: h_Lx
-       type(c_ptr), value :: h_nnzU
+       integer(c_int) :: h_nnzU
        type(c_ptr) :: h_Up
        type(c_ptr) :: h_Ui
        type(c_ptr) :: h_Ux
@@ -10972,10 +10975,11 @@ module hipsolver
     function hipsolverRfGet_Algs(handle, fact_alg, solve_alg) &
        result(RfGet_Algs) &
        bind(C, name="hipsolverRfGet_Algs")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVERRF_FACTORIZATION_ALG0, HIPSOLVERRF_TRIANGULAR_SOLVE_ALG1, &
+                 HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: fact_alg
-       type(c_ptr), value :: solve_alg
+       integer(kind(HIPSOLVERRF_FACTORIZATION_ALG0)) :: fact_alg
+       integer(kind(HIPSOLVERRF_TRIANGULAR_SOLVE_ALG1)) :: solve_alg
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfGet_Algs
     end function hipsolverRfGet_Algs
 
@@ -10985,10 +10989,11 @@ module hipsolver
     function hipsolverRfGetMatrixFormat(handle, myFormat, diag) &
        result(RfGetMatrixFormat) &
        bind(C, name="hipsolverRfGetMatrixFormat")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVERRF_MATRIX_FORMAT_CSR, HIPSOLVERRF_UNIT_DIAGONAL_STORED_L, &
+                 HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: myFormat
-       type(c_ptr), value :: diag
+       integer(kind(HIPSOLVERRF_MATRIX_FORMAT_CSR)) :: myFormat
+       integer(kind(HIPSOLVERRF_UNIT_DIAGONAL_STORED_L)) :: diag
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfGetMatrixFormat
     end function hipsolverRfGetMatrixFormat
 
@@ -10998,9 +11003,9 @@ module hipsolver
     function hipsolverRfGetNumericBoostReport(handle, report) &
        result(RfGetNumericBoostReport) &
        bind(C, name="hipsolverRfGetNumericBoostReport")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVERRF_NUMERIC_BOOST_NOT_USED, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: report
+       integer(kind(HIPSOLVERRF_NUMERIC_BOOST_NOT_USED)) :: report
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfGetNumericBoostReport
     end function hipsolverRfGetNumericBoostReport
 
@@ -11010,10 +11015,10 @@ module hipsolver
     function hipsolverRfGetNumericProperties(handle, zero, boost) &
        result(RfGetNumericProperties) &
        bind(C, name="hipsolverRfGetNumericProperties")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, c_double, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: zero
-       type(c_ptr), value :: boost
+       real(c_double) :: zero
+       real(c_double) :: boost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfGetNumericProperties
     end function hipsolverRfGetNumericProperties
 
@@ -11023,9 +11028,9 @@ module hipsolver
     function hipsolverRfGetResetValuesFastMode(handle, fastMode) &
        result(RfGetResetValuesFastMode) &
        bind(C, name="hipsolverRfGetResetValuesFastMode")
-       import :: c_ptr, HIPSOLVER_STATUS_SUCCESS
+       import :: c_ptr, HIPSOLVERRF_RESET_VALUES_FAST_MODE_OFF, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: fastMode
+       integer(kind(HIPSOLVERRF_RESET_VALUES_FAST_MODE_OFF)) :: fastMode
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfGetResetValuesFastMode
     end function hipsolverRfGetResetValuesFastMode
 

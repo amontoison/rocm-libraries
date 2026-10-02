@@ -1,10 +1,35 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+!
+! SPDX-License-Identifier: MIT
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in
+! all copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+! THE SOFTWARE.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !!!!!!!!!!!!!!
 ! dsyevdx example (partial symmetric eigensolver, Fortran 2003 interfaces)
 ! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! syevdx computes a selected subset of eigenvalues/eigenvectors (range=all -> full
-! spectrum). f2003 style: device buffers are type(c_ptr); nev is a device-backed
-! integer. Self-verifying: A0*v_k = lambda_k*v_k.
+! spectrum). f2003 style: device buffers are type(c_ptr); nev is a host integer.
+! Self-verifying: A0*v_k = lambda_k*v_k.
 !!!!!!!!!!!!!!
 !
 program hipsolver_dsyevdx
@@ -19,14 +44,14 @@ program hipsolver_dsyevdx
   real(c_double), target :: hA(3,3) = reshape((/2, -1, 0, -1, 2, -1, 0, -1, 2/), (/3, 3/))
   real(c_double) :: hA0(3,3)
   real(c_double), target :: hW(3)
-  integer(c_int), target :: hNev
+  integer(c_int) :: hNev
   real(c_double) :: lhs(3), rhs(3)
 
   integer(c_size_t) :: sizeA = 9, sizeW = 3
   integer(c_int) :: nevBuf
 
   type(c_ptr) :: dA, dW
-  integer(c_int), pointer :: dNev(:), dInfo(:)
+  integer(c_int), pointer :: dInfo(:)
   type(c_ptr) :: dWork, handle = c_null_ptr
   integer(c_int) :: lwork
 
@@ -39,7 +64,6 @@ program hipsolver_dsyevdx
 
   call hipCheck(hipMalloc(dA, sizeA * 8))
   call hipCheck(hipMalloc(dW, sizeW * 8))
-  call hipCheck(hipMalloc(dNev, 1))
   call hipCheck(hipMalloc(dInfo, 1))
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), sizeA * 8, hipMemcpyHostToDevice))
 
@@ -52,9 +76,8 @@ program hipsolver_dsyevdx
 
   call hipsolverCheck(hipsolverDsyevdx(handle, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_EIG_RANGE_ALL, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, &
-       0.0d0, 0.0d0, 1, N, c_loc(dNev(1)), dW, dWork, lwork, c_loc(dInfo(1))))
+       0.0d0, 0.0d0, 1, N, hNev, dW, dWork, lwork, c_loc(dInfo(1))))
 
-  call hipCheck(hipMemcpy(c_loc(hNev), c_loc(dNev(1)), 4_c_size_t, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 8, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hW(1)), dW, sizeW * 8, hipMemcpyDeviceToHost))
 
@@ -74,7 +97,7 @@ program hipsolver_dsyevdx
   end do
 
   call hipCheck(hipFree(dA)); call hipCheck(hipFree(dW))
-  call hipCheck(hipFree(dNev)); call hipCheck(hipFree(dInfo)); call hipCheck(hipFree(dWork))
+  call hipCheck(hipFree(dInfo)); call hipCheck(hipFree(dWork))
   call hipsolverCheck(hipsolverDestroy(handle))
   call hipCheck(hipDeviceReset())
 
