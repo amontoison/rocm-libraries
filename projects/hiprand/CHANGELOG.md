@@ -8,39 +8,24 @@ Documentation for hipRAND is available at
 ### Added
 
 * gfx1250 support
-* Generated Fortran bindings for hipRAND, as a single self-contained `hiprand` module
-  (`use hiprand`, link `hip::hiprand_fortran`). Built by default when a Fortran compiler is
-  available; controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the
-  tri-state `FORTRAN_ARRAY_INTERFACES`. The package is found with
-  `find_package(hiprand-fortran)` and installs per compiler under
-  `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and
-  `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
-  The module exports one `bind(C)` interface for each of the 30 host entry points
-  `hiprand.h` declares, plus the enum constants and the `hiprandCheck` status helper. It
-  declares no derived types: the opaque handles `hiprandGenerator_t` and
-  `hiprandDiscreteDistribution_t` are passed as `type(c_ptr)`, and the
-  derived-type wrappers, the strongly-typed `_typed` overloads and the `_dptr`
-  device-pointer specifics are not part of the packaged track. Array overloads are
-  generated for the subset of routines the generator supports; every other routine exposes
-  the plain `type(c_ptr)` interface under every tier.
-  These bindings are new in this release, so no previously shipped Fortran API is affected.
-  The binding tests live in `fortran/test/`, beside the binding rather than under `test/`.
-  They are 23 programs, one per (generator, distribution) pair, plus the FRUIT suite that
-  used to test the hand-written wrapper from `test/fortran/`: it has been moved here and
-  ported to `use hiprand` and `use hip`, and it checks the status code of every generator
-  lifecycle and seeding call. Every one of the 24 needs a GPU and is labelled `gpu`, so
-  `ctest -LE gpu` on a machine without one skips them all.
+* Generated Fortran bindings, as a single `hiprand` module: `use hiprand`, link
+  `hip::hiprand_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (`ON` on Linux with the ROCm
+  backend, `OFF` on Windows and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and
+  `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, `assumed-rank`). Found with
+  `find_package(hiprand-fortran)`; the archive and `.mod` files install per compiler under
+  `<libdir>/fortran/<compiler>`.
+
+### Changed
+
+* The FRUIT Fortran test suite moved from `test/fortran/` to `fortran/test/`, was ported to the
+  generated bindings, and now registers as the CTest test `hiprand_fortran_fruit`.
 
 ### Removed
 
-* The deprecated hand-written Fortran wrapper (`library/src/fortran/hiprand_m.f90`), its
-  private HIP module (`library/src/fortran/hip/`) and its `BUILD_FORTRAN_WRAPPER` option,
-  superseded by the generated bindings above. The wrapper was deprecated in favour of
-  hipfort in hipRAND 3.0.0 (ROCm 7.0) and was never shipped enabled, so
-  `hiprand_FORTRAN_FOUND` was already `NOTFOUND` and
-  `hiprand_FORTRAN_SRC_DIRS` was never set in a released package. Source builds that passed
-  `-DBUILD_FORTRAN_WRAPPER=ON` are affected and should move to `use hiprand`. The FRUIT
-  suite that tested the wrapper is not removed; see above.
+* The hand-written Fortran wrapper `library/src/fortran/hiprand_m.f90`, its private HIP module
+  `library/src/fortran/hip/` and its `BUILD_FORTRAN_WRAPPER` option, deprecated in favour of
+  hipfort in hipRAND 3.0.0 and never shipped enabled. Builds passing
+  `-DBUILD_FORTRAN_WRAPPER=ON` should switch to `use hiprand`.
 
 ## Since last release ROCm 7.12
 

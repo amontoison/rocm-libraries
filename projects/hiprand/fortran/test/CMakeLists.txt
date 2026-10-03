@@ -1,7 +1,8 @@
 # Tests for the hipRAND Fortran bindings: one executable per test, driven by
-# CTest -- 23 single-source programs that each check one (generator,
-# distribution) pair, plus the FRUIT suite. All of them create a generator and
-# use a device, so they build anywhere but only pass on a machine with a GPU.
+# CTest -- 24 single-source programs, 23 of them one per (generator,
+# distribution) pair and one covering the version query, plus the FRUIT suite.
+# All but the version query create a generator and use a device, so they build
+# anywhere but only pass on a machine with a GPU.
 # Reached only from the parent, under BUILD_FORTRAN_CLIENTS.
 
 # The Intel compilers do not recognize the .f03 source extension and skip such
@@ -80,16 +81,18 @@ function(hiprand_fortran_add_test name)
   target_compile_options(hiprand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME hiprand_fortran_${name} COMMAND hiprand_fortran_test_${name})
-  # Every one of these draws numbers on a device, so without a GPU it fails for
+  # Almost all of these draw numbers on a device, so without a GPU they fail for
   # a reason that is not the binding being broken. The label lets a build
   # machine with no GPU still run the suite meaningfully: ctest -LE gpu.
   set_tests_properties(hiprand_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per (generator, distribution) pair: five generators against uniform,
-# normal and log-normal in both precisions, plus Poisson. Between them they
-# cover every hiprandGenerate* entry point the module exposes that returns data
-# a host can check the distribution of.
+# One per (generator, distribution) pair: five generators against uniform and
+# normal in both precisions, with log-normal in both precisions and Poisson
+# through philox only, as those paths do not vary with the generator. Between
+# them they cover every hiprandGenerate* entry point the module exposes that
+# returns data a host can check the distribution of. hiprand_version is the
+# exception: it binds no generator and covers the version query alone.
 set(HIPRAND_FORTRAN_TESTS
     mrg32k3a_normal
     mrg32k3a_normal_double
