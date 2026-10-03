@@ -1,10 +1,11 @@
 # Tests for the rocRAND Fortran bindings: one executable per test, driven by
-# CTest. They create a generator and draw numbers on a device, so they build
-# anywhere but only pass on a machine with a GPU.
+# CTest. All but the version query create a generator and draw numbers on a
+# device, so they build anywhere but only pass on a machine with a GPU.
 #
-# Two suites: the .f03 sources, one test per (generator, distribution) pair, and
-# the FRUIT-based suite under fruit/, which moved here with the binding it now
-# exercises. Reached only from the parent, under BUILD_FORTRAN_CLIENTS.
+# Two suites: the .f03 sources, mostly one test per (generator, distribution)
+# pair, and the FRUIT-based suite (fruit/ plus the .f90 sources beside it), which
+# moved here with the binding it now exercises. Reached only from the parent,
+# under BUILD_FORTRAN_CLIENTS.
 
 # The Intel compilers do not recognize the .f03 source extension and skip such
 # files ("no action performed"). Force Fortran compilation with -Tf immediately
@@ -85,7 +86,7 @@ function(rocrand_fortran_add_test name)
   target_compile_options(rocrand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocrand_fortran_${name} COMMAND rocrand_fortran_test_${name})
-  # Every one of these draws numbers on a device, so without a GPU it fails for
+  # Almost all of these draw numbers on a device, so without a GPU they fail for
   # a reason that is not the binding being broken. The label lets a build
   # machine with no GPU still run the suite meaningfully: ctest -LE gpu.
   set_tests_properties(rocrand_fortran_${name} PROPERTIES LABELS "gpu")
@@ -94,7 +95,8 @@ endfunction()
 # One source per (generator, distribution) pair, named for the pair. Every
 # generator below is exercised against uniform and normal in both precisions;
 # log-normal and Poisson go through philox only, as those paths do not vary
-# with the generator.
+# with the generator. rocrand_version is the exception: it binds no generator
+# and covers the version query alone.
 set(ROCRAND_FORTRAN_TESTS
     mrg32k3a_normal
     mrg32k3a_normal_double
