@@ -7,7 +7,11 @@ Documentation for rocFFT is available at
 
 ### Added
 
-* Added generated Fortran bindings, exposed as a single self-contained `rocfft` module: a consumer writes `use rocfft` and links `roc::rocfft_fortran`. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(rocfft-fortran)`, and the archive and `.mod` files are installed per compiler, under `fortran/<compiler>` within `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR` respectively. The module exports the `bind(C)` interfaces, the enum constants and the `rocfftCheck` status helper; derived-type wrappers, `_typed` strongly-typed overloads and `_dptr` device-pointer specifics are not part of the packaged track, and handles are `type(c_ptr)`, so `rocfft_plan`, `rocfft_plan_description`, `rocfft_execution_info`, `rocfft_field` and `rocfft_brick` all appear as `type(c_ptr)`. Array overloads are generated for the subset of routines the generator supports, which for rocFFT is `rocfft_plan_create` and `rocfft_plan_description_set_data_layout`; every other routine exposes the same plain `type(c_ptr)` interface under all three settings, so `FORTRAN_ARRAY_INTERFACES` affects those two generics alone.
+* Generated Fortran bindings, as a single `rocfft` module: `use rocfft`, link `roc::rocfft_fortran`.
+  Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on Windows),
+  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, `assumed-rank`).
+  Found with `find_package(rocfft-fortran)`; the archive and the `.mod` files install per compiler,
+  under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
 
 ### Resolved issues
 
