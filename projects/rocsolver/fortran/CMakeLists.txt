@@ -1,84 +1,49 @@
 # Fortran bindings for rocSOLVER.
 #
 # rocsolver.F90 is GENERATED from the rocSOLVER C headers by the rocm-fortran
-# generator and committed here, next to the library it binds, so that a header
-# change and its binding travel in the same pull request. Do not edit it by
-# hand: regenerate it instead.
+# generator and committed here, so that a header change and its binding travel in
+# the same pull request. Do not edit it by hand: regenerate it instead.
 #
-# The bindings are a single Fortran module, `rocsolver`, carrying the bind(C)
-# interfaces, the enum constants and the rocsolverCheck status helper. A consumer
-# writes one `use rocsolver`. There are no derived types and no opaque handle
-# types: every handle, rocsolver_rfinfo included, is a bare type(c_ptr), so there
-# is no wrapper type a caller has to declare.
+# It is one Fortran module, `rocsolver`: the bind(C) interfaces, the enum
+# constants and the rocsolverCheck status helper. Every handle is a bare
+# type(c_ptr), so there is no wrapper type to declare.
 #
-# That is the whole packaged track, and it is narrower on purpose. The generator
-# can also emit derived-type wrappers, strongly-typed overloads and separate
-# device-pointer specifics, and it can carry the C documentation across as
-# Fortran docstrings; none of that is shipped here. What a caller gets is the
-# bind(C) surface, the enum constants, the status helper and -- for the routines
-# the generator supports -- the array overloads selected below.
-#
-# UNLIKE every other library's binding in this monorepo, this one is not
-# self-contained at COMPILE time. rocsolver-functions.h includes rocblas.h and the
-# rocSOLVER API is spelled in rocBLAS enumerators, so the generated module opens
-# with
-#
-#   use rocblas, only: rocblas_diagonal_non_unit, rocblas_fill_upper, &
-#     rocblas_operation_none, rocblas_side_left, rocblas_status_success
-#
-# and rocblas.mod, built by the SAME compiler, must exist before this archive can
-# be compiled. That dependency is resolved below, and it is PUBLIC: a consumer
-# that says `use rocsolver` needs rocblas.mod too, because the compiler follows
-# the module's own use-association to read it.
-#
-# librocsolver, in contrast, is required only to LINK a final executable, and is
-# carried as the target's link interface for that reason.
+# UNLIKE every other binding in this monorepo, it is not self-contained at
+# COMPILE time: rocsolver-functions.h includes rocblas.h and the API is spelled
+# in rocBLAS enumerators, so the module says `use rocblas` and rocblas.mod, built
+# by the SAME compiler, must exist before this archive can be compiled. That
+# dependency is PUBLIC -- a consumer's `use rocsolver` needs rocblas.mod too.
+# librocsolver, in contrast, is needed only to LINK a final executable.
 
 cmake_minimum_required(VERSION 3.19)
 
-# Configured directly (not as a subdirectory of the rocSOLVER build), this
-# directory is its own project, so that the bindings can be built and packaged
-# on their own, which is the supported path for anyone whose Fortran compiler
-# is not the amdflang the shipped bindings were built with. In-tree, rocSOLVER's
-# own project() is already in effect.
+# Standalone, this directory is its own project, so the bindings can be built and
+# packaged on their own -- the supported path for a Fortran compiler other than
+# the amdflang ROCm ships them for.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(rocsolver-fortran LANGUAGES NONE)
 endif()
 
-# ON by default but GUARDED: a site with no Fortran compiler must still
-# configure and build the C library. The monorepo root already probes once and
-# publishes ROCM_HAVE_FORTRAN; a standalone rocSOLVER build falls back to its own
-# probe.
-#
-# "${UNIX}" rather than ON, because Windows is not such a site: ROCm ships no
-# Fortran compiler there at all. TheRock puts flang in LLVM_ENABLE_PROJECTS
-# only in the non-WIN32 branch of compiler/pre_hook_amd-llvm.cmake, so the
-# amdflang preference below finds nothing, the probe falls through to whatever
-# gfortran happens to be on PATH, and enable_language(Fortran) then fails to
-# identify it. A default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still
-# works wherever a usable compiler exists.
+# GUARDED, so a site with no Fortran compiler still builds the C library.
+# "${UNIX}" rather than ON because ROCm ships no Fortran compiler on Windows at
+# all (TheRock adds flang only in the non-WIN32 branch of
+# compiler/pre_hook_amd-llvm.cmake), so the probe falls through to a stray
+# gfortran and enable_language(Fortran) then fails to identify it. Only a
+# default: -DBUILD_FORTRAN_BINDINGS=ON still works wherever a compiler exists.
 option(BUILD_FORTRAN_BINDINGS "Build the rocSOLVER Fortran bindings" "${UNIX}")
 
-# The bindings' own test suite, and the Fortran clients where a library has
-# them: one switch rather than two neighbouring ones. ON by default, and
-# guarded the same way as the bindings, so asking for them when the bindings
-# were not built is a skip rather than an error.
+# The binding tests and the Fortran clients: one switch rather than two. Asking
+# for them when the bindings were not built is a skip rather than an error.
 option(BUILD_FORTRAN_CLIENTS "Build the rocSOLVER Fortran clients and binding tests" ON)
 
-# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
-# every library in the monorepo, which is what you want for the common case:
+# Both options are ONE cache entry shared by every library in the monorepo, so
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
-# a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which overrides the shared
-# default.
+# one flag; each library also honours a name of its own, which overrides it.
 #
-# For the bindings that is the whole contract. For the clients it is not: in
-# tree, rocSOLVER's own client/test switch is a floor the Fortran tests cannot
-# rise above, because they are GPU test executables and belong to that track.
-# ROCSOLVER_BUILD_FORTRAN_CLIENTS therefore selects the Fortran tests within a
-# build that is already producing clients; it does not add them to a
-# library-only one. The gate that enforces that sits further down, next to the
-# point where the tests are added.
+# For the clients that per-library name only SELECTS the Fortran tests within a
+# build already producing clients: they are GPU test executables and cannot rise
+# above rocSOLVER's own client/test switch. That gate sits further down, next to
+# where the tests are added.
 if(DEFINED ROCSOLVER_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCSOLVER_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -86,40 +51,28 @@ if(DEFINED ROCSOLVER_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${ROCSOLVER_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state replaces the
-# pair of booleans hipFORT used, which were nested: the assumed-rank one only
-# took effect once the master switch was also defined, so asking for assumed rank
-# alone -- the switch whose name was exactly what one wanted -- produced no
-# overloads at all. The two upper tiers do not add up either, since an
-# assumed-rank dummy is not distinguishable by rank from the per-rank specifics,
-# so assumed-rank REPLACES the per-rank variants rather than joining them. One
-# value here therefore names exactly one tier.
+# Which array-argument overloads the module exposes. One tri-state rather than a
+# boolean per tier, because the tiers are mutually exclusive: an assumed-rank
+# dummy is not distinguishable by rank from the per-rank specifics, so
+# assumed-rank REPLACES the per-rank variants rather than adding to them.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + per-rank array overloads, wherever the generator emits
-#                  any (Fortran 2008): the default, and what the bindings
-#                  shipped in ROCm are built with
-#   assumed-rank   the same overloads spelled dimension(..) (Fortran 2018)
+#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
+#                  and what the bindings shipped in ROCm are built with
+#   assumed-rank   + one dimension(..) overload in their place (Fortran 2018)
 #
-# The qualification on those two lines is the point: neither upper tier covers
-# the whole library. Overloads exist only for the subset of routines the
-# generator supports, and every other routine is reachable solely through its
-# plain bind(C) declaration, under an unchanged name, at every value of this
-# option. Raising the tier therefore widens part of the API, not all of it.
+# Either upper tier reaches only the subset of routines the generator emits
+# overloads for; every other routine exposes the same plain type(c_ptr)
+# interface at all three tiers.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
              none assumed-shape assumed-rank)
 
-# Report to the parent scope whether the bindings were really built. Distinct
-# from ROCM_HAVE_FORTRAN, which reports only that a compiler exists: the
-# compiler can be present while this directory is switched off.
-#
-# Only when there IS a parent: standalone, this directory is the top-level scope
-# and PARENT_SCOPE warns under -Wdev rather than being a silent no-op, which
-# turns into a hard failure under -Werror=dev. Standalone is the documented path
-# for anyone whose Fortran compiler is not the one ROCm ships the bindings for,
-# so it has to configure cleanly.
+# Report to the parent whether the bindings were really built; ROCM_HAVE_FORTRAN
+# says only that a compiler exists. Guarded because standalone this is the
+# top-level scope, where PARENT_SCOPE warns under -Wdev -- a hard failure under
+# -Werror=dev.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(ROCSOLVER_HAVE_FORTRAN_BINDINGS FALSE PARENT_SCOPE)
 endif()
@@ -128,18 +81,12 @@ if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
 
-# Probing for a Fortran compiler is not free, and every library in a monorepo
-# build would otherwise repeat it, so the monorepo root probes ONCE and publishes
-# the answer as ROCM_HAVE_FORTRAN. That name is deliberately neither
-# rocm-libraries' nor rocm-systems': rocSOLVER is regularly built inside a
-# rocm-systems tree (and HIP inside this one), and a repo-specific name would
-# make it read the wrong variable, or none. ROCM_LIBS_HAVE_FORTRAN is what the
-# rocm-libraries root publishes today and is honoured as a legacy spelling until
-# that root adopts the new name.
-#
-# The local probe is the standalone path, where there is no root to publish
-# anything, and it is also the honest fallback: a directory that can be
-# configured on its own has to be able to answer this question on its own.
+# The monorepo root probes for a Fortran compiler ONCE and publishes
+# ROCM_HAVE_FORTRAN. The name is deliberately neither rocm-libraries' nor
+# rocm-systems': rocSOLVER is regularly built inside a rocm-systems tree, and a
+# repo-specific name would read the wrong variable. ROCM_LIBS_HAVE_FORTRAN is a
+# legacy spelling, honoured until the rocm-libraries root adopts the new one.
+# The local probe is the standalone path, where there is no root to ask.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
@@ -147,46 +94,29 @@ elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
 else()
   include(CheckLanguage)
 
-  # check_language() answers by writing the CACHE entry CMAKE_Fortran_COMPILER,
-  # and rocm-cmake's ROCMChecks arms a variable_watch on exactly that name to
-  # catch a project setting a toolchain variable behind the toolchain file's
-  # back. A compiler probe is the one legitimate writer that watch cannot tell
-  # apart from a violation, so it reports this one: a stray twelve-line banner
-  # by default, and a hard configure failure under -DROCM_ERROR_TOOLCHAIN_VAR=ON
-  # (or ROCMCHECKS_ERROR_TOOLCHAIN_VAR in the environment), which is a switch CI
-  # turns on. develop has no probe here and so never tripped it, which makes
-  # this directory the regression.
-  #
-  # So silence the checker across the probe and put it back afterwards, the same
-  # save/set/restore rocRAND already uses in cmake/Dependencies.cmake. Plain
-  # variables rather than cache ones: they shadow the cache for this scope only,
-  # which is what the watch callback reads, and the user's cache entries are
-  # left exactly as they were. Both names have to be cleared, because the
-  # callback escalates to SEND_ERROR on ROCM_ERROR_TOOLCHAIN_VAR before it ever
-  # looks at the warn flag.
+  # check_language() writes the CACHE entry CMAKE_Fortran_COMPILER, which
+  # rocm-cmake's ROCMChecks arms a variable_watch on; a legitimate compiler probe
+  # is indistinguishable there from a toolchain violation, so it warns, and
+  # hard-fails under -DROCM_ERROR_TOOLCHAIN_VAR=ON, which CI turns on. Silence it
+  # across the probe and restore it, as rocRAND does in cmake/Dependencies.cmake.
+  # Plain variables shadow the cache for this scope only, which is what the
+  # callback reads. Both names must be cleared: the callback escalates on
+  # ROCM_ERROR_TOOLCHAIN_VAR before it ever looks at the warn flag.
   set(_rocm_warn_toolchain_var "${ROCM_WARN_TOOLCHAIN_VAR}")
   set(_rocm_error_toolchain_var "${ROCM_ERROR_TOOLCHAIN_VAR}")
   set(ROCM_WARN_TOOLCHAIN_VAR OFF)
   set(ROCM_ERROR_TOOLCHAIN_VAR OFF)
 
-  # Prefer ROCm's own amdflang over whatever CMake would otherwise find first.
-  # check_language(Fortran) takes the first compiler on the search path, which on
-  # a ROCm CI image is the system gfortran, and that is how the bindings ended up
-  # as the one component of ROCm built by a different toolchain from everything
-  # else: installed under fortran/gfortran/ while the documentation promises
-  # fortran/amdflang/, and exercising a compiler the product does not ship with.
+  # Prefer ROCm's own amdflang. check_language(Fortran) takes the first compiler
+  # on the search path, which on a ROCm CI image is the system gfortran, and that
+  # is how the bindings ended up installed under fortran/gfortran/ while the
+  # documentation promises fortran/amdflang/. amdflang sits beside the clang
+  # already compiling this project, so look next to CMAKE_CXX_COMPILER; ROCM_PATH
+  # covers a standalone configure; NO_DEFAULT_PATH so a stray amdflang on PATH
+  # cannot win. An explicit CMAKE_Fortran_COMPILER, or FC, always wins: a .mod is
+  # compiler-specific, so whoever named a compiler meant it.
   #
-  # amdflang sits beside the clang already compiling this project, so the answer
-  # is next to CMAKE_CXX_COMPILER when there is one; ROCM_PATH covers a
-  # standalone configure. Searched with NO_DEFAULT_PATH so a stray amdflang
-  # elsewhere on PATH cannot win over the ROCm being built against.
-  #
-  # An explicit CMAKE_Fortran_COMPILER, or FC in the environment, always wins:
-  # building these bindings with gfortran is a supported thing to do, and a .mod
-  # is compiler-specific, so whoever asked for a compiler meant it.
-  #
-  # check_language() is a no-op once CMAKE_Fortran_COMPILER is defined, so this
-  # has to run before it, and the probe below never overrides what we set here.
+  # MUST run before check_language(), which is a no-op once the variable is set.
   if(NOT CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
     set(_rocm_fc_hints)
     foreach(_rocm_fc_cc "${CMAKE_CXX_COMPILER}" "${CMAKE_C_COMPILER}"
@@ -202,11 +132,9 @@ else()
     if(_rocm_fc_hints)
       find_program(_rocm_amdflang NAMES amdflang HINTS ${_rocm_fc_hints}
                    NO_DEFAULT_PATH)
-      # Confirm it runs before committing to it. A ROCm tree can carry a dangling
-      # amdflang symlink, and check_language() would not catch that: it does
-      # nothing at all once the variable is set, so the failure would surface far
-      # later as a broken enable_language with no hint of where the choice was
-      # made.
+      # Confirm it runs: a ROCm tree can carry a dangling amdflang symlink, and
+      # check_language() does nothing once the variable is set, so the failure
+      # would surface far later as a broken enable_language.
       if(_rocm_amdflang)
         execute_process(COMMAND "${_rocm_amdflang}" --version
                         RESULT_VARIABLE _rocm_fc_rc
@@ -249,29 +177,19 @@ if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
     "not '${FORTRAN_ARRAY_INTERFACES}'.")
 endif()
 
-# Pulled in here rather than beside the install() rules below because the
-# install layout is also baked into the target's INSTALL_INTERFACE include
-# directory, which is set well before them. Nothing must hardcode lib/ or
-# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
-# and a literal lib/fortran then names a directory that does not exist.
+# Here rather than beside the install() rules, because the install layout is also
+# baked into the target's INSTALL_INTERFACE include directory, set well before
+# them. Nothing must hardcode lib/ or include/: a distro installing to lib64 gets
+# CMAKE_INSTALL_LIBDIR=lib64, and a literal lib/fortran then names nothing.
 include(GNUInstallDirs)
 
-# The rocBLAS binding, and the one dependency here that is not optional: the
-# module says `use rocblas`, so rocblas.mod has to exist before rocsolver.F90 can
-# be compiled at all. In-tree the rocblas_fortran target is already defined,
-# because projects/rocblas is configured before projects/rocsolver; standalone
-# the Fortran package has to be found.
-#
-# PATH_SUFFIXES lib/cmake/rocblas because that is where the real config lives,
-# beside the rocBLAS C package. The forwarder in lib/cmake/rocblas-fortran makes
-# the plain spelling work as well, and CMake searches the default suffixes in
-# addition to these, so this call finds either layout, including a rocBLAS
-# installed before the forwarder existed.
-#
-# Resolved BEFORE the target is created, and a skip rather than a hard error.
-# BUILD_FORTRAN_BINDINGS is ON by default, so a missing optional binding must not
-# take the rocSOLVER C library down with it: a tree whose rocBLAS ships no
-# Fortran binding still has to configure and build.
+# The rocBLAS binding, the one non-optional dependency: the module says
+# `use rocblas`, so rocblas.mod must exist before rocsolver.F90 can be compiled.
+# In-tree the target is already defined (projects/rocblas is configured first).
+# PATH_SUFFIXES lib/cmake/rocblas is where the real config lives, beside the C
+# package; the forwarder in lib/cmake/rocblas-fortran covers the plain spelling.
+# Resolved BEFORE the target is created, and a skip rather than a hard error: a
+# missing optional binding must not take the C library down with it.
 if(NOT TARGET roc::rocblas_fortran)
   find_package(rocblas-fortran QUIET CONFIG PATH_SUFFIXES lib/cmake/rocblas)
 endif()
@@ -286,24 +204,16 @@ endif()
 
 add_library(rocsolver_fortran STATIC rocsolver.F90)
 
-# roc::, matching the namespace rocSOLVER exports its C library under (see
-# library/src/CMakeLists.txt), so that a consumer is not made to remember that
-# two halves of one package sit in different namespaces.
+# roc::, matching the namespace rocSOLVER exports its C library under, so that a
+# consumer is not made to remember two namespaces for one package.
 add_library(roc::rocsolver_fortran ALIAS rocsolver_fortran)
 
-# A .mod is not portable across compilers, so the artifacts are installed under a
-# per-compiler directory rather than a shared one. Two compilers can then be
-# installed side by side from the same package.
-#
-# The directory is named after the compiler a user actually types (amdflang,
-# gfortran), not after CMake's compiler ID, so that the -I/-L paths in the
-# documentation are the ones a raw (non-CMake) link line needs. Deriving it from
-# the ID and mapping back, rather than taking the basename of
-# CMAKE_Fortran_COMPILER, is what makes that survive the cases where the two
-# differ: an MPI wrapper (mpif90 around gfortran), a versioned binary
-# (gfortran-13), an absolute path, or the Cray wrapper (ftn). All four would give
-# the wrong directory under a plain basename, and the .mod would then be filed
-# under a name no consumer looks up.
+# A .mod is not portable across compilers, so artifacts install under a
+# per-compiler directory and two compilers can coexist in one prefix. The name is
+# the compiler a user types (amdflang, gfortran), not CMake's compiler ID, so the
+# -I/-L paths in the documentation match a raw link line. Derived from the ID
+# rather than from the basename of CMAKE_Fortran_COMPILER, which would be wrong
+# for an MPI wrapper (mpif90), a versioned binary (gfortran-13) or Cray's ftn.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_fc_name "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")     # Flang, LLVMFlang
@@ -317,49 +227,34 @@ elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
 elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
   set(_fc_name "nvfortran")
 else()
-  # Unknown compiler: fall back to the basename, lowercased, which is the best
-  # guess available and still keeps two compilers from colliding.
+  # Unknown compiler: the lowercased basename still keeps two from colliding.
   get_filename_component(_fc_name "${CMAKE_Fortran_COMPILER}" NAME_WE)
   string(TOLOWER "${_fc_name}" _fc_name)
 endif()
 
-# Strictly a .mod is tied to the compiler VERSION too, not just the compiler, so
-# this name is deliberately lossy: gfortran 13 and gfortran 14 install to the
-# same directory and the second overwrites the first. That is the documented
-# layout (include/fortran/gfortran), and it is the right default because the
-# overwhelmingly common case is one Fortran compiler per prefix. A site that
-# really does install several versions of the SAME compiler side by side sets
-# ROCSOLVER_FORTRAN_COMPILER_DIR itself, for example to gfortran-13.3.0.
+# Deliberately lossy: a .mod is tied to the compiler VERSION too, so gfortran 13
+# and 14 share a directory and the second overwrites the first. That is the
+# documented layout, and right for the common one-compiler prefix. A site that
+# installs several versions of the SAME compiler overrides this, e.g. with
+# gfortran-13.3.0.
 set(ROCSOLVER_FORTRAN_COMPILER_DIR "${_fc_name}" CACHE STRING
     "Per-compiler subdirectory the .mod and the archive install under")
 
 set(_moddir "${CMAKE_CURRENT_BINARY_DIR}/include")
 set_target_properties(rocsolver_fortran PROPERTIES
   Fortran_MODULE_DIRECTORY "${_moddir}"
-  # rocsolver.F90 is uppercase: the array overloads sit behind preprocessor
-  # guards, so the source must go through the C preprocessor.
+  # The array overloads sit behind preprocessor guards.
   Fortran_PREPROCESS ON
-  # Free form is the .F90 default, but stating it lets CMake emit whichever flag
-  # the compiler in use expects rather than relying on the extension.
+  # The .F90 default, but stating it lets CMake emit the flag the compiler in
+  # use expects rather than relying on the extension.
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the macro that selects the matching tier in the
-# generated source. The option value and the macro name are the same word, so
-# there is nothing to remember: assumed-shape is USE_ASSUMED_SHAPE, assumed-rank
-# is USE_ASSUMED_RANK.
-#
-# The branches below define exactly one of the two. The tiers are mutually
-# exclusive because an assumed-rank dummy is not distinguishable by rank from the
-# per-rank specifics, so the two cannot coexist in one generic. The generated
-# source settles that itself, and it settles it the same way in both of the
-# regions it guards: the interface blocks and the contains section each test
-# USE_ASSUMED_RANK first and fall back to USE_ASSUMED_SHAPE. Defining both is
-# therefore not an error -- assumed-rank wins and the per-rank specifics are
-# neither declared nor compiled. Checked with amdflang: rocsolver.F90 passes
-# -fsyntax-only with neither macro, with either one alone, and with both.
-#
-# none defines neither and leaves the raw type(c_ptr) surface.
+# The tri-state as a macro; the option value and the macro name are the same
+# word, and none defines neither. The generated source settles the mutual
+# exclusion itself -- both guarded regions test USE_ASSUMED_RANK first and fall
+# back to USE_ASSUMED_SHAPE -- so defining both is not an error. Checked with
+# amdflang: rocsolver.F90 passes -fsyntax-only with neither, either and both.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
   target_compile_definitions(rocsolver_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
@@ -367,32 +262,25 @@ elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
 endif()
 
 # No line-length flag: the generator wraps the emitted source at 112 columns,
-# inside the 132 that free-form Fortran guarantees, so every compiler reads it
-# without a vendor-specific option.
+# inside the 132 free-form Fortran guarantees.
 
 target_include_directories(rocsolver_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
   "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCSOLVER_FORTRAN_COMPILER_DIR}>")
 
-# PUBLIC, not INTERFACE: a consumer that says `use rocsolver` needs rocblas.mod on
-# its include path too, since the compiler follows the module's use-association.
-# The target was resolved above, before this one was created.
+# PUBLIC, not INTERFACE: a consumer that says `use rocsolver` needs rocblas.mod
+# on its include path too, since the compiler follows the use-association.
 target_link_libraries(rocsolver_fortran PUBLIC roc::rocblas_fortran)
 
 # Link interface only: needed to link an executable, not to build this archive.
-# roc::rocsolver is defined by rocSOLVER's library/src, and brings the HIP runtime with
-# it. Standalone it has to be looked for, and testing for the target without
-# ever calling find_package would mean it is never found: the archive would then
-# export no link interface at all, and every consumer would hit undefined
-# references to rocsolver_dgetrf and friends despite linking
-# roc::rocsolver_fortran exactly as documented.
+# Standalone it has to be looked for -- testing for the target without ever
+# calling find_package would export no link interface at all, and every consumer
+# would hit undefined references despite linking roc::rocsolver_fortran.
 #
 # rocsolver-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled. This project
-# declares LANGUAGES NONE and then enables only Fortran, so C is enabled first;
-# it compiles none of the sources here. QUIET, because a site that has no
-# installed rocSOLVER can still legitimately build the bindings: they compile
-# against nothing.
+# FindThreads, which hard-errors unless C or CXX is enabled, so C is enabled
+# first; it compiles none of the sources here. QUIET, because the bindings
+# compile against nothing and build fine with no rocSOLVER installed.
 if(NOT TARGET roc::rocsolver)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -400,17 +288,12 @@ if(NOT TARGET roc::rocsolver)
   find_package(rocsolver QUIET)
 endif()
 
-# ROCSOLVER_FORTRAN_NEEDS_C_PACKAGE records whether the search above actually
-# produced a link interface, and the config template turns it into the condition
-# guarding its own find_dependency(rocsolver). A config that demanded the C
-# package unconditionally would be wrong in both directions for an archive built
-# without one: it obliges the consumer to find a package this one does not
-# depend on, while the target it hands back still carries nothing to link.
-#
-# Set on BOTH branches, to an explicit TRUE or FALSE, because the template
-# substitutes the value straight into an if(): an unset variable would leave a
-# bare if() in the installed config, and every consumer's find_package would
-# die on it.
+# Records whether the search produced a link interface; the config template turns
+# it into the condition guarding its own find_dependency(rocsolver). Demanding
+# the C package unconditionally would oblige a consumer to find a package this
+# archive does not depend on. Set on BOTH branches, to an explicit TRUE or FALSE:
+# the template substitutes the value straight into an if(), and an unset variable
+# would leave a bare if() that every consumer's find_package dies on.
 if(TARGET roc::rocsolver)
   target_link_libraries(rocsolver_fortran INTERFACE roc::rocsolver)
   set(ROCSOLVER_FORTRAN_NEEDS_C_PACKAGE TRUE)
@@ -425,24 +308,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(ROCSOLVER_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
 endif()
 
-# The binding tests are GPU runtime executables, so in-tree they belong to the
-# client/test track and have to follow the library's own switch: a library-only
-# build has no business producing test binaries, and would be made to link a GPU
-# runtime it never asked for. The condition is the one rocSOLVER guards
-# add_subdirectory(clients) with, so the two cannot disagree.
+# The binding tests are GPU runtime executables, so in-tree they follow the
+# library's own client/test switch; the condition below is the one rocSOLVER
+# guards add_subdirectory(clients) with, so the two cannot disagree. Standalone
+# that switch does not exist. Set as a plain variable: the cache entry is shared
+# monorepo-wide, so turning it off here must stay scoped here.
 #
-# Standalone, this directory IS the build and the tests are the point, so the
-# library's switch does not exist and BUILD_FORTRAN_CLIENTS stands on its own.
-# Setting it as a plain variable is deliberate: the cache entry is one switch
-# shared by every library in the monorepo, so turning it off here has to be
-# scoped to this directory and must not be written back.
-#
-# Placed here, immediately before BUILD_FORTRAN_CLIENTS is read, rather than up
-# with the option() calls: a configure that never reaches this point -- no
-# Fortran compiler, BUILD_FORTRAN_BINDINGS=OFF, no rocBLAS binding -- has
-# already returned, and a message announcing that the tests are skipped
-# "because clients are not being built" would name the wrong reason for a
-# directory that configured nothing at all.
+# Placed immediately before BUILD_FORTRAN_CLIENTS is read, not up with the
+# option() calls: a configure that never reaches this point has already
+# returned, and would otherwise name the wrong reason for the skip.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
    AND BUILD_FORTRAN_CLIENTS
    AND NOT (BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES))
@@ -452,12 +326,9 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 endif()
 
 if(BUILD_FORTRAN_CLIENTS)
-  # enable_testing() here is enough for a STANDALONE build of this directory, but
-  # NOT for an in-tree one: CMake only writes the chain of CTestTestfile.cmake
-  # that ctest walks down from a build root when testing was enabled at the TOP
-  # level. Enabled only here, the tests are built and registered, and `ctest` run
-  # from the top of the rocSOLVER build reports "Total Tests: 0": a silent
-  # nothing, which is the worst way to find out. So say it.
+  # Enough standalone, but NOT in-tree: CMake writes the chain of
+  # CTestTestfile.cmake that ctest walks only when testing was enabled at the TOP
+  # level, so `ctest` from the top reports "Total Tests: 0". Hence the warning.
   enable_testing()
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
@@ -475,27 +346,16 @@ endif()
 
 include(CMakePackageConfigHelpers)
 
-# lib/cmake/rocsolver is where rocSOLVER's own rocm_export_targets() puts
-# rocsolver-config.cmake, so the Fortran package lands beside the C one and a
-# single CMAKE_PREFIX_PATH entry finds both.
-#
-# rocRAND and hipRAND cannot do this and install into lib/cmake/<lib>-fortran
-# alone, because their shipped <lib>-config.cmake carries a bare unguarded
-# include() of a sibling <lib>-fortran-config.cmake, and putting a file there
-# would recurse. rocSOLVER has no such include, checked against an installed
-# ROCm, rocsolver-config.cmake mentions Fortran nowhere, so it uses the shared
-# layout, like hipBLAS, rocBLAS and the FFT libraries.
+# Beside the C package, so a single CMAKE_PREFIX_PATH entry finds both. rocRAND
+# and hipRAND cannot do this -- their <lib>-config.cmake carries a bare unguarded
+# include() of a sibling <lib>-fortran-config.cmake, so a file there would
+# recurse -- but rocsolver-config.cmake mentions Fortran nowhere.
 set(_fortran_pkgdir "${CMAKE_INSTALL_LIBDIR}/cmake/rocsolver")
 
-# COMPONENT devel on every rule below, because everything this directory
-# installs -- a static archive, a set of .mod files, the generated source and
-# the CMake package -- is a development artifact: nothing here is needed to RUN
-# a program, only to build one against the bindings. devel is also what
-# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
-# it. Without it these files land in the runtime component instead.
-#
-# Plain install(), not rocm_install(): this directory must also configure
-# standalone, where rocm-cmake was never loaded and those commands do not exist.
+# COMPONENT devel on every rule below: everything installed here is a development
+# artifact, and devel is what rocm-cmake's install helpers default to -- without
+# it these land in the runtime component. Plain install(), not rocm_install():
+# this directory must also configure standalone, without rocm-cmake.
 install(TARGETS rocsolver_fortran
         EXPORT rocsolver-fortran-targets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCSOLVER_FORTRAN_COMPILER_DIR}"
@@ -506,17 +366,10 @@ install(DIRECTORY "${_moddir}/"
         FILES_MATCHING PATTERN "*.mod")
 
 # The generated source, so that a user on a compiler ROCm ships no .mod for can
-# rebuild the binding without fetching a monorepo to get one file. Source
-# obtained separately can also be generated from a different ROCm than the
-# installed librocsolver, which surfaces as an undefined symbol at link time or as
-# an interface that silently differs from the one the caller meant; source that
-# ships with the library cannot drift from it.
-#
-# Under share/, not include/. The .mod is compiler-specific and this is not, and
-# every entry under include/fortran/ is partitioned by compiler, so a source
-# file there would be read as naming one: the config below enumerates that
-# directory to report which compilers are installed, and would list rocsolver.F90
-# among them.
+# rebuild the binding without fetching a monorepo, from source that cannot drift
+# from the installed librocsolver. Under share/, not include/: every entry under
+# include/fortran/ is read as naming a compiler -- the config below enumerates
+# that directory to report which are installed, and would list rocsolver.F90.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/rocsolver.F90"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/rocsolver/fortran"
         COMPONENT devel)
@@ -526,10 +379,7 @@ install(EXPORT rocsolver-fortran-targets
         DESTINATION "${_fortran_pkgdir}"
         COMPONENT devel)
 
-# The two directories the config package has to name, kept out of the template
-# so that neither side spells lib/ or include/ literally. A literal lib/fortran
-# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
-# the consumer an IMPORTED_LOCATION that does not exist.
+# Kept out of the template so neither side spells lib/ or include/ literally.
 set(ROCSOLVER_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
 set(ROCSOLVER_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
@@ -537,36 +387,23 @@ configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/rocsolver-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/rocsolver-fortran-config.cmake"
   INSTALL_DESTINATION "${_fortran_pkgdir}"
-  # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
-  # an absolute path computed from where the config file was FOUND, so the
-  # package survives being relocated and gets lib64 right without the template
-  # knowing which layout it was built for. ROCSOLVER_FORTRAN_COMPILER_DIR stays a
-  # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
-  # and PATH_VARS would resolve it as one, under the install prefix.
+  # PATH_VARS: @PACKAGE_INIT@ rewrites each into an absolute path computed from
+  # where the config was FOUND, so the package is relocatable and gets lib64
+  # right. ROCSOLVER_FORTRAN_COMPILER_DIR stays a plain @-substitution: it is a
+  # bare directory NAME, and PATH_VARS would resolve it under the prefix.
   PATH_VARS ROCSOLVER_FORTRAN_LIBDIR ROCSOLVER_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocsolver-fortran-config.cmake"
         DESTINATION "${_fortran_pkgdir}"
         COMPONENT devel)
 
-# The config lands in lib/cmake/rocsolver, BESIDE the C package, because that is
-# what would let rocsolver-config.cmake pick it up with a bare
-# include(rocsolver-fortran-config.cmake OPTIONAL) once rocm_export_targets grows
-# a hook for it: a Fortran binding installed after the C library would then be
-# found at find_package(rocsolver) time, and ignored when absent.
+# find_package(rocsolver-fortran), the documented spelling, searches
+# lib/cmake/rocsolver-fortran*, which the directory above does not match. A
+# forwarder gives that search somewhere to land without duplicating the real
+# config and its targets file.
 #
-# rocm_export_targets' existing INCLUDE argument is NOT that hook. It emits a
-# bare, non-OPTIONAL include() and emits it BEFORE the targets file
-# (ROCMInstallTargets.cmake writes INCLUDE entries first), so a Fortran config
-# reached that way would run before roc::rocsolver exists. That change belongs in
-# rocm-cmake.
-#
-# But find_package(rocsolver-fortran): the documented spelling, and the one the
-# config's own header shows, searches lib/cmake/rocsolver-fortran*, which
-# lib/cmake/rocsolver does not match, so on its own that placement makes the
-# direct spelling fail with "could not find a package configuration file". A
-# forwarder gives the search somewhere to land without duplicating the real
-# config, which would also need its own copy of the targets file and would then
-# be a second thing to keep in step.
+# rocm_export_targets' INCLUDE argument is not an alternative: it emits a
+# non-OPTIONAL include(), and emits it BEFORE the targets file, so a Fortran
+# config reached that way would run before roc::rocsolver exists.
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocsolver-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the rocSOLVER C package, in
 # lib/cmake/rocsolver, so that rocsolver-config.cmake can include it as a sibling.
@@ -578,22 +415,18 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/rocsolver-fortran-config.cmak
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocsolver-fortran"
         COMPONENT devel)
 
-# A version file, so that find_package(rocsolver-fortran 3.38) resolves rather
-# than failing with "could not find a configuration file compatible with
-# requested version". SameMajorVersion because the module's bind(C) surface
-# tracks the C API's compatibility promise.
+# A version file, so that find_package(rocsolver-fortran 3.38) resolves.
+# SameMajorVersion because the bind(C) surface tracks the C API's promise.
 #
-# The version is read from THIS tree's top-level CMakeLists, not from
-# rocsolver_VERSION. That variable looks like the obvious source and is a trap: in
-# a standalone build it is set by the find_package(rocsolver) above, so it reports
-# whatever rocSOLVER happens to be INSTALLED (3.36.0 from a stock /opt/rocm)
-# rather than the version of the headers these bindings were generated from. The
-# bindings ship with their source tree, so the source tree is the truth.
+# Read from THIS tree's top-level CMakeLists, not from rocsolver_VERSION: in a
+# standalone build that variable is set by the find_package(rocsolver) above and
+# reports whatever rocSOLVER is INSTALLED, not the version the bindings were
+# generated from.
 set(_fortran_version "")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt")
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt" _rocsolver_root)
-  # rocSOLVER spells it set(VERSION_STRING "3.38.0") and then passes the variable
-  # to rocm_setup_version, so match the literal assignment rather than the call.
+  # rocSOLVER spells it set(VERSION_STRING "3.38.0"), so match the assignment
+  # rather than the rocm_setup_version call it is passed to.
   string(REGEX MATCH "set\\([ \t]*VERSION_STRING[ \t]+\"([0-9]+\\.[0-9]+\\.[0-9]+)\""
          _m "${_rocsolver_root}")
   if(CMAKE_MATCH_1)
@@ -607,13 +440,9 @@ if(_fortran_version)
     "${CMAKE_CURRENT_BINARY_DIR}/rocsolver-fortran-config-version.cmake"
     VERSION "${_fortran_version}"
     COMPATIBILITY SameMajorVersion)
-  # Installed in BOTH package directories, and it has to be. CMake looks for
-  # <pkg>-config-version.cmake NEXT TO the <pkg>-config.cmake it actually
-  # resolved, not wherever the real one lives. find_package(rocsolver-fortran 3.38)
-  # resolves the forwarder in lib/cmake/rocsolver-fortran, so a version file only
-  # beside the real config in lib/cmake/rocsolver is never consulted, and the call
-  # fails with "could not find a configuration file compatible with requested
-  # version" even though the config is right there and the version matches.
+  # BOTH directories: CMake looks for <pkg>-config-version.cmake NEXT TO the
+  # config it actually resolved, and a versioned find_package(rocsolver-fortran)
+  # resolves the forwarder.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocsolver-fortran-config-version.cmake"
           DESTINATION "${_fortran_pkgdir}"
           COMPONENT devel)
@@ -621,9 +450,8 @@ if(_fortran_version)
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocsolver-fortran"
           COMPONENT devel)
 else()
-  # Better no version file than a wrong one: without it an unversioned
-  # find_package still succeeds, whereas a version file claiming the wrong
-  # number makes a versioned one succeed and link the wrong .mod.
+  # Better no version file than a wrong one: an unversioned find_package still
+  # succeeds, whereas a wrong number makes a versioned one link the wrong .mod.
   message(STATUS
     "rocSOLVER: could not determine the version for the Fortran package, so no "
     "rocsolver-fortran-config-version.cmake is installed; "
