@@ -7,8 +7,15 @@ Documentation for hipFFT is available at
 
 ### Added
 
-* Added generated Fortran bindings, exposed as two self-contained modules: a consumer writes `use hipfft` and links `hip::hipfft_fortran` for the hipFFT API, or `use hipfftw` and links `hip::hipfftw_fortran` for the FFTW compatibility API. The two are independent, so a program on the FFTW surface never touches the hipFFT binding. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the modules expose); the `HIPFFT_*` and `HIPFFTW_*` spellings of the first two switch either half on its own. The binding tests are GPU executables, so in an in-tree build they also follow hipFFT's own `BUILD_CLIENTS*` switches and are skipped in a library-only build. The packages are found with `find_package(hipfft-fortran)` and `find_package(hipfftw-fortran)`, and the archives and `.mod` files are installed per compiler, under `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
-* The packaged bindings are generated without the doxygen docstrings that the C headers carry: neither `hipfft.F90` nor `hipfftw.F90` retains any `!>` comment line. Consult the hipFFT and FFTW API documentation for per-argument descriptions. The declarations themselves are unaffected, and no `bind(C)` symbol was lost from either module. `hipfft` exports the `bind(C)` interfaces, the generics over array arguments for the subset of routines the generator supports, the enum constants and the `hipfftCheck` status helper; `hipfftw` exports the `bind(C)` interfaces, the `FFTW_*` flag constants and the `fftw_iodim`/`fftw_iodim64` derived types. Plan handles remain `type(c_ptr)` in both modules: the packaged track emits no derived-type handle wrapper, no strongly-typed overloads and no device-pointer specifics.
+* Generated Fortran bindings, as two independent modules: `use hipfft` and link
+  `hip::hipfft_fortran` for the hipFFT API, or `use hipfftw` and link `hip::hipfftw_fortran` for the
+  FFTW compatibility API. A program on the FFTW surface never touches the hipFFT binding.
+  Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on Windows and on the CUDA
+  backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`,
+  `assumed-rank`); the `HIPFFT_*` and `HIPFFTW_*` spellings of the first two switch either half on
+  its own. Found with `find_package(hipfft-fortran)` and `find_package(hipfftw-fortran)`; the
+  archives and the `.mod` files install per compiler, under `<libdir>/fortran/<compiler>` and
+  `<includedir>/fortran/<compiler>`.
 
 ## hipFFT 1.0.26 for ROCm 10.1
 
