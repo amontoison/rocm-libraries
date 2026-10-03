@@ -13,8 +13,9 @@
 # The directory builds with no dependency on the hipSOLVER C target, because a
 # Fortran binding compiles against nothing. libhipsolver is needed only to LINK a
 # final executable, and is carried as the target's link interface for that
-# reason. This module replaced the hand-written library/src/hipsolver_module.f90,
-# which the clients' Fortran shim now compiles against instead.
+# reason. This module replaces the hand-written library/src/hipsolver_module.f90,
+# removed in the same change; the clients' Fortran shim now compiles against
+# this one.
 
 cmake_minimum_required(VERSION 3.19)
 

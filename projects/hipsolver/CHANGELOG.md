@@ -11,42 +11,30 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   * getrfBatched
     * hipsolverSgetrfBatched_bufferSize, hipsolverDgetrfBatched_bufferSize, hipsolverCgetrfBatched_bufferSize, and hipsolverZgetrfBatched_bufferSize
     * hipsolverSgetrfBatched, hipsolverDgetrfBatched, hipsolverCgetrfBatched, and hipsolverZgetrfBatched
-* Generated Fortran bindings, as a single self-contained `hipsolver` module (`use hipsolver`,
-  link `roc::hipsolver_fortran`). Built by default when a Fortran compiler is available;
-  controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
-  `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(hipsolver-fortran)`, installed per
-  compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`, with the
-  generated source alongside in `<datadir>/hipsolver/fortran` (the directories
-  `CMAKE_INSTALL_LIBDIR`, `CMAKE_INSTALL_INCLUDEDIR` and `CMAKE_INSTALL_DATADIR` resolve to,
-  so `lib64` on a distro that uses it).
-  The module exports the `bind(C)` interfaces, the enum constants and the `hipsolverCheck`
-  status helper, and that is the whole of it. It declares no derived types:
-  `hipsolverHandle_t`, `hipsolverDnHandle_t`, `hipsolverSpHandle_t`, `hipsolverRfHandle_t`,
-  `hipsolverGesvdjInfo_t` and `hipsolverSyevjInfo_t` are all plain `type(c_ptr)`, as they were
-  in the hand-written binding this replaces. There are no strongly-typed (`_typed`) wrappers
-  and no device-pointer (`_dptr`) specifics; a generator can emit that convenience layer, but
-  it is not part of the packaged track. Array overloads are generated for the subset of
-  routines the generator supports, and `FORTRAN_ARRAY_INTERFACES` chooses their form; every
-  other routine exposes the plain `type(c_ptr)` interface under all three settings.
+* Generated Fortran bindings, as a single `hipsolver` module: `use hipsolver`, link
+  `roc::hipsolver_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on
+  Windows and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`,
+  `assumed-shape`, `assumed-rank`). Found with `find_package(hipsolver-fortran)`; the archive and the
+  `.mod` files install per compiler, under `<libdir>/fortran/<compiler>` and
+  `<includedir>/fortran/<compiler>`.
 
 ### Changed
 
 * The Fortran binding is now generated from the hipSOLVER headers instead of hand-written.
-  The module keeps the name `hipsolver`, so `use hipsolver` is unchanged, but the separate
-  `hipsolver_enums` module is gone: its constants are part of `hipsolver`. Code that said
-  `use hipsolver_enums` should say `use hipsolver`. Rather than a shared library plus a
-  `.f90` source to compile yourself, a static archive and a `.mod` are installed; link
-  `roc::hipsolver_fortran`.
+  `use hipsolver` is unchanged, but the separate `hipsolver_enums` module is gone: its constants are
+  part of `hipsolver`, so code that said `use hipsolver_enums` should now say `use hipsolver`. A static
+  archive and a `.mod` are installed in place of the shared library and the `.f90` source to compile
+  yourself; link `roc::hipsolver_fortran`.
 
 ### Removed
 
-* Removed the hand-written Fortran binding `library/src/hipsolver_module.f90`, along with the
-  rule that installed it into `include/hipsolver` and the backward-compatibility symlinks to
-  it. It was deprecated in hipSOLVER 2.3.0 (ROCm 6.3.0). The generated `hipsolver` module
-  replaces it.
-* Removed the `EXPORT_FORTRAN_BINDINGS` CMake option, which only chose whether the removed
-  shared `hipsolver_fortran` library joined the `hipsolver-targets` export set. The generated
-  binding has an export set and a config package of its own.
+* The hand-written `library/src/hipsolver_module.f90`, the rule that installed it into
+  `include/hipsolver` and the backward-compatibility symlinks to it; deprecated since hipSOLVER 2.3.0
+  (ROCm 6.3.0).
+* The `EXPORT_FORTRAN_BINDINGS` option: it only chose whether the removed shared `hipsolver_fortran`
+  library joined the `hipsolver-targets` export set, and the generated binding has an export set and a
+  config package of its own.
+
 ### Optimized
 ### Resolved issues
 ### Known issues
