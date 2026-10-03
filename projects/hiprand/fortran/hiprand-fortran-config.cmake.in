@@ -3,11 +3,10 @@
 #   find_package(hiprand-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE hip::hiprand_fortran)
 #
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is not portable across compilers or even across versions of the
-# same compiler. This package therefore checks that the consumer is building with
-# the compiler the bindings were installed for, and fails with a named diagnostic
-# rather than letting the build hit an unreadable .mod much later.
+# The bindings ship as one archive and one .mod set PER FORTRAN COMPILER,
+# because a .mod is not portable across compilers. This package checks that the
+# consumer is building with the compiler the bindings were installed for, and
+# fails with a named diagnostic rather than hitting an unreadable .mod later.
 
 @PACKAGE_INIT@
 
@@ -15,35 +14,23 @@ set(HIPRAND_FORTRAN_COMPILER_DIR "@HIPRAND_FORTRAN_COMPILER_DIR@")
 
 # Where the per-compiler subdirectories live. Written by PATH_VARS, so the
 # preamble above has already turned each into an absolute path derived from
-# where THIS file was found: the package keeps working after it is moved, and a
-# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
-# names nothing. Everything below goes through these two.
-#
-# Do not name that preamble by its token here. configure_package_config_file()
-# substitutes it wherever it appears, comments included, so spelling it out
-# would splice a second copy of the whole preamble into the middle of this
-# sentence.
+# where THIS file was found: the package survives relocation and gets lib64
+# right. Do not name that preamble by its token here: it is substituted wherever
+# it appears, comments included, so spelling it out would splice in a copy.
 set(_hiprand_libdir "@PACKAGE_HIPRAND_FORTRAN_LIBDIR@")
 set(_hiprand_incdir "@PACKAGE_HIPRAND_FORTRAN_INCLUDEDIR@")
 
-# A consumer asks "is a hipRAND Fortran binding available here?" through
-# hiprand_FORTRAN_FOUND, which is set whether this package is reached directly by
-# find_package(hiprand-fortran) or alongside hiprand-config.cmake, with which it
-# is co-installed in lib/cmake/hiprand. It stays FALSE on every early return
-# below.
-#
-# The deprecated wrapper's config used to define this same variable with a
-# different meaning ("here are sources for you to compile yourself", via
-# hiprand_FORTRAN_SRC_DIRS). That config is removed in the same commit that adds
-# this one, so the name is free and carries only the meaning above.
+# How a consumer asks "is a hipRAND Fortran binding available here?". Set
+# whether this package is reached directly by find_package(hiprand-fortran) or
+# alongside hiprand-config.cmake, with which it is co-installed in
+# lib/cmake/hiprand. It stays FALSE on every early return below.
 set(hiprand_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(hiprand-fortran_FOUND FALSE)
-  # One argument, not several. set() with multiple arguments builds a LIST, and
+  # One argument, not several: set() with multiple arguments builds a LIST, and
   # find_package renders a list with a semicolon at every element boundary, so a
-  # message split across lines for readability comes out as
-  # "... find_package: ;add Fortran to ...".
+  # message split across lines would read "... find_package: ;add Fortran ...".
   string(CONCAT hiprand-fortran_NOT_FOUND_MESSAGE
       "The hipRAND Fortran bindings need Fortran enabled before find_package: "
       "add Fortran to your project() languages, or call enable_language(Fortran).")
@@ -53,11 +40,9 @@ endif()
 # This MUST mirror the mapping in projects/hiprand/fortran/CMakeLists.txt
 # exactly: it recomputes, for the compiler the CONSUMER is using, the same
 # directory name the bindings were installed under. The two cannot share code --
-# this file runs in a consumer's build, long after ours is gone, so they are
-# kept in step by hand. Get it wrong, compare against CMake's raw ID, against
-# "${id}-${version}", or against the basename of an MPI wrapper, and the check
-# can never match: the package then rejects every consumer with a message
-# claiming a compiler mismatch that does not exist.
+# this file runs in a consumer's build, long after ours is gone -- so they are
+# kept in step by hand. Get it wrong and the check can never match: the package
+# then rejects every consumer over a mismatch that does not exist.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_hiprand_fc "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
@@ -78,16 +63,14 @@ endif()
 # A site that installs several versions of one compiler side by side overrides
 # HIPRAND_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so the
 # recorded directory is accepted when it is the derived name, or that name
-# followed by a separator and anything. A strict equality would reject exactly
-# the sites that used the documented override. Note what this cannot do: the
-# layout records no version, so the package cannot tell gfortran 13 from
-# gfortran 15 by itself.
+# followed by a separator and anything; strict equality would reject exactly the
+# sites that used the documented override. The layout records no version, so
+# gfortran 13 and gfortran 15 are indistinguishable here.
 #
-# Done by length and substring rather than by regex. _hiprand_fc comes from
-# CMAKE_Fortran_COMPILER's basename on the fallback branch above, so it is an
-# arbitrary file name; interpolating it into a regex would let a compiler called
-# g++.wrapper or flang(2) either mismatch silently or abort CMake with a regex
-# error. There is no regex-escape in CMake, so the comparison avoids regex.
+# Done by length and substring rather than regex: _hiprand_fc comes from the
+# basename fallback above, so it is an arbitrary file name, and with no
+# regex-escape in CMake a compiler called g++.wrapper or flang(2) would either
+# mismatch silently or abort CMake with a regex error.
 function(_hiprand_dir_matches DIR FC OUT)
   set(${OUT} FALSE PARENT_SCOPE)
   if(DIR STREQUAL FC)
@@ -105,17 +88,11 @@ function(_hiprand_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use.
-#
-# The recorded HIPRAND_FORTRAN_COMPILER_DIR is the compiler the package was
-# built with, and it is only a default. A prefix can hold artifacts for several
-# compilers at once -- installing the bindings twice writes
-# include/fortran/gfortran and include/fortran/amdflang side by side -- but the
-# config package is written once, so the recorded value names whichever install
-# ran last. Trusting it blindly rejects a consumer whose .mod is present.
-#
-# So prefer the consumer's OWN compiler when its artifacts are installed here,
-# and fall back to the recorded directory when they are not.
+# Which per-compiler directory to use. A prefix can hold artifacts for several
+# compilers at once, but the config package is written once, so the recorded
+# HIPRAND_FORTRAN_COMPILER_DIR names whichever install ran LAST and trusting it
+# blindly rejects a consumer whose .mod is present. Prefer the consumer's OWN
+# compiler when its artifacts are here, and fall back to the recorded value.
 set(_hiprand_dir "")
 if(EXISTS "${_hiprand_incdir}/${_hiprand_fc}/hiprand.mod")
   set(_hiprand_dir "${_hiprand_fc}")
@@ -142,27 +119,22 @@ if(NOT _hiprand_dir)
 endif()
 
 # The C library the binding declares bind(C) interfaces into. It is a link-time
-# dependency of the imported target, so it has to be imported first or the
-# include() below would leave hip::hiprand_fortran pointing at an undefined
-# hip::hiprand and the generate step would fail. Skipped when the caller already
-# did find_package(hiprand), which is the common case.
+# dependency of the imported target, so it must be imported BEFORE the include()
+# below, or hip::hiprand_fortran would point at an undefined hip::hiprand and
+# the generate step would fail.
 #
 # hiprand-config.cmake in turn does find_dependency(hip), and hip-config.cmake
-# reaches FindThreads, which hard-errors unless C or CXX is enabled. A
-# Fortran-only consumer has neither, so C is enabled here. Enabling a language
-# from a config package is unusual, and it is done deliberately: the alternative
-# is making every Fortran consumer of these bindings write enable_language(C)
-# for a reason that has nothing to do with their code, after a
-# "FindThreads only works if either C or CXX language is enabled" that names
-# nothing they wrote.
+# reaches FindThreads, which hard-errors unless C or CXX is enabled. Enabling a
+# language from a config package is unusual, and deliberate: the alternative is
+# making every Fortran consumer write enable_language(C) after an error that
+# names nothing they wrote.
 #
 # The outer guard is substituted to a literal TRUE or FALSE by the build that
 # installed this file, and is FALSE when no hipRAND C library was in sight
 # there. That build is legitimate -- a Fortran binding compiles against nothing
-# -- and it exports a target with an empty link interface, so requiring the
-# consumer to find hipRAND would fail their configure over a package this
-# package demonstrably does not use. Such a consumer links -lhiprand itself;
-# the message the build printed says so.
+# -- and exports a target with an empty link interface, so requiring the
+# consumer to find hipRAND would fail their configure over a package this one
+# does not use. Such a consumer links -lhiprand itself.
 if(@HIPRAND_FORTRAN_NEEDS_C_PACKAGE@)
   if(NOT TARGET hip::hiprand)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)

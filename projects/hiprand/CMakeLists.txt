@@ -58,13 +58,11 @@ project(hipRAND CXX)
 # Build options
 
 # The backend selector comes FIRST, ahead of the option() block below, because
-# BUILD_FORTRAN_BINDINGS's default is computed from it. It used to sit after
-# that block, which was harmless while every option had a constant default and
-# is not any more: option() only honours its default when it creates the cache
-# entry, so a BUILD_WITH_LIB read before this line would have been empty and the
-# Fortran default would silently have been the ROCm one on every backend.
-# Nothing between here and its old position used it, so this is a move and not a
-# change.
+# BUILD_FORTRAN_BINDINGS's default is computed from it: option() only honours
+# its default when it CREATES the cache entry, so a BUILD_WITH_LIB read before
+# this line would be empty and the Fortran default would silently have been the
+# ROCm one on every backend. A move, not a change -- nothing between here and
+# its old position used it.
 set(BUILD_WITH_LIB "ROCM" CACHE STRING "Select backend library to build with (ROCM or CUDA)")
 set_property(CACHE BUILD_WITH_LIB PROPERTY STRINGS "ROCM" "CUDA")
 
@@ -73,22 +71,14 @@ option(BUILD_BENCHMARK "Build benchmarks" OFF)
 option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
 # Declared here as well as in fortran/, so that print_configuration_summary()
 # below, which runs before add_subdirectory(fortran), has a value to report.
-# The second option() call in the subdirectory reuses this cache entry.
+# This is the declaration that wins, since it creates the cache entry first;
+# fortran/ carries the same default so a standalone configure there agrees.
 #
-# "${UNIX}": OFF on Windows, where ROCm ships no Fortran compiler at all --
-# TheRock builds LLVM without flang there. This is the declaration that wins,
-# since it creates the cache entry first; fortran/ carries the same default so
-# that a standalone configure of that directory agrees. The full reasoning is
-# in fortran/CMakeLists.txt.
-#
-# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
-# than about the compiler. hiprand.F90 is produced from the ROCm code path and
-# is exercised only there: no CI job builds or runs it against a cuRAND-backed
-# libhiprand, so nothing in this tree says the binding is correct on that
-# backend. Shipping it on by default would publish an untested artefact, so it
-# is off there and has to be asked for by name. BUILD_WITH_LIB is hipRAND's own
-# backend switch, moved above this block for the purpose; the warning that fires
-# when the bindings are asked for anyway is in fortran/CMakeLists.txt.
+# "${UNIX}" because ROCm ships no Fortran compiler on Windows; OFF on the CUDA
+# backend because hiprand.F90 is generated from the ROCm code path and is not
+# tested against a cuRAND-backed libhiprand. The full reasoning, and the warning
+# that fires when the bindings are asked for there anyway, are in
+# fortran/CMakeLists.txt.
 if(BUILD_WITH_LIB STREQUAL "CUDA")
   set(_hiprand_fortran_default OFF)
 else()
@@ -236,9 +226,9 @@ print_configuration_summary()
 # This adds library targets: hiprand
 add_subdirectory(library)
 
-# Fortran bindings, generated from the headers above and committed next to
-# them. Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS
-# is OFF or when no Fortran compiler is available, so a C-only site is unaffected.
+# Fortran bindings, generated from the headers above and committed next to them.
+# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is
+# OFF or no Fortran compiler is available, so a C-only site is unaffected.
 add_subdirectory(fortran)
 
 # Tests
