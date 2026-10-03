@@ -62,14 +62,25 @@ endif()
 # is off there and has to be asked for by name.
 #
 # _hipsolver_cuda_backend is the root's own backend test, computed above its
-# project() call and inherited here, so the detection lives in one place.
-# Standalone it is simply undefined and the default falls back to ${UNIX}, which
-# is correct: a standalone build of the bindings has no backend of its own.
+# project() call and inherited here, so in-tree the detection lives in one
+# place. Standalone the root never runs and nothing defines it, so the same test
+# is repeated below, against the variables a standalone caller can actually set.
+# Without that repeat -DUSE_CUDA=ON would be ignored here and the bindings would
+# default ON on the CUDA backend -- out of step with hipBLAS, hipFFT and
+# hipRAND, which all read their own backend variable directly in this file.
 #
 # This option() call is the SECOND in an in-tree build -- the root's runs first,
 # because enable_language(Fortran) there needs the answer before this directory
 # is added -- so it is a no-op then, and live only standalone. Both compute the
 # same default from the same variable, so the two can never read as disagreeing.
+if(NOT DEFINED _hipsolver_cuda_backend)
+  if(USE_CUDA OR "$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+    set(_hipsolver_cuda_backend ON)
+  else()
+    set(_hipsolver_cuda_backend OFF)
+  endif()
+endif()
+
 if(_hipsolver_cuda_backend)
   set(_hipsolver_fortran_default OFF)
 else()
