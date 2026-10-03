@@ -1,16 +1,12 @@
-# Tests for the hipRAND Fortran bindings.
-#
-# One executable per test, driven by CTest: 23 single-source programs that each
-# check one (generator, distribution) pair, plus the FRUIT suite. All of them
-# create a generator and use a device, so they build anywhere but only pass on a
-# machine with a GPU.
-#
-# Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
+# Tests for the hipRAND Fortran bindings: one executable per test, driven by
+# CTest -- 23 single-source programs that each check one (generator,
+# distribution) pair, plus the FRUIT suite. All of them create a generator and
+# use a device, so they build anywhere but only pass on a machine with a GPU.
+# Reached only from the parent, under BUILD_FORTRAN_CLIENTS.
 
-# The Intel compilers (ifx/ifort) do not recognize the .f03 source extension and
-# skip such files ("no action performed"). Force Fortran compilation by inserting
-# -Tf immediately before the source in the compile rule; the LANGUAGE Fortran
-# source property alone is not enough.
+# The Intel compilers do not recognize the .f03 source extension and skip such
+# files ("no action performed"). Force Fortran compilation with -Tf immediately
+# before the source; the LANGUAGE source property alone is not enough.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
@@ -18,11 +14,9 @@ endif()
 
 # Unlike the binding itself, the RUNTIME tests are not self-contained: they
 # allocate and copy device memory, so each says `use hip` as well as
-# `use hiprand`. That makes the HIP Fortran binding a COMPILE-time dependency of
-# those tests: its .mod must exist, where libhiprand is only a link-time one.
-# In a monorepo build hip::hip_fortran comes from projects/hip/fortran; a
-# standalone build has to find it in an installed ROCm, built with this same
-# compiler.
+# `use hiprand`. That makes the HIP Fortran binding a COMPILE-time dependency --
+# its .mod must exist, where libhiprand is only a link-time one. Standalone it
+# has to be found in an installed ROCm, built with this same compiler.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -37,14 +31,9 @@ endif()
 
 # libhiprand itself, needed to link but not to compile. In-tree it arrives
 # through the hiprand_fortran link interface; standalone it has to be found.
-#
 # hiprand-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled. The bindings are
-# Fortran-only and standalone this project declares LANGUAGES NONE, so C is
-# enabled here purely to satisfy that dependency: it compiles none of the
-# sources below. Without it, a standalone test build stops at "FindThreads only
-# works if either C or CXX language is enabled", which says nothing about what
-# is actually wrong.
+# FindThreads, which hard-errors unless C or CXX is enabled, so C is enabled
+# here and compiles none of the sources below.
 if(NOT TARGET hip::hiprand)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -59,13 +48,12 @@ if(NOT TARGET hip::hiprand)
   return()
 endif()
 
-# Build one test executable and register it with CTest. The sources are the
-# arguments after `name`, relative to this directory; with none given the
-# single source is `${name}.f03`, which is what the runtime tests below rely
-# on. The FRUIT driver is multi-source and passes its five files explicitly so
-# that it goes through this same link line instead of a parallel one: the three
-# link dependencies are the same for both, and two copies of them would have to
-# be kept in step by hand.
+# Build one test executable and register it with CTest. Sources are the
+# arguments after `name`, relative to this directory; with none given the single
+# source is `${name}.f03`, which the runtime tests below rely on. The FRUIT
+# driver is multi-source and passes its five files explicitly so that it goes
+# through this same link line: the three link dependencies are the same for
+# both, and two copies would have to be kept in step by hand.
 function(hiprand_fortran_add_test name)
   set(srcs ${ARGN})
   if(NOT srcs)
@@ -81,8 +69,8 @@ function(hiprand_fortran_add_test name)
   # Force language detection for .f03 in toolchains where CMake misses it.
   set_source_files_properties(${abs_srcs} PROPERTIES LANGUAGE Fortran)
   add_executable(hiprand_fortran_test_${name} ${abs_srcs})
-  # A multi-source test defines modules of its own; give each target its own
-  # directory for them so they cannot collide in the shared build directory.
+  # A multi-source test defines modules of its own, so each target needs a
+  # directory for them rather than colliding in the shared build directory.
   set_target_properties(hiprand_fortran_test_${name} PROPERTIES
     LINKER_LANGUAGE Fortran
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/${name}")
@@ -92,17 +80,16 @@ function(hiprand_fortran_add_test name)
   target_compile_options(hiprand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME hiprand_fortran_${name} COMMAND hiprand_fortran_test_${name})
-  # Every one of these creates a generator and draws numbers on a device, so it
-  # fails without a GPU, which is not the same thing as the binding being
-  # broken. The label lets a build machine with no GPU still run the suite
-  # meaningfully: ctest -LE gpu.
+  # Every one of these draws numbers on a device, so without a GPU it fails for
+  # a reason that is not the binding being broken. The label lets a build
+  # machine with no GPU still run the suite meaningfully: ctest -LE gpu.
   set_tests_properties(hiprand_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
 # One per (generator, distribution) pair: five generators against uniform,
 # normal and log-normal in both precisions, plus Poisson. Between them they
-# cover every hiprandGenerate* entry point the module exposes that returns
-# data a host can check the distribution of.
+# cover every hiprandGenerate* entry point the module exposes that returns data
+# a host can check the distribution of.
 set(HIPRAND_FORTRAN_TESTS
     mrg32k3a_normal
     mrg32k3a_normal_double
@@ -134,16 +121,14 @@ if(_have_hip_binding)
     hiprand_fortran_add_test(${_t})
   endforeach()
 
-  # The FRUIT suite, which used to live under test/fortran/ against the
-  # hand-written wrapper and now sits here against the generated module, so
-  # that every Fortran binding test is next to the binding it tests. It asserts
-  # on the status code of every call it makes, which is how it reaches entry
-  # points none of the tests above names: hiprandGenerate, hiprandGenerateSeeds,
-  # hiprandGenerateLongLong, hiprandCreateGeneratorHost,
+  # The FRUIT suite, which moved here with the binding it now exercises. It
+  # asserts on the status code of every call it makes, which is how it reaches
+  # entry points none of the tests above names: hiprandGenerate,
+  # hiprandGenerateSeeds, hiprandGenerateLongLong, hiprandCreateGeneratorHost,
   # hiprandSetGeneratorOffset, hiprandCreatePoissonDistribution and
-  # hiprandDestroyDistribution. One executable over five sources: the two files
-  # of the vendored harness, the helper that wraps a test case in its setup and
-  # teardown, the test module and the driver program.
+  # hiprandDestroyDistribution. ONE executable over five sources: the two files
+  # of the vendored harness, the setup/teardown helper, the test module and the
+  # driver program.
   hiprand_fortran_add_test(fruit
       fruit/fruit_util.f90
       fruit/fruit.f90
