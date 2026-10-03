@@ -1,15 +1,11 @@
-# Tests for the rocFFT Fortran bindings.
-#
-# One executable per test, driven by CTest. These are runtime tests: they call
-# into rocFFT and the HIP runtime and need a GPU, so they build anywhere but only
-# pass on a machine with one.
-#
-# Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
+# Tests for the rocFFT Fortran bindings: one executable per test, driven by
+# CTest. They call into rocFFT and the HIP runtime, so they build anywhere but
+# only pass on a machine with a GPU. Reached only from the parent CMakeLists,
+# under BUILD_FORTRAN_CLIENTS.
 
-# The Intel compilers (ifx/ifort) do not recognize the .f03 source extension and
-# skip such files ("no action performed"). Force Fortran compilation by inserting
-# -Tf immediately before the source in the compile rule; the LANGUAGE Fortran
-# source property alone is not enough.
+# The Intel compilers (ifx/ifort) do not recognize the .f03 extension and skip
+# such files ("no action performed"). Inserting -Tf before the source forces
+# Fortran compilation; the LANGUAGE source property alone is not enough.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
@@ -17,21 +13,17 @@ endif()
 
 # Everything looked for below (hip-fortran, rocfft, hip) lands in
 # hip-config.cmake, which reaches FindThreads, which hard-errors unless C or CXX
-# is enabled. The bindings are Fortran-only and standalone this project declares
-# LANGUAGES NONE, so C is enabled here purely to satisfy that: it compiles none
-# of the sources below. Without it, a standalone test build stops at
-# "FindThreads only works if either C or CXX language is enabled", which says
-# nothing about what is actually wrong.
+# is enabled. C is enabled here purely to satisfy that; it compiles none of the
+# sources below.
 if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
   enable_language(C)
 endif()
 
-# Every RUNTIME test allocates device memory and copies buffers, so each one
-# writes `use hip` next to its `use rocfft`. That makes the HIP BINDING (not just
-# the HIP runtime) a compile-time dependency of those tests: without hip.mod they
-# cannot even be parsed. It is built by rocm-systems' projects/hip and, like this
-# one, only exists when that repo was configured with a Fortran compiler, hence a
-# skip rather than an error.
+# The tests allocate device memory and copy buffers, so each says `use hip`. That
+# makes the HIP BINDING, not just the HIP runtime, a COMPILE-time dependency:
+# without hip.mod they cannot be parsed. It comes from rocm-systems'
+# projects/hip and, like this one, only exists where that repo was configured
+# with a Fortran compiler -- hence a skip rather than an error.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -76,9 +68,8 @@ function(rocfft_fortran_add_test name)
   target_compile_options(rocfft_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocfft_fortran_${name} COMMAND rocfft_fortran_test_${name})
-  # Every one of these calls into rocFFT and the HIP runtime and fails without a
-  # GPU, which is not the same thing as the binding being broken. The label lets
-  # a build machine with no GPU still run the suite meaningfully: ctest -LE gpu.
+  # These fail without a GPU, which is not the binding being broken, so the
+  # label lets a GPU-less machine run the suite with ctest -LE gpu.
   set_tests_properties(rocfft_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 

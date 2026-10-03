@@ -3,29 +3,24 @@
 #   find_package(rocfft-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE roc::rocfft_fortran)
 #
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is not portable across compilers or even across versions of the
-# same compiler. This package therefore resolves which installed per-compiler
-# directory the consumer should use, preferring the consumer's own compiler and
-# falling back to the one recorded at install time, and fails with a named
-# diagnostic listing what IS installed rather than letting the build hit an
-# unreadable .mod much later.
+# The bindings ship as one archive and one .mod set PER FORTRAN COMPILER, since a
+# .mod is not portable across compilers. This package resolves which installed
+# per-compiler directory the consumer should use, preferring the consumer's own
+# compiler and falling back to the one recorded at install time, and fails with a
+# diagnostic listing what IS installed rather than hitting an unreadable .mod
+# much later.
 
 @PACKAGE_INIT@
 
 set(ROCFFT_FORTRAN_COMPILER_DIR "@ROCFFT_FORTRAN_COMPILER_DIR@")
 
 # Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# preamble above has already turned each into an absolute path derived from
-# where THIS file was found: the package keeps working after it is moved, and a
-# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
-# names nothing. Everything below goes through these two.
+# preamble above has already turned each into an absolute path derived from where
+# THIS file was found: relocatable, and lib64 where a distro uses it. Everything
+# below goes through these two.
 #
-# No comment in this file may spell that preamble's placeholder token with its
-# surrounding @ delimiters. configure_package_config_file() substitutes every
-# occurrence of it, comments included, so naming it would splice a second copy
-# of the whole preamble -- PACKAGE_PREFIX_DIR, set_and_check() and
-# check_required_components() all defined twice -- into the middle of a sentence.
+# Do not spell the preamble's token here: configure_package_config_file()
+# substitutes it everywhere in the template, comments included.
 set(_rocfft_libdir "@PACKAGE_ROCFFT_FORTRAN_LIBDIR@")
 set(_rocfft_incdir "@PACKAGE_ROCFFT_FORTRAN_INCLUDEDIR@")
 
@@ -37,7 +32,7 @@ set(rocfft_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(rocfft-fortran_FOUND FALSE)
-  # One argument, not several. set() with multiple arguments builds a LIST, and
+  # string(CONCAT), not a multi-argument set(): that builds a LIST, and
   # find_package renders a list with a semicolon at every element boundary, so a
   # message split across lines for readability comes out as
   # "... find_package: ;add Fortran to ...".
@@ -47,22 +42,18 @@ if(NOT CMAKE_Fortran_COMPILER_LOADED)
   return()
 endif()
 
-# Compared on the compiler EXECUTABLE name, the same key the install layout is
-# built from, and derived the SAME way, from CMAKE_Fortran_COMPILER_ID mapped
-# back to the executable, so the check and the directory it guards cannot drift
-# apart. A plain basename here would reject a consumer building through an MPI
-# wrapper or a gfortran-13 binary whose .mod the installed bindings are perfectly
-# readable by. It catches the case that actually bites (gfortran reading an
-# amdflang .mod) and deliberately does not police version skew inside one
-# compiler, which the recorded directory carries no version to detect anyway.
+# Compared on the compiler EXECUTABLE name, the key the install layout is built
+# from, and derived the SAME way so the check and the directory it guards cannot
+# drift apart. A plain basename would reject a consumer building through an MPI
+# wrapper or a gfortran-13 binary whose .mod is perfectly readable. This catches
+# the case that bites (gfortran reading an amdflang .mod) and does not police
+# version skew inside one compiler, which the layout records nothing to detect.
 #
-# This MUST mirror the mapping in projects/rocfft/fortran/CMakeLists.txt exactly.
-# The two cannot share code, because this file runs in a consumer's build long
-# after ours is gone, so they are kept in step by hand. Get it wrong and the check
-# never matches: the package then rejects EVERY consumer with a message claiming
-# a compiler mismatch that does not exist. Comparing against anything the
-# CMakeLists does not itself install under, such as CMAKE_Fortran_COMPILER_ID
-# or an "id-version" string like gnu-13.3.0, is exactly that bug.
+# MUST mirror the mapping in projects/rocfft/fortran/CMakeLists.txt exactly. The
+# two cannot share code -- this file runs in a consumer's build long after ours
+# is gone -- so they are kept in step by hand. Get it wrong and the check never
+# matches, rejecting EVERY consumer with a compiler mismatch that does not
+# exist.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_rocfft_fc "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")     # Flang, LLVMFlang
@@ -80,19 +71,14 @@ else()
   string(TOLOWER "${_rocfft_fc}" _rocfft_fc)
 endif()
 
-# A site that installs several versions of one compiler side by side overrides
-# ROCFFT_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so the
-# recorded directory is accepted when it is the derived name, or that name
-# followed by a separator and anything. A strict equality would reject exactly
-# the sites that used the documented override. Note what this cannot do: the
-# layout records no version, so the package cannot tell gfortran 13 from
-# gfortran 15 by itself.
+# A site that installs several versions of one compiler overrides
+# ROCFFT_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so accept
+# the derived name, or that name followed by a separator and anything; a strict
+# equality would reject exactly the sites that used the documented override.
 #
-# Done by length and substring rather than by regex. _rocfft_fc comes from
-# CMAKE_Fortran_COMPILER's basename on the fallback branch above, so it is an
-# arbitrary file name; interpolating it into a regex would let a compiler called
-# g++.wrapper or flang(2) either mismatch silently or abort CMake with a regex
-# error. There is no regex-escape in CMake, so the comparison avoids regex.
+# By length and substring rather than regex: _rocfft_fc can be an arbitrary file
+# name from the fallback branch above, and CMake has no regex-escape, so a
+# compiler called g++.wrapper or flang(2) would mismatch or abort the regex.
 function(_rocfft_dir_matches DIR FC OUT)
   set(${OUT} FALSE PARENT_SCOPE)
   if(DIR STREQUAL FC)
@@ -110,17 +96,12 @@ function(_rocfft_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use.
-#
-# The recorded ROCFFT_FORTRAN_COMPILER_DIR is the compiler the package was built
-# with, and it is only a default. A prefix can hold artifacts for several
-# compilers at once, since installing the bindings twice writes
-# include/fortran/gfortran and include/fortran/amdflang side by side, but the
+# Which per-compiler directory to use. The recorded ROCFFT_FORTRAN_COMPILER_DIR
+# is only a default: a prefix can hold artifacts for several compilers, but the
 # config package is written once, so the recorded value names whichever install
-# ran last. Trusting it blindly rejects a consumer whose .mod is present.
-#
-# So prefer the consumer's OWN compiler when its artifacts are installed here,
-# and fall back to the recorded directory when they are not.
+# ran last and trusting it blindly would reject a consumer whose .mod is present.
+# Prefer the consumer's OWN compiler when its artifacts are installed here, and
+# fall back to the recorded directory.
 set(_rocfft_dir "")
 if(EXISTS "${_rocfft_incdir}/${_rocfft_fc}/rocfft.mod")
   set(_rocfft_dir "${_rocfft_fc}")
@@ -147,26 +128,21 @@ if(NOT _rocfft_dir)
 endif()
 
 # Whether the exported target really carries roc::rocfft in its link interface.
-# The bindings declare bind(C) interfaces only, so they build with no C library
-# in sight, and when none was found at build time the archive is exported with an
-# empty link interface. Obliging the consumer to find a package this package does
-# not depend on would then be pure ceremony, and it would fail on exactly the
-# machines where rocFFT is not installed -- which is the case that produced the
-# empty interface in the first place. The value is written by fortran/
-# CMakeLists.txt as the literal TRUE or FALSE, never left empty: a bare if() here
-# is a syntax error that kills every consumer's find_package.
+# The bindings build with no C library in sight, and the archive is then exported
+# with an empty one, so demanding the C package here would fail for a dependency
+# this package does not have, on exactly the machines that do not have it. The
+# value is written by fortran/CMakeLists.txt as the literal TRUE or FALSE, never
+# left empty: a bare if() here kills every consumer's find_package.
 if(@ROCFFT_FORTRAN_NEEDS_C_PACKAGE@)
-  # roc::rocfft has to exist BEFORE the targets file is read, otherwise CMake
-  # stops with "the link interface of target roc::rocfft_fortran contains:
-  # roc::rocfft but the target was not found", which reads like a packaging bug
-  # rather than a missing find_package in the consumer.
+  # roc::rocfft MUST exist BEFORE the targets file is read, or CMake stops with
+  # "the link interface of target roc::rocfft_fortran contains: roc::rocfft but
+  # the target was not found", which reads like a packaging bug.
   #
   # rocfft-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-  # FindThreads, which hard-errors unless C or CXX is enabled. A Fortran-only
-  # consumer has neither, so C is enabled here. Enabling a language from a config
-  # package is unusual, and it is done deliberately: the alternative is making
-  # every Fortran consumer of these bindings write enable_language(C) for a
-  # reason that has nothing to do with their code.
+  # FindThreads, which hard-errors unless C or CXX is enabled. Enabling a
+  # language from a config package is unusual and deliberate: the alternative is
+  # every Fortran consumer writing enable_language(C) for a reason that has
+  # nothing to do with their code.
   if(NOT TARGET roc::rocfft)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
       enable_language(C)
