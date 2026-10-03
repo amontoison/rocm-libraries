@@ -1,120 +1,86 @@
 # Fortran bindings for hipFFT and hipFFTW.
 #
 # hipfft.F90 and hipfftw.F90 are GENERATED from the hipFFT and hipFFTW C headers
-# by the rocm-fortran generator and committed here, next to the libraries they
-# bind, so that a header change and its binding travel in the same pull request.
-# Do not edit them by hand: regenerate them instead.
+# by the rocm-fortran generator and committed here, so that a header change and
+# its binding travel in the same pull request. Do not edit them by hand:
+# regenerate them instead.
 #
-# Each binding is a single self-contained Fortran module. `hipfft` carries the
-# interfaces, the enum constants (HIPFFT_Z2Z, HIPFFT_FORWARD, ...) and the
-# hipfftCheck status helper; `hipfftw` carries the FFTW compatibility surface,
-# the FFTW_* flag constants and the fftw_iodim/fftw_iodim64 derived types. A
-# consumer writes one `use hipfft` or one `use hipfftw`.
+# Each is one self-contained Fortran module: `hipfft` the interfaces, enum
+# constants and hipfftCheck helper, `hipfftw` the FFTW compatibility surface, the
+# FFTW_* flags and the fftw_iodim/fftw_iodim64 derived types.
 #
-# TWO targets in ONE directory, because that is how the libraries themselves are
-# built: projects/hipfft/library compiles both libhipfft and libhipfftw from one
-# source tree and ships both in the hipfft package. The bindings follow the
-# libraries (they are packaged, installed and found together), so there is one
-# CMakeLists here and not two.
+# TWO targets in ONE directory, because projects/hipfft/library compiles both
+# libhipfft and libhipfftw from one source tree and ships both in the hipfft
+# package. The modules stay independent all the same: hipfftw.F90 contains no
+# `use hipfft`, so the archives have no compile-time relationship and no ordering
+# constraint, and a program on the FFTW API links libhipfftw alone.
 #
-# The two modules stay independent all the same: hipfftw.F90 contains no
-# `use hipfft`, so the two archives have no compile-time relationship and no
-# ordering constraint, and a program on the FFTW compatibility API links
-# libhipfftw alone without ever touching libhipfft.
-#
-# This directory is self-contained: it builds with no dependency on the hipFFT C
-# targets, because a Fortran binding compiles against nothing (it only declares
-# bind(C) interfaces). libhipfft/libhipfftw are required to LINK a final
-# executable, and are carried as the targets' link interfaces for that reason.
+# The directory builds with no dependency on the hipFFT C targets, because a
+# Fortran binding compiles against nothing; libhipfft/libhipfftw are needed only
+# to LINK a final executable.
 
 cmake_minimum_required(VERSION 3.19)
 
-# Configured directly (not as a subdirectory of the hipFFT build), this
-# directory is its own project, so that the bindings can be built and packaged
-# on their own. In-tree, hipFFT's own project() is already in effect.
+# Standalone, this directory is its own project, so the bindings can be built and
+# packaged on their own.
 #
-# LANGUAGES NONE, not C: nothing here is written in C, and Fortran is enabled
-# further down, only once the build is known to be wanted. Locating the
-# installed hipFFT does need a C (or CXX) compiler, since find_package(hipfft)
-# find_dependency(hip)s, and hip-config-amd.cmake reaches FindThreads, which
-# hard-errors with neither language enabled, but that is a property of the
-# lookup, not of this project, so C is enabled at each lookup site instead,
-# guarded on neither language being loaded already. Enabling it here would make
-# a C compiler a hard requirement of a build that does not compile a line of C.
+# LANGUAGES NONE, not C: nothing here is written in C. Locating the installed
+# hipFFT does need C or CXX -- find_package(hipfft) find_dependency(hip)s, and
+# hip-config-amd.cmake reaches FindThreads, which hard-errors with neither
+# enabled -- but that is a property of the lookup, so C is enabled at each lookup
+# site instead. Enabling it here would make a C compiler a hard requirement of a
+# build that compiles no C.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(hipfft-fortran LANGUAGES NONE)
 endif()
 
-# ON by default but GUARDED: a site with no Fortran compiler must still
-# configure and build the C libraries. The monorepo root already probes once and
-# publishes ROCM_HAVE_FORTRAN; a standalone hipFFT build falls back to its own
-# probe.
+# GUARDED, so a site with no Fortran compiler still builds the C libraries.
+# "${UNIX}" rather than ON because ROCm ships no Fortran compiler on Windows at
+# all (TheRock adds flang only in the non-WIN32 branch of
+# compiler/pre_hook_amd-llvm.cmake), so the probe falls through to a stray
+# gfortran and enable_language(Fortran) then fails to identify it.
 #
-# "${UNIX}" rather than ON, because Windows is not such a site: ROCm ships no
-# Fortran compiler there at all. TheRock puts flang in LLVM_ENABLE_PROJECTS
-# only in the non-WIN32 branch of compiler/pre_hook_amd-llvm.cmake, so the
-# amdflang preference below finds nothing, the probe falls through to whatever
-# gfortran happens to be on PATH, and enable_language(Fortran) then fails to
-# identify it. A default and not a veto: -DBUILD_FORTRAN_BINDINGS=ON still
-# works wherever a usable compiler exists.
+# OFF on the CUDA backend, and that is about the GENERATED SOURCE, not the
+# compiler: hipfft.F90 and hipfftw.F90 are produced from the ROCm code path and
+# no CI job builds or runs them against a cuFFT-backed libhipfft, so defaulting
+# ON there would publish an untested artefact. BUILD_WITH_LIB is hipFFT's own
+# backend switch, which the root declares, normalises and forces to CUDA for a
+# HIP-NVCC compiler, all before this directory is added. Standalone it is
+# undefined and the default falls back to ${UNIX}: a standalone build of the
+# bindings has no backend of its own.
 #
-# OFF on the CUDA backend, and that one is about the GENERATED SOURCE rather
-# than about the compiler. hipfft.F90 and hipfftw.F90 are produced from the ROCm
-# code path and are exercised only there: no CI job builds or runs them against
-# a cuFFT-backed libhipfft, so nothing in this tree says the bindings are
-# correct on that backend. Shipping them on by default would publish an untested
-# artefact, so they are off there and have to be asked for by name.
-#
-# BUILD_WITH_LIB is hipFFT's own backend switch, a cache string the root
-# declares and then normalises with string(TOUPPER), and the root also forces it
-# to CUDA when the compiler resolved to HIP-NVCC. Both happen before this
-# directory is added, so the value has settled by the time this is evaluated.
-# Standalone it is simply undefined and the default falls back to ${UNIX}, which
-# is correct: a standalone build of the bindings has no backend of its own.
-#
-# One option for both modules. hipFFT and hipFFTW are separate targets, and the
-# per-library HIPFFT_/HIPFFTW_ overrides further down still single either out,
-# but the reason to default off is the same for the two and splitting it would
-# only invite them to drift.
+# One option for both modules: the per-library overrides below still single
+# either out, but the reason to default off is the same for both.
 if(BUILD_WITH_LIB STREQUAL "CUDA")
   set(_hipfft_fortran_default OFF)
 else()
   set(_hipfft_fortran_default "${UNIX}")
 endif()
 # The ONLY option(BUILD_FORTRAN_BINDINGS) in hipFFT, deliberately: the first
-# option() call in a CMake run fixes the cache entry, so a second one in the
-# root with a different default would be silently ignored by whichever ran
-# second and the two would read as disagreeing.
+# option() call in a run fixes the cache entry, so a second one in the root with
+# a different default would be silently ignored.
 option(BUILD_FORTRAN_BINDINGS "Build the hipFFT and hipFFTW Fortran bindings"
        "${_hipfft_fortran_default}")
 unset(_hipfft_fortran_default)
 
-# The bindings' own test suites. ON by default and guarded the same way: asking
-# for the tests when the bindings were not built is a skip, not an error. ON is
-# safe because the in-tree gate further down is a floor this cannot rise above,
-# and standalone this directory IS the build, where the tests are the point.
+# The binding tests. Asking for them when the bindings were not built is a skip
+# rather than an error, and ON is safe because the in-tree gate further down is a
+# floor this cannot rise above.
 option(BUILD_FORTRAN_CLIENTS "Build the hipFFT and hipFFTW Fortran clients and binding tests" ON)
 
-# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
-# every library in the monorepo, which is what you want for the common case:
+# Both options are ONE cache entry shared by every library in the monorepo, so
 # -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran track off in
-# a single flag. It is not what you want when one library has to be singled out,
-# so each library also honours a name of its own, which overrides the shared
-# default.
+# one flag; each library also honours a name of its own, which overrides it.
 #
-# That override is the last word for the BINDINGS only. For the CLIENTS, the
-# gate further down is a floor an in-tree build cannot rise above: the binding
-# tests are GPU test executables, they belong to hipFFT's own client/test track,
-# and a library-only build produces none of them however
-# HIPFFT_BUILD_FORTRAN_CLIENTS is set. The per-library name still picks the
-# tests apart from each other, and still decides on its own standalone, where
-# there is no client track to belong to.
+# That override is the last word for the BINDINGS only. For the CLIENTS the gate
+# further down is a floor an in-tree build cannot rise above, however
+# HIPFFT_BUILD_FORTRAN_CLIENTS is set; the per-library name still picks the two
+# test sets apart, and still decides on its own standalone.
 #
-# This directory builds TWO libraries' bindings, so it honours two pairs:
-# HIPFFT_* selects the hipfft target, HIPFFTW_* the hipfftw one. Either can be
-# switched off without the other: they are separate targets binding separate
-# shared libraries, and a site that wants only the FFTW compatibility surface
-# should not have to build both.
+# TWO libraries' bindings here, so two pairs are honoured: HIPFFT_* selects the
+# hipfft target, HIPFFTW_* the hipfftw one. Either can be switched off without
+# the other, since a site that wants only the FFTW surface should not have to
+# build both.
 set(_hipfft_bindings  ${BUILD_FORTRAN_BINDINGS})
 set(_hipfftw_bindings ${BUILD_FORTRAN_BINDINGS})
 set(_hipfft_tests     ${BUILD_FORTRAN_CLIENTS})
@@ -132,36 +98,33 @@ if(DEFINED HIPFFTW_BUILD_FORTRAN_CLIENTS)
   set(_hipfftw_tests ${HIPFFTW_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the modules expose. One tri-state stands in for
-# the two macros the generated source is guarded with, which are mutually
-# exclusive: assumed-rank REPLACES the per-rank variants rather than adding to
-# them, so a build selects one tier and the tri-state is what keeps the two
-# macros from ever reaching the compiler together.
+# Which array-argument overloads the modules expose. One tri-state rather than a
+# boolean per tier, because the tiers are mutually exclusive: an assumed-rank
+# dummy is not distinguishable by rank from the per-rank specifics, so
+# assumed-rank REPLACES the per-rank variants rather than adding to them.
 #
 #   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + the per-rank array overloads (Fortran 2008), the default,
+#   assumed-shape  + the per-rank array overloads (Fortran 2008): the default,
 #                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + the single dimension(..) overload (Fortran 2018)
+#   assumed-rank   + one dimension(..) overload in their place (Fortran 2018)
 #
 # Either upper tier reaches only the subset of routines the generator emits
-# array overloads for; every other routine exposes the same plain type(c_ptr)
-# interface at all three tiers.
+# overloads for; every other routine exposes the same plain type(c_ptr) interface
+# at all three tiers.
 #
 # hipFFTW is the one binding where the three tiers currently coincide: the FFTW
 # compatibility API takes bare pointers to already-allocated buffers, so the
-# generator emitted no array overloads and no preprocessor guards in
-# hipfftw.F90. The option is still applied to both targets, so that a
-# regenerated, guarded hipfftw.F90 needs no CMake change.
+# generator emitted no array overloads and no preprocessor guards in hipfftw.F90.
+# The option is still applied to both targets, so that a regenerated, guarded
+# hipfftw.F90 needs no CMake change.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
              none assumed-shape assumed-rank)
 
-# Report to the parent scope whether each binding was really built. Distinct
-# from ROCM_HAVE_FORTRAN, which reports only that a compiler exists: the
-# compiler can be present while either half is switched off.
-# Only when there IS a parent: standalone, this directory is the top-level scope
-# and PARENT_SCOPE warns under -Wdev rather than being a silent no-op.
+# Report to the parent whether each binding was really built; ROCM_HAVE_FORTRAN
+# says only that a compiler exists. Guarded because standalone this is the
+# top-level scope, where PARENT_SCOPE warns under -Wdev.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(HIPFFT_HAVE_FORTRAN_BINDINGS  FALSE PARENT_SCOPE)
   set(HIPFFTW_HAVE_FORTRAN_BINDINGS FALSE PARENT_SCOPE)
@@ -171,12 +134,11 @@ if(NOT _hipfft_bindings AND NOT _hipfftw_bindings)
   return()
 endif()
 
-# Reached on the CUDA backend only when the default above was overridden by
-# hand. Warn rather than fail: the bindings DO build and link there, since the
-# public hipFFT headers carry no CUDART_VERSION guard on their entry points and
-# library/src/nvidia_detail/ defines every symbol the modules reference. What is
-# missing is evidence, not symbols, so an explicit request is honoured and the
-# warning says exactly what the user is taking on.
+# Reached on the CUDA backend only when the default above was overridden by hand.
+# Warn rather than fail: the bindings DO build and link there -- the public
+# headers carry no CUDART_VERSION guard and library/src/nvidia_detail/ defines
+# every symbol the modules reference -- so what is missing is evidence, not
+# symbols, and an explicit request is honoured.
 if(BUILD_WITH_LIB STREQUAL "CUDA")
   message(WARNING
     "hipFFT: the Fortran bindings were requested on the CUDA backend. "
@@ -185,18 +147,12 @@ if(BUILD_WITH_LIB STREQUAL "CUDA")
     "default there. Building them is supported; vouching for them is not.")
 endif()
 
-# Probing for a Fortran compiler is not free, and every library in a monorepo
-# build would otherwise repeat it, so the monorepo root probes ONCE and publishes
-# the answer as ROCM_HAVE_FORTRAN. That name is deliberately neither
-# rocm-libraries' nor rocm-systems': a library from one monorepo is regularly
-# built inside the other, and a repo-specific name would have each side reading a
-# variable the other never sets. ROCM_LIBS_HAVE_FORTRAN is what rocm-libraries
-# publishes today and is honoured as a legacy spelling until its root adopts the
-# new name.
-#
-# The local probe is the standalone path, where there is no root to publish
-# anything, and it is also the honest fallback: a directory that can be
-# configured on its own has to be able to answer this question on its own.
+# The monorepo root probes for a Fortran compiler ONCE and publishes
+# ROCM_HAVE_FORTRAN. The name is deliberately neither rocm-libraries' nor
+# rocm-systems': a library from one monorepo is regularly built inside the other,
+# and a repo-specific name would read a variable the other never sets.
+# ROCM_LIBS_HAVE_FORTRAN is a legacy spelling, honoured until the rocm-libraries
+# root adopts the new one. The local probe is the standalone path.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
@@ -204,46 +160,29 @@ elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
 else()
   include(CheckLanguage)
 
-  # check_language() answers by writing the CACHE entry CMAKE_Fortran_COMPILER,
-  # and rocm-cmake's ROCMChecks arms a variable_watch on exactly that name to
-  # catch a project setting a toolchain variable behind the toolchain file's
-  # back. A compiler probe is the one legitimate writer that watch cannot tell
-  # apart from a violation, so it reports this one: a stray twelve-line banner
-  # by default, and a hard configure failure under -DROCM_ERROR_TOOLCHAIN_VAR=ON
-  # (or ROCMCHECKS_ERROR_TOOLCHAIN_VAR in the environment), which is a switch CI
-  # turns on. develop has no probe here and so never tripped it, which makes
-  # this directory the regression.
-  #
-  # So silence the checker across the probe and put it back afterwards, the same
-  # save/set/restore rocRAND already uses in cmake/Dependencies.cmake. Plain
-  # variables rather than cache ones: they shadow the cache for this scope only,
-  # which is what the watch callback reads, and the user's cache entries are
-  # left exactly as they were. Both names have to be cleared, because the
-  # callback escalates to SEND_ERROR on ROCM_ERROR_TOOLCHAIN_VAR before it ever
-  # looks at the warn flag.
+  # check_language() writes the CACHE entry CMAKE_Fortran_COMPILER, which
+  # rocm-cmake's ROCMChecks arms a variable_watch on; a legitimate compiler probe
+  # is indistinguishable there from a toolchain violation, so it warns, and
+  # hard-fails under -DROCM_ERROR_TOOLCHAIN_VAR=ON, which CI turns on. Silence it
+  # across the probe and restore it, as rocRAND does in cmake/Dependencies.cmake.
+  # Plain variables shadow the cache for this scope only, which is what the
+  # callback reads. Both names must be cleared: the callback escalates on
+  # ROCM_ERROR_TOOLCHAIN_VAR before it ever looks at the warn flag.
   set(_rocm_warn_toolchain_var "${ROCM_WARN_TOOLCHAIN_VAR}")
   set(_rocm_error_toolchain_var "${ROCM_ERROR_TOOLCHAIN_VAR}")
   set(ROCM_WARN_TOOLCHAIN_VAR OFF)
   set(ROCM_ERROR_TOOLCHAIN_VAR OFF)
 
-  # Prefer ROCm's own amdflang over whatever CMake would otherwise find first.
-  # check_language(Fortran) takes the first compiler on the search path, which on
-  # a ROCm CI image is the system gfortran, and that is how the bindings ended up
-  # as the one component of ROCm built by a different toolchain from everything
-  # else: installed under fortran/gfortran/ while the documentation promises
-  # fortran/amdflang/, and exercising a compiler the product does not ship with.
+  # Prefer ROCm's own amdflang. check_language(Fortran) takes the first compiler
+  # on the search path, which on a ROCm CI image is the system gfortran, and that
+  # is how the bindings ended up installed under fortran/gfortran/ while the
+  # documentation promises fortran/amdflang/. amdflang sits beside the clang
+  # already compiling this project, so look next to CMAKE_CXX_COMPILER; ROCM_PATH
+  # covers a standalone configure; NO_DEFAULT_PATH so a stray amdflang on PATH
+  # cannot win. An explicit CMAKE_Fortran_COMPILER, or FC, always wins: a .mod is
+  # compiler-specific, so whoever named a compiler meant it.
   #
-  # amdflang sits beside the clang already compiling this project, so the answer
-  # is next to CMAKE_CXX_COMPILER when there is one; ROCM_PATH covers a
-  # standalone configure. Searched with NO_DEFAULT_PATH so a stray amdflang
-  # elsewhere on PATH cannot win over the ROCm being built against.
-  #
-  # An explicit CMAKE_Fortran_COMPILER, or FC in the environment, always wins:
-  # building these bindings with gfortran is a supported thing to do, and a .mod
-  # is compiler-specific, so whoever asked for a compiler meant it.
-  #
-  # check_language() is a no-op once CMAKE_Fortran_COMPILER is defined, so this
-  # has to run before it, and the probe below never overrides what we set here.
+  # MUST run before check_language(), which is a no-op once the variable is set.
   if(NOT CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
     set(_rocm_fc_hints)
     foreach(_rocm_fc_cc "${CMAKE_CXX_COMPILER}" "${CMAKE_C_COMPILER}"
@@ -259,11 +198,9 @@ else()
     if(_rocm_fc_hints)
       find_program(_rocm_amdflang NAMES amdflang HINTS ${_rocm_fc_hints}
                    NO_DEFAULT_PATH)
-      # Confirm it runs before committing to it. A ROCm tree can carry a dangling
-      # amdflang symlink, and check_language() would not catch that: it does
-      # nothing at all once the variable is set, so the failure would surface far
-      # later as a broken enable_language with no hint of where the choice was
-      # made.
+      # Confirm it runs: a ROCm tree can carry a dangling amdflang symlink, and
+      # check_language() does nothing once the variable is set, so the failure
+      # would surface far later as a broken enable_language.
       if(_rocm_amdflang)
         execute_process(COMMAND "${_rocm_amdflang}" --version
                         RESULT_VARIABLE _rocm_fc_rc
@@ -300,11 +237,10 @@ endif()
 
 enable_language(Fortran)
 
-# Pulled in here rather than beside the install() rules below because the
-# install layout is also baked into each target's INSTALL_INTERFACE include
-# directory, which is set well before them. Nothing must hardcode lib/ or
-# include/: a distro that installs to lib64 gets CMAKE_INSTALL_LIBDIR=lib64,
-# and a literal lib/fortran then names a directory that does not exist.
+# Here rather than beside the install() rules, because the install layout is also
+# baked into each target's INSTALL_INTERFACE include directory, set well before
+# them. Nothing must hardcode lib/ or include/: a distro installing to lib64 gets
+# CMAKE_INSTALL_LIBDIR=lib64, and a literal lib/fortran then names nothing.
 include(GNUInstallDirs)
 
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
@@ -313,26 +249,17 @@ if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
     "not '${FORTRAN_ARRAY_INTERFACES}'.")
 endif()
 
-# A .mod is not portable across compilers, so the artifacts are installed under a
-# per-compiler directory rather than a shared one. Two compilers can then be
-# installed side by side from the same package.
+# A .mod is not portable across compilers, so artifacts install under a
+# per-compiler directory and two compilers can coexist in one prefix. The name is
+# the compiler a user types (amdflang, gfortran), not CMake's compiler ID, so the
+# -I/-L paths in the documentation match a raw link line. Derived from the ID
+# rather than from the basename of CMAKE_Fortran_COMPILER, which would be wrong
+# for an MPI wrapper (mpif90), a versioned binary (gfortran-13) or Cray's ftn.
 #
-# The directory is named after the compiler a user actually types (amdflang,
-# gfortran), not after CMake's compiler ID, so that the -I/-L paths in the
-# documentation are the ones a raw (non-CMake) link line needs. Deriving it from
-# the ID and mapping back, rather than taking the basename of
-# CMAKE_Fortran_COMPILER, is what makes that survive the cases where the two
-# differ: an MPI wrapper (mpif90 around gfortran), a versioned binary
-# (gfortran-13), an absolute path, or the Cray wrapper (ftn). All four would give
-# the wrong directory under a plain basename, and the .mod would then be filed
-# under a name no consumer looks up.
-#
-# THIS MAPPING MUST MIRROR the one in hipfft-fortran-config.cmake.in and the one
-# in hipfftw-fortran-config.cmake.in exactly. The three cannot share code, because
-# the configs run in a consumer's build long after this one is gone, so they are
-# kept in step by hand. Get it wrong and the check in the configs never matches:
-# the packages then reject every consumer with a message claiming a compiler
-# mismatch that does not exist.
+# THIS MAPPING MUST MIRROR the one in both config templates exactly. The three
+# cannot share code -- the configs run in a consumer's build long after this one
+# is gone -- so they are kept in step by hand, and a drift makes the configs
+# reject every consumer with a compiler mismatch that does not exist.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_fc_name "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")     # Flang, LLVMFlang
@@ -346,51 +273,38 @@ elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
 elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
   set(_fc_name "nvfortran")
 else()
-  # Unknown compiler: fall back to the basename, lowercased, which is the best
-  # guess available and still keeps two compilers from colliding.
+  # Unknown compiler: the lowercased basename still keeps two from colliding.
   get_filename_component(_fc_name "${CMAKE_Fortran_COMPILER}" NAME_WE)
   string(TOLOWER "${_fc_name}" _fc_name)
 endif()
 
-# Strictly a .mod is tied to the compiler VERSION too, not just the compiler, so
-# this name is deliberately lossy: gfortran 13 and gfortran 14 install to the
-# same directory and the second overwrites the first. That is the documented
-# layout (include/fortran/gfortran), and it is the right default because the
-# overwhelmingly common case is one Fortran compiler per prefix. A site that
-# really does install several versions of the SAME compiler side by side sets
-# HIPFFT_FORTRAN_COMPILER_DIR itself, for example to gfortran-13.3.0.
+# Deliberately lossy: a .mod is tied to the compiler VERSION too, so gfortran 13
+# and 14 share a directory and the second overwrites the first. That is the
+# documented layout, and right for the common one-compiler prefix. A site that
+# installs several versions of the SAME compiler overrides this, e.g. with
+# gfortran-13.3.0.
 set(HIPFFT_FORTRAN_COMPILER_DIR "${_fc_name}" CACHE STRING
     "Per-compiler subdirectory the .mod files and archives install under")
 
-# hipFFTW installs into the same layout, out of the same package, for the same
-# compiler, so it does not get a cache entry of its own: two overridable names
-# for one directory could only ever disagree, and disagreeing would scatter one
+# hipFFTW installs into the same layout, so it gets no cache entry of its own:
+# two overridable names for one directory could only disagree, scattering one
 # compiler's .mod files across two directories. The mirror exists only so that
 # hipfftw-fortran-config.cmake.in can substitute a name of its own.
 set(HIPFFTW_FORTRAN_COMPILER_DIR "${HIPFFT_FORTRAN_COMPILER_DIR}")
 
-# One module directory for both targets. hipfft.mod and hipfftw.mod are distinct
-# names and neither module `use`s the other, so there is no clash and no ordering
-# constraint, and the single install(DIRECTORY) below is correct whichever halves
-# were built: only the .mod files of the targets that really compiled exist here.
+# One module directory for both targets: the names are distinct and neither
+# module `use`s the other, so there is no clash and no ordering constraint, and
+# the single install(DIRECTORY) below is correct whichever halves were built.
 set(_moddir "${CMAKE_CURRENT_BINARY_DIR}/include")
 
-# Locate the C libraries ONCE, for both halves: the installed
-# hipfft-targets.cmake defines hip::hipfft and hip::hipfftw together, so a single
-# lookup settles both. In-tree they come from this project's library/ directory
-# and the lookup is skipped entirely.
-#
-# Testing for the targets without ever calling find_package, which is what this
-# used to do, means they are never found in a standalone build: the archives
-# would then export no link interface at all, and every consumer would hit
-# undefined references to hipfftPlan1d and friends despite linking
-# hip::hipfft_fortran exactly as documented.
-#
-# hipfft-config.cmake find_dependency(hip)s, and hip-config-amd.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled, and QUIET does not
-# suppress a FATAL_ERROR. A Fortran-only configure of this directory has neither,
-# so C is enabled first. QUIET, because a site with no installed ROCm can still
-# legitimately build the bindings: they compile against nothing.
+# Locate the C libraries ONCE for both halves: the installed
+# hipfft-targets.cmake defines hip::hipfft and hip::hipfftw together. Testing for
+# the targets without ever calling find_package would export no link interface at
+# all, and every consumer would hit undefined references despite linking
+# hip::hipfft_fortran. C is enabled first because hipfft-config.cmake
+# find_dependency(hip)s and hip-config-amd.cmake reaches FindThreads, which
+# hard-errors unless C or CXX is enabled -- QUIET does not suppress a
+# FATAL_ERROR. QUIET all the same, because the bindings compile against nothing.
 if(NOT TARGET hip::hipfft AND NOT TARGET hip::hipfftw)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -411,32 +325,24 @@ endif()
 # --------------------------------------------------------------------------
 if(_hipfft_bindings)
   add_library(hipfft_fortran STATIC hipfft.F90)
-  # hipFFT exports its C targets under the hip:: namespace (hip::hipfft,
-  # hip::hipfftw), not roc::, so the bindings follow the namespace this project
-  # already publishes rather than inventing a second one.
+  # hip::, not roc::, because that is the namespace hipFFT already exports its C
+  # targets under.
   add_library(hip::hipfft_fortran ALIAS hipfft_fortran)
 
   set_target_properties(hipfft_fortran PROPERTIES
     Fortran_MODULE_DIRECTORY "${_moddir}"
-    # hipfft.F90 is uppercase: the array overloads sit behind preprocessor
-    # guards, so the source must go through the C preprocessor.
+    # The array overloads sit behind preprocessor guards.
     Fortran_PREPROCESS ON
-    # Free form is the .F90 default, but stating it lets CMake emit whichever
-    # flag the compiler in use expects rather than relying on the extension.
+    # The .F90 default, but stating it lets CMake emit the flag the compiler in
+    # use expects rather than relying on the extension.
     Fortran_FORMAT FREE
     POSITION_INDEPENDENT_CODE ON)
 
-  # Translate the tri-state into the macro the generated source is guarded with.
-  # The option value and the macro name are the same word, so there is nothing to
-  # remember here beyond the spelling. Each #ifdef selects its own tier and
-  # neither implies the other, so at most one macro is ever defined here.
-  # `none` defines neither macro and leaves the raw type(c_ptr) surface.
-  #
-  # Defining both is not an error: hipfft.F90 tests USE_ASSUMED_RANK first in
-  # both the interface region and the contained specifics, so assumed-rank wins
-  # and the module still compiles. This tri-state emits at most one all the
-  # same, so that the tier in force is the one named here rather than one that
-  # fell out of a precedence rule inside the generated source.
+  # The tri-state as a macro; the option value and the macro name are the same
+  # word, and none defines neither. Defining both is not an error -- hipfft.F90
+  # tests USE_ASSUMED_RANK first in both guarded regions -- but at most one is
+  # emitted here, so the tier in force is the one named rather than one that fell
+  # out of a precedence rule inside the generated source.
   if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
     target_compile_definitions(hipfft_fortran PRIVATE USE_ASSUMED_SHAPE=1)
   elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
@@ -444,8 +350,7 @@ if(_hipfft_bindings)
   endif()
 
   # No line-length flag: every line of both generated modules fits within the
-  # 132 columns the free-form standard guarantees, so every compiler reads them
-  # without a vendor-specific option.
+  # 132 columns the free-form standard guarantees.
 
   target_include_directories(hipfft_fortran PUBLIC
     "$<BUILD_INTERFACE:${_moddir}>"
@@ -454,9 +359,8 @@ if(_hipfft_bindings)
   # Link interface only: needed to link an executable, not to build this archive.
   if(TARGET hip::hipfft)
     target_link_libraries(hipfft_fortran INTERFACE hip::hipfft)
-    # Recorded so the config package knows whether the exported target actually
-    # names hip::hipfft in its link interface, and therefore whether it has to
-    # find_dependency(hipfft) before including the targets file. A bindings-only
+    # Recorded so the config package knows whether it has to
+    # find_dependency(hipfft) before including the targets file: a bindings-only
     # install made with no hipFFT in sight must not demand one at consume time.
     set(HIPFFT_FORTRAN_NEEDS_HIPFFT_PACKAGE TRUE)
   else()
@@ -473,18 +377,13 @@ endif()
 # --------------------------------------------------------------------------
 if(_hipfftw_bindings)
   add_library(hipfftw_fortran STATIC hipfftw.F90)
-  # hip:: and not roc::, because that is the namespace this project already
-  # exports hipfftw itself under (hip::hipfftw). A consumer should not have to
-  # remember that the binding and the library it binds sit in different
-  # namespaces.
+  # hip::, not roc::, matching hip::hipfftw itself.
   add_library(hip::hipfftw_fortran ALIAS hipfftw_fortran)
 
   set_target_properties(hipfftw_fortran PROPERTIES
     Fortran_MODULE_DIRECTORY "${_moddir}"
-    # hipfftw.F90 is uppercase for consistency with the other generated
-    # bindings, whose array overloads sit behind preprocessor guards. This one
-    # currently has no guards, but preprocessing it costs nothing and keeps the
-    # file regenerable into a guarded form without a CMake change.
+    # No guards in hipfftw.F90 today, but preprocessing costs nothing and keeps
+    # the file regenerable into a guarded form without a CMake change.
     Fortran_PREPROCESS ON
     Fortran_FORMAT FREE
     POSITION_INDEPENDENT_CODE ON)
@@ -516,25 +415,16 @@ if(_hipfftw_bindings)
   endif()
 endif()
 
-# The binding tests are GPU runtime executables, so in-tree they belong to the
-# client/test track and have to follow the library's own switch: a library-only
-# build has no business producing test binaries, and would be made to link a GPU
-# runtime it never asked for. The condition is the one hipFFT guards
-# add_subdirectory( clients ) with, so the two cannot disagree, plus BUILD_CLIENTS
-# itself: that umbrella turns the other three on, but it does so BELOW
-# add_subdirectory( fortran ), so reading only the three here would skip the
-# tests of a -DBUILD_CLIENTS=ON build.
+# The binding tests are GPU runtime executables, so in-tree they follow the
+# library's own client/test switch; the condition below is the one hipFFT guards
+# add_subdirectory( clients ) with, PLUS BUILD_CLIENTS itself -- that umbrella
+# turns the other three on, but BELOW add_subdirectory( fortran ), so reading
+# only the three would skip the tests of a -DBUILD_CLIENTS=ON build.
 #
-# Standalone, this directory IS the build and the tests are the point, so the
-# library's switches do not exist and the two flags stand on their own. Turning
-# them off here rather than BUILD_FORTRAN_CLIENTS is what keeps the decision
-# local: that cache entry is one switch shared by every library in the monorepo,
-# and must not be written back from a single library's subdirectory.
-#
-# Placed at the point the flags are READ, not up beside the options, so that a
-# configure that never reaches here -- -DBUILD_FORTRAN_BINDINGS=OFF, or a host
-# with no Fortran compiler, both of which return above -- does not announce a
-# skip of tests that were never going to be configured in the first place.
+# The local _hipfft_tests/_hipfftw_tests are cleared rather than
+# BUILD_FORTRAN_CLIENTS, whose cache entry is shared monorepo-wide. Placed where
+# the flags are READ, not beside the options, so that a configure that never
+# reaches here does not announce a skip of tests it was never going to build.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
    AND (_hipfft_tests OR _hipfftw_tests)
    AND NOT (BUILD_CLIENTS OR BUILD_CLIENTS_BENCH OR BUILD_CLIENTS_SAMPLES
@@ -546,14 +436,11 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 endif()
 
 if(_hipfft_tests OR _hipfftw_tests)
-  # enable_testing() here is enough for a STANDALONE build of this directory, but
-  # NOT for an in-tree one: CMake only writes the chain of CTestTestfile.cmake
-  # that ctest walks down from a build root when testing was enabled at the TOP
-  # level. hipFFT's own enable_testing() sits inside its BUILD_CLIENTS_* guard,
-  # so a build that asks for the Fortran bindings and nothing else does not get
-  # it. Enabled only here, the tests are built and registered, and `ctest` run
-  # from the top of the parent build reports "Total Tests: 0", a silent
-  # nothing, which is the worst way to find out. So say it.
+  # Enough standalone, but NOT in-tree: CMake writes the chain of
+  # CTestTestfile.cmake that ctest walks only when testing was enabled at the TOP
+  # level, and hipFFT's own enable_testing() sits inside its BUILD_CLIENTS_*
+  # guard, so a bindings-only build does not get it and `ctest` from the top
+  # reports "Total Tests: 0". Hence the warning.
   enable_testing()
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
@@ -571,25 +458,14 @@ endif()
 
 include(CMakePackageConfigHelpers)
 
-# The version both Fortran packages are stamped with, so that
-# find_package(hipfft-fortran 1.0) and find_package(hipfftw-fortran 1.0) resolve
-# rather than failing with "could not find a configuration file compatible with
-# requested version".
+# The version both Fortran packages are stamped with. ONE version for both:
+# hipFFTW has none of its own, being built from the hipFFT source tree.
 #
-# ONE version for both: hipFFTW has no version of its own, it is built from the
-# hipFFT source tree and shipped in the hipFFT package, so its binding carries
-# hipFFT's number.
-#
-# Read from THIS tree's top-level CMakeLists, not from hipfft_VERSION. That
-# variable looks like the obvious source and is a trap: it is set by the
-# find_package(hipfft) above, so it reports whatever hipFFT happens to be
-# INSTALLED rather than the version of the headers these bindings were generated
-# from. The bindings ship with their source tree, so the source tree is the
-# truth.
-#
-# hipFFT does not spell the version as a literal: VERSION_STRING is assembled
-# from three components, so the three are matched and joined here rather than
-# matching the assignment that references them.
+# Read from THIS tree's top-level CMakeLists, not from hipfft_VERSION: that
+# variable is set by the find_package(hipfft) above and reports whatever hipFFT
+# is INSTALLED, not the version the bindings were generated from. hipFFT does not
+# spell the version as a literal -- VERSION_STRING is assembled from three
+# components -- so the three are matched and joined here.
 set(_fortran_version "")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt")
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt" _hipfft_root)
@@ -597,9 +473,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt")
   foreach(_v_comp MAJOR MINOR PATCH)
     # The whole match, not CMAKE_MATCH_1, decides whether this component was
     # found: a failed string(REGEX MATCH) leaves CMAKE_MATCH_1 holding whatever
-    # the last SUCCESSFUL match put there, so reading it unguarded would silently
-    # reuse the previous component's number and stamp the package with a version
-    # that appears nowhere in the tree.
+    # the last SUCCESSFUL match put there, so reading it unguarded would reuse
+    # the previous component's number.
     string(REGEX MATCH "set[ \t]*\\([ \t]*HIPFFT_VERSION_${_v_comp}[ \t]+\"([0-9]+)\""
            _v_whole "${_hipfft_root}")
     if(_v_whole)
@@ -614,9 +489,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt")
 endif()
 
 if(NOT _fortran_version)
-  # Better no version file than a wrong one: without it an unversioned
-  # find_package still succeeds, whereas a version file claiming the wrong number
-  # makes a versioned one succeed and link the wrong .mod.
+  # Better no version file than a wrong one: an unversioned find_package still
+  # succeeds, whereas a wrong number makes a versioned one link the wrong .mod.
   message(STATUS
     "hipFFT: could not determine the version for the Fortran packages, so no "
     "hipfft-fortran-config-version.cmake or hipfftw-fortran-config-version.cmake "
@@ -624,17 +498,12 @@ if(NOT _fortran_version)
     "find_package(hipfftw-fortran <version>) will not match.")
 endif()
 
-# COMPONENT devel on every rule below, because everything this directory
-# installs -- two static archives, a set of .mod files, the generated sources and
-# the CMake packages -- is a development artifact: nothing here is needed to RUN
-# a program, only to build one against the bindings. devel is also what
-# rocm-cmake would have chosen: rocm_install_targets and rocm_install default to
-# it. Without it these files land in the runtime component instead, and the
-# hipfft-devel package a Fortran consumer installs would not carry the bindings
-# at all.
-#
-# Plain install(), not rocm_install(): this directory must also configure
-# standalone, where rocm-cmake was never loaded and those commands do not exist.
+# COMPONENT devel on every rule below: everything installed here is a development
+# artifact, and devel is what rocm-cmake's install helpers default to -- without
+# it these land in the runtime component, and the hipfft-devel package a Fortran
+# consumer installs would not carry the bindings at all. Plain install(), not
+# rocm_install(): this directory must also configure standalone, without
+# rocm-cmake.
 #
 # One install(DIRECTORY) covers both modules: only the .mod files of the targets
 # that were really compiled exist in _moddir.
@@ -643,30 +512,21 @@ install(DIRECTORY "${_moddir}/"
         COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
-# The two directories each config package has to name, kept out of the templates
-# so that neither side spells lib/ or include/ literally. A literal lib/fortran
-# is wrong the moment CMAKE_INSTALL_LIBDIR is lib64, and the config then hands
-# the consumer an IMPORTED_LOCATION that does not exist.
-#
+# Kept out of the templates so neither side spells lib/ or include/ literally.
 # HIPFFTW_* mirrors HIPFFT_* for the same reason HIPFFTW_FORTRAN_COMPILER_DIR
-# does: both halves install into one layout out of one package, and the mirror
-# exists only so that hipfftw-fortran-config.cmake.in can substitute names of
-# its own.
+# does: both halves install into one layout, and the mirror exists only so that
+# hipfftw-fortran-config.cmake.in can substitute names of its own.
 set(HIPFFT_FORTRAN_LIBDIR      "${CMAKE_INSTALL_LIBDIR}/fortran")
 set(HIPFFT_FORTRAN_INCLUDEDIR  "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 set(HIPFFTW_FORTRAN_LIBDIR     "${HIPFFT_FORTRAN_LIBDIR}")
 set(HIPFFTW_FORTRAN_INCLUDEDIR "${HIPFFT_FORTRAN_INCLUDEDIR}")
 
-# Two export sets and two config packages, not one of each. The two bindings are
-# found independently (find_package(hipfft-fortran) vs
-# find_package(hipfftw-fortran)), each config carries its own compiler check and
-# its own hip*_FORTRAN_FOUND flag, and a consumer of the FFTW API must not be
-# made to import a hipfft binding it never asked for.
-#
-# Both land in lib/cmake/hipfft: hipFFTW has no config-package directory of its
-# own, since it ships inside the hipfft package, and putting the hipFFT one there
-# too is what lets hipfft-config.cmake pick either up with a bare
-# include(<name> OPTIONAL) as a sibling.
+# Two export sets and two config packages, not one of each: the bindings are
+# found independently, each with its own compiler check and hip*_FORTRAN_FOUND
+# flag, and a consumer of the FFTW API must not be made to import a hipfft
+# binding it never asked for. Both land in lib/cmake/hipfft -- hipFFTW has no
+# config-package directory of its own -- which is also what lets
+# hipfft-config.cmake pick either up with a bare include(<name> OPTIONAL).
 if(_hipfft_bindings)
   install(TARGETS hipfft_fortran
           EXPORT hipfft-fortran-targets
@@ -678,18 +538,11 @@ if(_hipfft_bindings)
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
           COMPONENT devel)
 
-  # The generated source, so that a user on a compiler ROCm ships no .mod for can
-  # rebuild the binding without fetching a monorepo to get one file. Source
-  # obtained separately can also be generated from a different ROCm than the
-  # installed libhipfft, which surfaces as an undefined symbol at link time or as
-  # an interface that silently differs from the one the caller meant; source that
-  # ships with the library cannot drift from it.
-  #
-  # Under share/, not include/. The .mod is compiler-specific and this is not, and
-  # every entry under include/fortran/ is partitioned by compiler, so a source
-  # file there would be read as naming one: the config below enumerates that
-  # directory to report which compilers are installed, and would list hipfft.F90
-  # among them.
+  # The generated source, so that a user on a compiler ROCm ships no .mod for
+  # can rebuild the binding without fetching a monorepo, from source that cannot
+  # drift from the installed libhipfft. Under share/, not include/: every entry
+  # under include/fortran/ is read as naming a compiler -- the config enumerates
+  # that directory to report which are installed, and would list hipfft.F90.
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipfft.F90"
           DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran"
           COMPONENT devel)
@@ -698,23 +551,19 @@ if(_hipfft_bindings)
     "${CMAKE_CURRENT_SOURCE_DIR}/hipfft-fortran-config.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config.cmake"
     INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
-    # PATH_VARS is exactly what these two want: @PACKAGE_INIT@ rewrites each into
-    # an absolute path computed from where the config file was FOUND, so the
-    # package survives being relocated and gets lib64 right without the template
-    # knowing which layout it was built for. HIPFFT_FORTRAN_COMPILER_DIR stays a
-    # plain @-substitution on purpose -- it is a bare directory NAME, not a path,
-    # and PATH_VARS would resolve it as one, under the install prefix.
+    # PATH_VARS: @PACKAGE_INIT@ rewrites each into an absolute path computed
+    # from where the config was FOUND, so the package is relocatable and gets
+    # lib64 right. HIPFFT_FORTRAN_COMPILER_DIR stays a plain @-substitution: it
+    # is a bare directory NAME, and PATH_VARS would resolve it under the prefix.
     PATH_VARS HIPFFT_FORTRAN_LIBDIR HIPFFT_FORTRAN_INCLUDEDIR)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config.cmake"
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
           COMPONENT devel)
 
   # find_package(hipfft-fortran), the documented spelling, searches
-  # lib/cmake/hipfft-fortran*, which lib/cmake/hipfft does not match, so on its
-  # own that placement makes the direct spelling fail with "could not find a
-  # package configuration file". A forwarder gives the search somewhere to land
-  # without duplicating the real config, which would also need its own copy of
-  # the targets file and would then be a second thing to keep in step.
+  # lib/cmake/hipfft-fortran*, which lib/cmake/hipfft does not match. A forwarder
+  # gives that search somewhere to land without duplicating the real config and
+  # its targets file.
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/hipfft-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the hipFFT C package, in
 # lib/cmake/hipfft, so that hipfft-config.cmake can include it as a sibling.
@@ -733,13 +582,9 @@ include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfft-fortran-config.cmake\")
       "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config-version.cmake"
       VERSION "${_fortran_version}"
       COMPATIBILITY SameMajorVersion)
-    # Installed in BOTH package directories, and it has to be. CMake looks for
-    # <pkg>-config-version.cmake NEXT TO the <pkg>-config.cmake it actually
-    # resolved, not wherever the real one lives. find_package(hipfft-fortran 1.0)
-    # resolves the forwarder in lib/cmake/hipfft-fortran, so a version file only
-    # beside the real config in lib/cmake/hipfft is never consulted, and the call
-    # fails with "could not find a configuration file compatible with requested
-    # version" even though the config is right there and the version matches.
+    # BOTH directories: CMake looks for <pkg>-config-version.cmake NEXT TO the
+    # config it actually resolved, and a versioned find_package(hipfft-fortran)
+    # resolves the forwarder.
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipfft-fortran-config-version.cmake"
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfft"
             COMPONENT devel)
@@ -761,8 +606,8 @@ if(_hipfftw_bindings)
           COMPONENT devel)
 
   # The generated source, for the same reason as hipfft.F90 above, and under the
-  # same share/hipfft/fortran: hipFFTW is packaged with hipFFT and has no
-  # directory of its own anywhere else in the layout, so it has none here either.
+  # same share/hipfft/fortran: hipFFTW has no directory of its own anywhere else
+  # in the layout.
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/hipfftw.F90"
           DESTINATION "${CMAKE_INSTALL_DATADIR}/hipfft/fortran"
           COMPONENT devel)
@@ -789,10 +634,8 @@ include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfftw-fortran-config.cmake\")
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipfftw-fortran"
           COMPONENT devel)
 
-  # A version file of its own, carrying hipFFT's number, and installed in both
-  # of ITS package directories for the same reason as hipfft's above: the
-  # forwarder in lib/cmake/hipfftw-fortran is what find_package resolves, and a
-  # version file is only ever looked for beside the config that was resolved.
+  # A version file of its own, carrying hipFFT's number, in both of ITS package
+  # directories for the same reason as hipfft's above.
   if(_fortran_version)
     write_basic_package_version_file(
       "${CMAKE_CURRENT_BINARY_DIR}/hipfftw-fortran-config-version.cmake"

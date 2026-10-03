@@ -7,41 +7,36 @@
 # hipfft-config.cmake can pick it up as a sibling with a bare
 # include(hipfft-fortran-config.cmake OPTIONAL). CMake's own search for
 # find_package(hipfft-fortran) globs lib/cmake/hipfft-fortran*, which that
-# directory does not match, so a one-line forwarder is installed in
-# lib/cmake/hipfft-fortran and includes this file.
+# directory does not match, so a one-line forwarder is installed there and
+# includes this file.
 #
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is not portable across compilers. This package therefore checks
-# that the consumer is building with the compiler the bindings were installed
-# for, and fails with a named diagnostic rather than letting the build hit an
-# unreadable .mod much later.
+# The bindings ship as one archive and one .mod set PER FORTRAN COMPILER, since a
+# .mod is not portable across compilers. This package checks that the consumer is
+# building with the compiler the bindings were installed for, and fails with a
+# named diagnostic rather than hitting an unreadable .mod much later.
 
 @PACKAGE_INIT@
 
 set(HIPFFT_FORTRAN_COMPILER_DIR "@HIPFFT_FORTRAN_COMPILER_DIR@")
 
 # Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# preamble above has already turned each into an absolute path derived from
-# where THIS file was found: the package keeps working after it is moved, and a
-# distro that installs to lib64 gets lib64 rather than a hardcoded lib/ that
-# names nothing. Everything below goes through these two.
+# preamble above has already turned each into an absolute path derived from where
+# THIS file was found: relocatable, and lib64 where a distro uses it. Everything
+# below goes through these two.
 #
-# That preamble is referred to and never named: configure_package_config_file()
-# substitutes its token wherever the token appears, comments included, so
-# spelling it out here would splice a second copy of the whole preamble, macro
-# definitions and all, into the middle of this sentence.
+# Do not spell the preamble's token here: configure_package_config_file()
+# substitutes it everywhere in the template, comments included.
 set(_hipfft_libdir "@PACKAGE_HIPFFT_FORTRAN_LIBDIR@")
 set(_hipfft_incdir "@PACKAGE_HIPFFT_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a hipFFT Fortran binding available here?" through
-# hipfft_FORTRAN_FOUND, which is set whether this package is reached directly by
-# find_package(hipfft-fortran) or through an OPTIONAL include at the end of
-# hipfft-config.cmake. It stays FALSE on every early return below.
+# hipfft_FORTRAN_FOUND, set whether this package is reached directly or through
+# an OPTIONAL include from hipfft-config.cmake. It stays FALSE on every early
+# return below.
 set(hipfft_FORTRAN_FOUND FALSE)
 
-# The NOT_FOUND_MESSAGE is built with string(CONCAT) rather than passed to set()
-# as several arguments, because set() with several arguments makes a list and
-# CMake then prints the message with semicolons between the pieces.
+# string(CONCAT), not a multi-argument set(): that builds a LIST, and CMake then
+# prints the message with semicolons between the pieces.
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(hipfft-fortran_FOUND FALSE)
   string(CONCAT hipfft-fortran_NOT_FOUND_MESSAGE
@@ -51,22 +46,18 @@ if(NOT CMAKE_Fortran_COMPILER_LOADED)
 endif()
 
 # THIS MAPPING MUST MIRROR the one in projects/hipfft/fortran/CMakeLists.txt
-# exactly: it recomputes, for the compiler the CONSUMER is using, the same
-# directory name the bindings were installed under. The two cannot share code --
-# this file runs in a consumer's build long after ours is gone, so they are
-# kept in step by hand. Get it wrong and the check never matches: the package
-# then rejects every consumer with a message claiming a compiler mismatch that
-# does not exist.
+# exactly: it recomputes, for the CONSUMER's compiler, the directory name the
+# bindings were installed under. The two cannot share code -- this file runs in a
+# consumer's build long after ours is gone -- so they are kept in step by hand.
+# Get it wrong and the check never matches, rejecting every consumer with a
+# compiler mismatch that does not exist.
 #
 # Compared on the compiler EXECUTABLE name, which is what the install layout is
-# keyed on (include/fortran/gfortran, lib/fortran/gfortran). CMake's compiler ID
-# would not do on its own: it is "GNU" where the directory is "gfortran", and a
-# user writing a raw -I/-L line types the executable name, not the ID. It is
-# derived from the ID and mapped back, and NOT taken as the basename of
+# keyed on; the ID would not do, being "GNU" where the directory is "gfortran".
+# Derived from the ID and mapped back, NOT taken as the basename of
 # CMAKE_Fortran_COMPILER, so that a consumer building through an MPI wrapper
-# (mpif90 around gfortran), a versioned binary (gfortran-13) or the Cray wrapper
-# compares equal to the directory the bindings really installed under instead of
-# being told to rebuild them.
+# (mpif90), a versioned binary (gfortran-13) or the Cray wrapper compares equal
+# to the directory the bindings really installed under.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_hipfft_fc "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")     # Flang, LLVMFlang
@@ -84,19 +75,15 @@ else()
   string(TOLOWER "${_hipfft_fc}" _hipfft_fc)
 endif()
 
-# A site that installs several versions of one compiler side by side overrides
-# HIPFFT_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so the
-# recorded directory is accepted when it is the derived name, or that name
-# followed by a separator and anything. A strict equality would reject exactly
-# the sites that used the documented override. Note what this cannot do: the
-# layout records no version, so the package cannot tell gfortran 13 from
-# gfortran 15 by itself.
+# A site that installs several versions of one compiler overrides
+# HIPFFT_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so accept
+# the derived name, or that name followed by a separator and anything; a strict
+# equality would reject exactly the sites that used the documented override. The
+# layout records no version, so this cannot tell gfortran 13 from gfortran 15.
 #
-# Done by length and substring rather than by regex. _hipfft_fc comes from
-# CMAKE_Fortran_COMPILER's basename on the fallback branch above, so it is an
-# arbitrary file name; interpolating it into a regex would let a compiler called
-# g++.wrapper or flang(2) either mismatch silently or abort CMake with a regex
-# error. There is no regex-escape in CMake, so the comparison avoids regex.
+# By length and substring rather than regex: _hipfft_fc can be an arbitrary file
+# name from the fallback branch above, and CMake has no regex-escape, so a
+# compiler called g++.wrapper or flang(2) would mismatch or abort the regex.
 #
 # Named _hipfft_ and not _fortran_: hipfftw-fortran-config.cmake carries the same
 # helper under _hipfftw_, and a consumer that finds both packages would otherwise
@@ -118,20 +105,13 @@ function(_hipfft_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use.
-#
-# The recorded HIPFFT_FORTRAN_COMPILER_DIR is the compiler the package was built
-# with, and it is only a default. A prefix can hold artifacts for several
-# compilers at once, since installing the bindings twice writes
-# include/fortran/gfortran and include/fortran/amdflang side by side, but the
+# Which per-compiler directory to use. The recorded HIPFFT_FORTRAN_COMPILER_DIR
+# is only a default: a prefix can hold artifacts for several compilers, but the
 # config package is written once, so the recorded value names whichever install
-# ran last. Trusting it blindly rejects a consumer whose .mod is present.
-#
-# So prefer the consumer's OWN compiler when its artifacts are installed here,
-# and fall back to the recorded directory when they are not. hipfft.mod and not
-# just the directory: hipfftw can be installed without hipfft (either half is
-# switchable on its own), so a directory that exists proves nothing about THIS
-# binding.
+# ran last and trusting it blindly would reject a consumer whose .mod is present.
+# Prefer the consumer's OWN compiler when its artifacts are installed here.
+# hipfft.mod and not just the directory: either half is switchable on its own, so
+# a directory that exists proves nothing about THIS binding.
 set(_hipfft_dir "")
 if(EXISTS "${_hipfft_incdir}/${_hipfft_fc}/hipfft.mod")
   set(_hipfft_dir "${_hipfft_fc}")
@@ -158,22 +138,19 @@ if(NOT _hipfft_dir)
 endif()
 
 # hipfft-fortran-targets.cmake names hip::hipfft in its link interface, so that
-# target has to exist BEFORE the targets file is read, otherwise CMake stops
-# with "the link interface of target hip::hipfft_fortran contains: hip::hipfft
-# but the target was not found", which reads like a packaging bug rather than a
-# missing find_package in the consumer.
+# target MUST exist BEFORE the targets file is read, or CMake stops with "the
+# link interface of target hip::hipfft_fortran contains: hip::hipfft but the
+# target was not found", which reads like a packaging bug.
 #
 # hipfft-config.cmake find_dependency(hip)s, and hip-config-amd.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled. A Fortran-only
-# consumer has neither, so C is enabled here. Enabling a language from a config
-# package is unusual, and it is done deliberately: the alternative is making
-# every Fortran consumer of these bindings write enable_language(C) for a reason
-# that has nothing to do with their code.
+# FindThreads, which hard-errors unless C or CXX is enabled. Enabling a language
+# from a config package is unusual and deliberate: the alternative is every
+# Fortran consumer writing enable_language(C) for a reason that has nothing to do
+# with their code.
 #
-# Demanded only when the bindings were really built against a visible hipFFT.
-# False only for a bindings-only install made with no hipFFT in sight, where the
-# exported target carries no link interface and the consumer supplies -lhipfft
-# itself; such an install must not demand a package at consume time.
+# The interpolated flag is FALSE only for a bindings-only install made with no
+# hipFFT in sight, where the exported target carries no link interface and the
+# consumer supplies -lhipfft itself.
 if(@HIPFFT_FORTRAN_NEEDS_HIPFFT_PACKAGE@ AND NOT TARGET hip::hipfft)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
