@@ -7,45 +7,28 @@ Documentation for hipBLAS is available at
 
 ### Added
 
-* Generated Fortran bindings, as a single self-contained `hipblas` module (`use hipblas`,
-  link `roc::hipblas_fortran`). Built by default when a Fortran compiler is available;
-  controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
-  `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(hipblas-fortran)`, installed per
-  compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`,
-  where `<libdir>` and `<includedir>` are `CMAKE_INSTALL_LIBDIR` and
-  `CMAKE_INSTALL_INCLUDEDIR`.
+* Generated Fortran bindings, as a single `hipblas` module: `use hipblas`, link
+  `roc::hipblas_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows
+  and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`,
+  `assumed-shape`, `assumed-rank`). Found with `find_package(hipblas-fortran)`; the archive and
+  `.mod` files install per compiler under `<libdir>/fortran/<compiler>` and
+  `<includedir>/fortran/<compiler>`.
 
 ### Changed
 
-* The Fortran binding is now generated from the hipBLAS headers instead of hand-written.
-  `library/src/hipblas_module.f90` is removed and is no longer installed into
-  `include/hipblas`. It defined two modules, `hipblas` and `hipblas_enums`; the generated
-  binding defines only `hipblas`, with the enum constants folded in. `use hipblas` is
-  unchanged, but `use hipblas_enums` should become `use hipblas`. The one exception is the
-  `hipDataType` enumerators (`HIP_R_32F` and the rest), which `hipblas_enums` re-exported
-  and the generated module does not: they belong to HIP rather than to hipBLAS, so code
-  that names them when calling `hipblasGemmEx` and the other `_ex` routines has to get
-  them from elsewhere. Rather than shipping a `.f90` source to compile yourself, a
-  compiled archive and `.mod` are installed; link `roc::hipblas_fortran`. The generated
-  source is still shipped, under `share/hipblas/fortran`, for compilers no `.mod` is
-  provided for.
-* The packaged `hipblas` module exports the `bind(C)` interfaces, the enum constants and
-  the `hipblasCheck` status helper, and no more. It declares no derived type of its own,
-  no `_typed` strongly-typed overloads and no `_dptr` device-pointer specifics, and it
-  carries no docstrings. Every handle, `hipblasHandle_t` included, and every pointer-mode
-  scalar is a `type(c_ptr)`, so `alpha`, `beta` and the scalar results of `dot`, `nrm2`,
-  `asum` and `iamax` are passed as `c_loc()` of a target. Array overloads are generated
-  for the subset of routines the generator supports, selected by
-  `FORTRAN_ARRAY_INTERFACES`; every other routine exposes the plain `type(c_ptr)`
-  interface under all three tiers. This is the intended shape of the packaged track, and
-  it is the same shape `library/src/hipblas_module.f90` had, which also bound every handle
-  as `type(c_ptr)` and defined no generic interface at all, so no call that compiled
-  against it loses a form here.
-* Every `bind(C)` symbol the hand-written `library/src/hipblas_module.f90` declared is
-  still declared by the generated binding; none was dropped. In the other direction the
-  generated binding adds `hipblasGetProperty`, `hipblasGetVersion`,
-  `hipblasStatusToString`, `hipblasSetWorkspace`, `hipblasGetMathMode` and
-  `hipblasSetMathMode`, which the hand-written module omitted.
+* `hipblas_enums` is merged into `hipblas`: the generated binding defines only `hipblas`, with
+  the enum constants folded in. `use hipblas` is unchanged; `use hipblas_enums` becomes
+  `use hipblas`.
+* The `hipDataType` enumerators (`HIP_R_32F` and the rest) are no longer re-exported: they
+  belong to HIP, not to hipBLAS. Code that names them when calling `hipblasGemmEx` and the
+  other `_ex` routines must now get them from HIP.
+* The binding ships as a compiled archive and `.mod` set, not a `.f90` to compile yourself:
+  link `roc::hipblas_fortran` instead of adding the source to your build.
+
+### Removed
+
+* The hand-written `library/src/hipblas_module.f90`, no longer installed into
+  `include/hipblas`.
 
 ## hipBLAS 3.7.0
 

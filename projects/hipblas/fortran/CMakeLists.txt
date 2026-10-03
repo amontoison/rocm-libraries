@@ -61,8 +61,9 @@ option(BUILD_FORTRAN_BINDINGS "Build the hipBLAS Fortran bindings"
        "${_hipblas_fortran_default}")
 unset(_hipblas_fortran_default)
 
-# One switch for the binding tests and a library's Fortran clients. Guarded like
-# the bindings, so asking for them without the bindings is a skip, not an error.
+# One switch for the binding tests and a library's Fortran clients. ON by
+# default, but guarded like the bindings: asking for them when the bindings were
+# not built is a skip, not an error.
 option(BUILD_FORTRAN_CLIENTS "Build the hipBLAS Fortran clients and binding tests" ON)
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
@@ -288,9 +289,9 @@ elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
   target_compile_definitions(hipblas_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
-# No line-length flag: the generator wraps the emitted source at 112 columns,
-# inside the 132 free-form Fortran guarantees, so every compiler reads it
-# without a vendor-specific option.
+# No line-length flag: every line of the emitted source fits within the 132
+# columns free-form Fortran guarantees, so every compiler reads it without a
+# vendor-specific option.
 
 target_include_directories(hipblas_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
