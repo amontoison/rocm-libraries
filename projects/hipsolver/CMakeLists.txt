@@ -36,56 +36,36 @@ if(NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 endif()
 
-# Which Fortran compiler the bindings are built with. Decided HERE, before
-# anything else can answer the question: enable_language(Fortran) below resolves
+# Which Fortran compiler the bindings are built with. MUST be decided here,
+# before project(): enable_language(Fortran) below resolves
 # CMAKE_Fortran_COMPILER once and freezes it for the whole tree, and fortran/ is
-# added some 250 lines further down, far too late to have a say -- its own call
-# finds the compiler already chosen and does nothing at all.
+# added far too late to have a say. The macro lives under fortran/ because that
+# directory has to make the same choice standalone, and two copies of a
+# compiler-selection policy drift apart silently -- the build succeeds either
+# way, and the only visible difference is which per-compiler directory the
+# artifacts land in. gfortran stays as the fallback where no amdflang is in
+# reach; an explicit CMAKE_Fortran_COMPILER or $ENV{FC} wins in both branches.
 #
-# Preferring ROCm's own amdflang is the point. A plain default of gfortran is
-# how the bindings ended up as the one component of ROCm built by a different
-# toolchain from everything else: installed under fortran/gfortran/ while the
-# documentation promises fortran/amdflang/, and exercising a compiler the
-# product does not ship with. gfortran stays as the fallback for a host with no
-# amdflang in reach, which is what this project defaulted to before.
+# Skipped when the Fortran track is off. BUILD_FORTRAN_BINDINGS is declared with
+# option() after project(), so the cache is the only place to read it this early;
+# without this test a -DBUILD_FORTRAN_BINDINGS=OFF configure would still search
+# for a compiler and leave CMAKE_Fortran_COMPILER in its cache.
 #
-# The macro carries the same "an explicit CMAKE_Fortran_COMPILER or $ENV{FC}
-# wins" test the fallback below repeats, so a user who named a compiler gets it
-# either way. It lives under fortran/ because that directory has to make the
-# same choice when it is configured standalone, and two copies of a
-# compiler-selection policy drift apart silently: the build succeeds either way,
-# and the only visible difference is which per-compiler directory the artifacts
-# land in.
-# Skipped outright when the Fortran track is switched off. BUILD_FORTRAN_BINDINGS
-# is declared with option() further down, after project(), so the cache is the
-# only place to read it this early; undefined means the user did not ask for
-# anything, and the default is ON. Without this test a -DBUILD_FORTRAN_BINDINGS=OFF
-# configure -- one that enables no Fortran and builds none -- would still search
-# for a compiler, run it, and leave CMAKE_Fortran_COMPILER in its cache.
-#
-# Not on the CUDA backend, where gfortran is the answer and amdflang is wrong.
-# The invariant the clients rely on is that the LAPACK they link was built by
-# the same Fortran toolchain as this project. On the ROCm side that holds by
-# construction: HIPSOLVER_INTERNAL_LAPACK_BUILD compiles OpenBLAS in-tree with
-# this very compiler, so the two agree whatever it is. The CUDA backend does not
-# build it (see the HIP_PLATFORM test ~120 lines below -- cuSOLVER has geev), so
-# the clients link the host's LAPACK instead, and on every Linux image that is a
-# gfortran build. Nothing else puts a Fortran runtime on those link lines: it
-# comes from this compiler, through hipsolver_fortran_client. Choose amdflang
-# and liblapack.a's own objects (xerbla, sgesvd, sormbr) are left with none, so
-# hipsolver-test and hipsolver-bench fail to link on undefined _gfortran_*.
-#
-# It is also the honest answer for a build that wraps cuSOLVER: the reason to
-# prefer amdflang is that ROCm should not have one component built by a foreign
-# toolchain, and on this backend there is no ROCm toolchain to be consistent
-# with.
+# Not on the CUDA backend, where amdflang is WRONG. The clients rely on the
+# LAPACK they link having been built by the same Fortran toolchain as this
+# project. On the ROCm side HIPSOLVER_INTERNAL_LAPACK_BUILD compiles OpenBLAS
+# in-tree with this very compiler, so the two agree; the CUDA backend does not
+# build it (cuSOLVER has geev), so the clients link the host's LAPACK, which on
+# every Linux image is a gfortran build. The Fortran runtime on those link lines
+# comes from this compiler through hipsolver_fortran_client, so choosing amdflang
+# leaves liblapack.a's own objects (xerbla, sgesvd, sormbr) without one and
+# hipsolver-test and hipsolver-bench fail on undefined _gfortran_*.
 #
 # HIP_PLATFORM cannot be read here -- it is resolved after project() and
-# find_package(hip), and this block has to run before project(). So this repeats
-# the explicit inputs that resolution starts from. It deliberately does NOT
-# cover the implicit nvidia fallback taken when hip is not found (the hip < 6.0
-# path): that is unknowable this early, and a CUDA build reaching nvidia that
-# way rather than naming the platform will still pick amdflang.
+# find_package(hip) -- so this repeats the explicit inputs that resolution starts
+# from. It deliberately does NOT cover the implicit nvidia fallback taken when
+# hip is not found (the hip < 6.0 path): unknowable this early, and such a build
+# will still pick amdflang.
 set(_hipsolver_cuda_backend OFF)
 if(USE_CUDA OR "$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
   set(_hipsolver_cuda_backend ON)
@@ -148,34 +128,24 @@ option(BUILD_HIPSPARSE_TESTS "Build additional tests to cover sparse functionali
 option(BUILD_WITH_SPARSE "Build hipSOLVER with sparse functionality available at build time (requires installed dependencies)" OFF)
 option(BUILD_VERBOSE "Output additional build information" OFF)
 option(HIPSOLVER_FIND_PACKAGE_LAPACK_CONFIG "Skip module mode search for LAPACK" ON)
-# EXPORT_FORTRAN_BINDINGS is gone with the hand-written binding it controlled:
-# it chose whether the old shared hipsolver_fortran joined the hipsolver-targets
-# export set. The generated binding has an export set of its own
-# (hipsolver-fortran-targets) and a config package of its own, so the choice no
-# longer exists. BUILD_FORTRAN_BINDINGS below still turns the whole track off.
+# EXPORT_FORTRAN_BINDINGS is gone with the hand-written binding it controlled.
+# The generated binding has an export set (hipsolver-fortran-targets) and a
+# config package of its own, so the choice no longer exists;
+# BUILD_FORTRAN_BINDINGS still turns the whole track off.
 #
-# OFF on the CUDA backend, and that is about the GENERATED SOURCE rather than
-# about the compiler. hipsolver.F90 is produced from the ROCm code path and is
-# exercised only there: no CI job builds or runs it against a cuSOLVER-backed
-# libhipsolver, so nothing in this tree says the binding is correct on that
-# backend. Shipping it on by default would publish an untested artefact, so it
-# is off there and has to be asked for by name. ${UNIX} otherwise, because ROCm
-# ships no Fortran compiler on Windows at all.
+# OFF on the CUDA backend, and that is about the GENERATED SOURCE, not the
+# compiler: hipsolver.F90 is produced from the ROCm code path and no CI job
+# builds or runs it against a cuSOLVER-backed libhipsolver, so defaulting ON
+# there would publish an untested artefact. ${UNIX} otherwise, because ROCm ships
+# no Fortran compiler on Windows at all. _hipsolver_cuda_backend is the test
+# computed above project(), reused rather than repeated, and carries that block's
+# documented limit.
 #
-# _hipsolver_cuda_backend is the backend test computed above project(), reused
-# rather than repeated: one place decides what "CUDA backend" means for this
-# project and both readers agree by construction. It carries that block's
-# documented limit -- the implicit nvidia fallback taken when hip is not found
-# is unknowable this early -- which is the right trade here too, a default being
-# a default and not a veto.
-#
-# This is the FIRST of the two option(BUILD_FORTRAN_BINDINGS) calls in hipSOLVER
-# and so the one that fixes the cache entry for an in-tree build; the one in
-# fortran/CMakeLists.txt is a no-op here and is live only when that directory is
-# configured standalone. The root needs the answer this early because
-# enable_language(Fortran) just below depends on it, long before
-# add_subdirectory(fortran). The two are kept from disagreeing by computing the
-# same default from the same variable.
+# This is the FIRST of the two option(BUILD_FORTRAN_BINDINGS) calls and so the
+# one that fixes the cache entry for an in-tree build; the one in
+# fortran/CMakeLists.txt is a no-op here and live only standalone. The root needs
+# the answer this early because enable_language(Fortran) just below depends on
+# it. Both compute the same default from the same variable.
 if(_hipsolver_cuda_backend)
   set(_hipsolver_fortran_default OFF)
 else()
@@ -193,10 +163,8 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 if(BUILD_FORTRAN_BINDINGS)
-  # This is the call that freezes CMAKE_Fortran_COMPILER for the whole tree, so
-  # the compiler it resolves is whatever was chosen above project(); see the
-  # rocm_fortran_prefer_amdflang() call there. Nothing between here and there
-  # may set it.
+  # This freezes CMAKE_Fortran_COMPILER for the whole tree, to whatever was
+  # chosen above project(). Nothing between here and there may set it.
   enable_language(Fortran)
 endif()
 
@@ -435,15 +403,12 @@ add_subdirectory(library)
 
 include(clients/cmake/build-options.cmake)
 
-# Fortran bindings, generated from the headers above and committed next to
-# them. Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS
-# is OFF or when no Fortran compiler is available, so a C-only site is unaffected.
+# Fortran bindings, self-guarded: the subdirectory returns early when
+# BUILD_FORTRAN_BINDINGS is OFF or no Fortran compiler is available.
 #
-# Placed after the client options and before clients/ itself. It reads
-# BUILD_CLIENTS_TESTS and its siblings to decide whether to build its own test
-# executables, so those options have to be declared first; and clients/ links
-# roc::hipsolver_fortran into its Fortran shim, so the target has to exist by
-# the time that directory is added.
+# MUST sit after the client options and before clients/: it reads
+# BUILD_CLIENTS_TESTS and its siblings, and clients/ links
+# roc::hipsolver_fortran into its Fortran shim.
 add_subdirectory(fortran)
 
 if(NOT SYSTEM_OS)

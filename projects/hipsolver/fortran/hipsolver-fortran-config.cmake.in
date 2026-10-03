@@ -3,42 +3,34 @@
 #   find_package(hipsolver-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE roc::hipsolver_fortran)
 #
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is not portable across compilers or even across versions of the
-# same compiler. This package therefore checks that the consumer is building with
-# the compiler the bindings were installed for, and fails with a named diagnostic
-# rather than letting the build hit an unreadable .mod much later.
+# The bindings ship as one archive and one .mod set PER FORTRAN COMPILER, since a
+# .mod is not portable across compilers. This package checks that the consumer is
+# building with the compiler the bindings were installed for, and fails with a
+# named diagnostic rather than hitting an unreadable .mod much later.
 
 @PACKAGE_INIT@
 
 set(HIPSOLVER_FORTRAN_COMPILER_DIR "@HIPSOLVER_FORTRAN_COMPILER_DIR@")
 
 # Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# PACKAGE_INIT preamble above has already turned each into an absolute path
-# derived from where THIS file was found: the package keeps working after it is
-# moved, and a distro that installs to lib64 gets lib64 rather than a hardcoded
-# lib/ that names nothing. Everything below goes through these two.
+# preamble above has already turned each into an absolute path derived from where
+# THIS file was found: relocatable, and lib64 where a distro uses it. Everything
+# below goes through these two.
 #
-# That preamble is referred to by name and never spelled with its @ delimiters,
-# here or anywhere else in this file: configure_package_config_file()
-# substitutes the token everywhere it appears, comments included, so a second
-# copy of the whole preamble would be spliced into the middle of this sentence.
+# Do not spell the preamble's token here: configure_package_config_file()
+# substitutes it everywhere in the template, comments included.
 set(_hipsolver_libdir "@PACKAGE_HIPSOLVER_FORTRAN_LIBDIR@")
 set(_hipsolver_incdir "@PACKAGE_HIPSOLVER_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a hipSOLVER Fortran binding available here?" through
-# hipsolver_FORTRAN_FOUND, which is set whether this package is reached directly
-# by find_package(hipsolver-fortran) or alongside hipsolver-config.cmake, with
-# which it is co-installed in lib/cmake/hipsolver. It stays FALSE on every early
-# return below.
-#
-# hipSOLVER never shipped a config-level Fortran variable, so unlike rocRAND this
-# name carries no previous meaning to collide with.
+# hipsolver_FORTRAN_FOUND, set whether this package is reached directly or
+# alongside the co-installed hipsolver-config.cmake. It stays FALSE on every
+# early return below.
 set(hipsolver_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(hipsolver-fortran_FOUND FALSE)
-  # One argument, not several. set() with multiple arguments builds a LIST, and
+  # string(CONCAT), not a multi-argument set(): that builds a LIST, and
   # find_package renders a list with a semicolon at every element boundary, so a
   # message split across lines for readability comes out as
   # "... find_package: ;add Fortran to ...".
@@ -48,14 +40,12 @@ if(NOT CMAKE_Fortran_COMPILER_LOADED)
   return()
 endif()
 
-# This MUST mirror the mapping in projects/hipsolver/fortran/CMakeLists.txt
-# exactly: it recomputes, for the compiler the CONSUMER is using, the same
-# directory name the bindings were installed under. The two cannot share code --
-# this file runs in a consumer's build, long after ours is gone, so they are
-# kept in step by hand. Get it wrong, compare against CMake's raw ID, against
-# "${id}-${version}", or against the basename of an MPI wrapper, and the check
-# can never match: the package then rejects every consumer with a message
-# claiming a compiler mismatch that does not exist.
+# MUST mirror the mapping in projects/hipsolver/fortran/CMakeLists.txt exactly:
+# it recomputes, for the CONSUMER's compiler, the directory name the bindings
+# were installed under. The two cannot share code -- this file runs in a
+# consumer's build long after ours is gone -- so they are kept in step by hand.
+# Get it wrong and the check never matches, rejecting every consumer with a
+# compiler mismatch that does not exist.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_hipsolver_fc "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
@@ -73,19 +63,16 @@ else()
   string(TOLOWER "${_hipsolver_fc}" _hipsolver_fc)
 endif()
 
-# A site that installs several versions of one compiler side by side overrides
-# HIPSOLVER_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so the
-# recorded directory is accepted when it is the derived name, or that name
-# followed by a separator and anything. A strict equality would reject exactly
-# the sites that used the documented override. Note what this cannot do: the
-# layout records no version, so the package cannot tell gfortran 13 from
-# gfortran 15 by itself.
+# A site that installs several versions of one compiler overrides
+# HIPSOLVER_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so
+# accept the derived name, or that name followed by a separator and anything; a
+# strict equality would reject exactly the sites that used the documented
+# override. The layout records no version, so this cannot tell gfortran 13 from
+# gfortran 15.
 #
-# Done by length and substring rather than by regex. _hipsolver_fc comes from
-# CMAKE_Fortran_COMPILER's basename on the fallback branch above, so it is an
-# arbitrary file name; interpolating it into a regex would let a compiler called
-# g++.wrapper or flang(2) either mismatch silently or abort CMake with a regex
-# error. There is no regex-escape in CMake, so the comparison avoids regex.
+# By length and substring rather than regex: _hipsolver_fc can be an arbitrary
+# file name from the fallback branch above, and CMake has no regex-escape, so a
+# compiler called g++.wrapper or flang(2) would mismatch or abort the regex.
 function(_hipsolver_dir_matches DIR FC OUT)
   set(${OUT} FALSE PARENT_SCOPE)
   if(DIR STREQUAL FC)
@@ -103,17 +90,12 @@ function(_hipsolver_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use.
-#
-# The recorded HIPSOLVER_FORTRAN_COMPILER_DIR is the compiler the package was
-# built with, and it is only a default. A prefix can hold artifacts for several
-# compilers at once -- installing the bindings twice writes
-# include/fortran/gfortran and include/fortran/amdflang side by side -- but the
-# config package is written once, so the recorded value names whichever install
-# ran last. Trusting it blindly rejects a consumer whose .mod is present.
-#
-# So prefer the consumer's OWN compiler when its artifacts are installed here,
-# and fall back to the recorded directory when they are not.
+# Which per-compiler directory to use. The recorded
+# HIPSOLVER_FORTRAN_COMPILER_DIR is only a default: a prefix can hold artifacts
+# for several compilers, but the config package is written once, so the recorded
+# value names whichever install ran last and trusting it blindly would reject a
+# consumer whose .mod is present. Prefer the consumer's OWN compiler when its
+# artifacts are installed here, and fall back to the recorded directory.
 set(_hipsolver_dir "")
 if(EXISTS "${_hipsolver_incdir}/${_hipsolver_fc}/hipsolver.mod")
   set(_hipsolver_dir "${_hipsolver_fc}")
@@ -139,27 +121,22 @@ if(NOT _hipsolver_dir)
   return()
 endif()
 
-# The C library the binding declares bind(C) interfaces into. It is a link-time
-# dependency of the imported target, so it has to be imported first or the
-# include() below would leave roc::hipsolver_fortran pointing at an undefined
-# roc::hipsolver and the generate step would fail. Skipped when the caller
-# already did find_package(hipsolver), which is the common case.
+# The C library the binding declares bind(C) interfaces into. A link-time
+# dependency of the imported target, so it must be imported BEFORE the include()
+# below or roc::hipsolver_fortran would point at an undefined roc::hipsolver and
+# the generate step would fail.
 #
-# hipsolver-config.cmake in turn does find_dependency(HIP), and hip-config.cmake
-# reaches FindThreads, which hard-errors unless C or CXX is enabled. A
-# Fortran-only consumer has neither, so C is enabled here. Enabling a language
-# from a config package is unusual, and it is done deliberately: the alternative
-# is making every Fortran consumer of these bindings write enable_language(C)
-# for a reason that has nothing to do with their code, after a
-# "FindThreads only works if either C or CXX language is enabled" that names
-# nothing they wrote.
+# The outer condition is interpolated to a literal TRUE or FALSE by the build
+# that installed this file, and records whether roc::hipsolver really is in the
+# exported link interface: the bindings can be built with no hipSOLVER installed,
+# and demanding the C package here would then fail for a dependency this package
+# does not have.
 #
-# Interpolated to the literal TRUE or FALSE by the build that installed this
-# file, because the bindings can legitimately be built with no hipSOLVER in
-# sight: they compile against nothing, and the archive then carries an empty
-# link interface. There is no roc::hipsolver for the targets file to name in
-# that case, so obliging the consumer to find hipSOLVER would be an invented
-# requirement, and satisfying it would still not get them a link line.
+# hipsolver-config.cmake does find_dependency(HIP), and hip-config.cmake reaches
+# FindThreads, which hard-errors unless C or CXX is enabled. Enabling a language
+# from a config package is unusual and deliberate: the alternative is every
+# Fortran consumer writing enable_language(C) after an error naming nothing they
+# wrote.
 if(@HIPSOLVER_FORTRAN_NEEDS_C_PACKAGE@)
   if(NOT TARGET roc::hipsolver)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
