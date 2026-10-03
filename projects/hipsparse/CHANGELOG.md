@@ -9,12 +9,23 @@ Documentation for hipSPARSE is available at
 ### Added
 * Added the generic API routines `hipsparseSpGEAM_createDescr`, `hipsparseSpGEAM_destroyDescr`, `hipsparseSpGEAM_bufferSize`, `hipsparseSpGEAM_nnz`, and `hipsparseSpGEAM` for sparse matrix-matrix addition (`C = alpha * op(A) + beta * op(B)`), along with the `hipsparseSpGEAMDescr_t` type and the `hipsparseSpGEAMAlg_t` algorithm enum, to match the cuSPARSE 13.3 generic `SpGEAM` API.
 * Added batched support to `hipsparseSDDMM` for CSR format.
-* Added generated Fortran bindings, exposed as a single self-contained `hipsparse` module: a consumer writes `use hipsparse` and links `roc::hipsparse_fortran`. They are built whenever a Fortran compiler is available, and are controlled by `BUILD_FORTRAN_BINDINGS` (the bindings), `BUILD_FORTRAN_CLIENTS` (their tests), and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, or `assumed-rank`, selecting which array-argument overloads the module exposes). The package is found with `find_package(hipsparse-fortran)`, and the archive and `.mod` files are installed per compiler, under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`, following `CMAKE_INSTALL_LIBDIR` and `CMAKE_INSTALL_INCLUDEDIR`.
-* The `hipsparse` module exports the `bind(C)` interfaces and the enum constants, plus the `hipsparseCheck` status helper and the array overloads selected by `FORTRAN_ARRAY_INTERFACES`. Those overloads are generated for the subset of routines the generator supports; every other routine exposes the same plain `type(c_ptr)` interface under all three settings. The module declares no derived types, no strongly-typed wrappers and no device-pointer specifics, and it carries no docstrings: every handle, descriptor and info object is an opaque `type(c_ptr)`, the same value the C API returns, there is no `hipsparse_*_t` Fortran type to pass instead, and the C headers stay the single place the prose lives.
-* Routines whose C signature takes a scalar by pointer -- `alpha`, `beta`, `nnzTotalDevHostPtr`, `position`, `tol`, `threshold`, `boost_val`, `reordering`, `ncolors`, `coloring`, the Givens `c` and `s`, and the version and pointer-mode outputs -- take that argument as `type(c_ptr), value`, so a caller passes `c_loc(x)` and can name device memory under `HIPSPARSE_POINTER_MODE_DEVICE`. The one interface covers both pointer modes, so there is no separate device-pointer specific. The qualifier is per routine and not per argument name: `tol` is a `double*` in the `csrilu02` and `bsrilu02` numeric-boost routines and is bound `type(c_ptr), value` there, while `hipsparseXnnz_compress` and `hipsparseXcsr2csr_compress` take `tol` by value in C and keep a by-value `real` in Fortran. `pBufferSizeInBytes` is a host output rather than a pointer-mode scalar and is passed as a plain integer.
+* Generated Fortran bindings, as a single `hipsparse` module: `use hipsparse`, link
+  `roc::hipsparse_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows
+  and on the CUDA backend, where only `FORTRAN_ARRAY_INTERFACES=none` links),
+  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`,
+  `assumed-rank`). Found with `find_package(hipsparse-fortran)`; the archive and `.mod` files
+  install per compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
+  Scalars the C API takes by pointer (`alpha`, `beta`, `nnzTotalDevHostPtr` and the rest) are
+  `type(c_ptr), value`, so pass `c_loc(x)`; one interface covers both pointer modes.
 
 ### Changed
-* The Fortran module is now generated from the hipSPARSE C headers rather than hand-written, and `library/src/hipsparse.f90` and `library/src/hipsparse_enums.f90` have been removed. `use hipsparse` is unchanged and still brings in the enum constants, so the separate `hipsparse_enums` module is gone and any `use hipsparse_enums` has to be dropped. The hand-written module was compiled straight into the in-tree Fortran samples and was never installed; the bindings now ship as a static archive plus compiler-specific `.mod` files, with the generated source beside them under `<datadir>/hipsparse/fortran` for compilers no `.mod` is provided for.
+* `hipsparse_enums` is merged into `hipsparse`: the generated binding defines only `hipsparse`,
+  with the enum constants folded in. `use hipsparse` is unchanged; drop any `use hipsparse_enums`.
+
+### Removed
+* The hand-written `library/src/hipsparse.f90` and `library/src/hipsparse_enums.f90`. They were
+  compiled into the in-tree Fortran samples and never installed, so no installed interface is
+  affected.
 
 ## hipSPARSE 4.7.0 for ROCm 10.0
 

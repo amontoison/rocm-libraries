@@ -65,8 +65,9 @@ option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings"
        "${_hipsparse_fortran_default}")
 unset(_hipsparse_fortran_default)
 
-# One switch for the binding tests and a library's Fortran clients. Guarded like
-# the bindings, so asking for them without the bindings is a skip, not an error.
+# One switch for the binding tests and a library's Fortran clients. ON by
+# default, but guarded like the bindings: asking for them when the bindings were
+# not built is a skip, not an error.
 option(BUILD_FORTRAN_CLIENTS "Build the hipSPARSE Fortran clients and binding tests" ON)
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
@@ -415,7 +416,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/hipsparse-fortran-config.cmak
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/hipsparse-fortran"
         COMPONENT devel)
 
-# A version file, so that find_package(hipsparse-fortran 5.1) resolves rather
+# A version file, so that find_package(hipsparse-fortran 4.8) resolves rather
 # than failing on a missing one. SameMajorVersion, because the module's bind(C)
 # surface tracks the C API's compatibility promise. Read from THIS tree's
 # top-level CMakeLists, not from hipsparse_VERSION: in a standalone build that
@@ -441,7 +442,7 @@ if(_fortran_version)
     COMPATIBILITY SameMajorVersion)
   # In BOTH package directories, necessarily: CMake looks for
   # <pkg>-config-version.cmake NEXT TO the <pkg>-config.cmake it actually
-  # resolved. find_package(hipsparse-fortran 5.1) resolves the forwarder, so a
+  # resolved. find_package(hipsparse-fortran 4.8) resolves the forwarder, so a
   # version file only beside the real config is never consulted and the
   # versioned call fails even though the version matches.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipsparse-fortran-config-version.cmake"
