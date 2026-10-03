@@ -3,7 +3,6 @@
 # One executable per test, driven by CTest. Each builds its input on the host,
 # copies it into device memory and drives one rocSPARSE routine through the
 # binding, so they build anywhere but only pass on a machine with a GPU.
-#
 # Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
 
 # The Intel compilers (ifx/ifort) do not recognize the .f03 source extension and
@@ -15,13 +14,11 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# Unlike the binding itself, the RUNTIME tests are not self-contained: they
-# allocate and copy device memory, so each says `use hip` as well as
-# `use rocsparse`. That makes the HIP Fortran binding a COMPILE-time dependency of
-# those tests: its .mod must exist, where librocsparse is only a link-time one.
-# In a monorepo build hip::hip_fortran comes from projects/hip/fortran; a
-# standalone build has to find it in an installed ROCm, built with this same
-# compiler.
+# The tests allocate and copy device memory, so each says `use hip` as well as
+# `use rocsparse`. That makes the HIP Fortran binding a COMPILE-time dependency
+# -- its .mod must exist -- where librocsparse is only a link-time one. In-tree
+# hip::hip_fortran comes from projects/hip/fortran; standalone it has to be
+# found in an installed ROCm, built with this same compiler.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -36,14 +33,9 @@ endif()
 
 # librocsparse itself, needed to link but not to compile. In-tree it arrives
 # through the rocsparse_fortran link interface; standalone it has to be found.
-#
-# rocsparse-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled. The bindings are
-# Fortran-only and standalone this project declares LANGUAGES NONE, so C is
-# enabled here purely to satisfy that dependency: it compiles none of the
-# sources below. Without it, a standalone test build stops at "FindThreads only
-# works if either C or CXX language is enabled", which says nothing about what
-# is actually wrong.
+# rocsparse-config.cmake does find_dependency(hip), whose hip-config.cmake
+# reaches FindThreads and hard-errors unless C or CXX is enabled, so C is
+# enabled here purely to satisfy it (it compiles none of the sources below).
 if(NOT TARGET roc::rocsparse)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -59,8 +51,7 @@ if(NOT TARGET roc::rocsparse)
 endif()
 
 # Build <name>.f03 into one executable and register it with CTest as
-# rocsparse_fortran_<name>, labelled gpu. Expects the source to sit in this
-# directory and to link rocsparse_fortran, hip::hip_fortran and roc::rocsparse.
+# rocsparse_fortran_<name>, labelled gpu.
 function(rocsparse_fortran_add_test name)
   set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
   if(NOT EXISTS "${src}")
@@ -76,10 +67,9 @@ function(rocsparse_fortran_add_test name)
   target_compile_options(rocsparse_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocsparse_fortran_${name} COMMAND rocsparse_fortran_test_${name})
-  # Every one of these opens a rocSPARSE handle and allocates device memory, so
-  # it fails without a GPU, which is not the same thing as the binding being
-  # broken. The label lets a build machine with no GPU still run the suite
-  # meaningfully: ctest -LE gpu.
+  # These open a rocSPARSE handle and allocate device memory, so they fail
+  # without a GPU, which is not the binding being broken. The label lets a
+  # GPU-less build machine still run the suite: ctest -LE gpu.
   set_tests_properties(rocsparse_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
@@ -157,20 +147,19 @@ set(ROCSPARSE_FORTRAN_TESTS
     zgpsv_interleaved_batch)
 
 # The csrgeam and csrgemm tests are commented out above, all four precisions of
-# each, because they segfault. The cause is established for csrgemm and is worth
-# stating so nobody re-adds those unchanged. For csrgeam it is not, and those
-# entries stay commented out pending an investigation rather than a guess.
+# each, because they segfault.
 #
 # csrgemm selects what it computes from whether beta is a NULL POINTER, not from
-# its value. rocsparse_csrgemm.h is explicit about it: "descr_D, csr_val_D,
-# csr_row_ptr_D, or csr_col_ind_D are invalid if beta is valid". These tests
-# declare beta = 0.0_c_double and hand over c_loc(beta), a perfectly valid
-# pointer, while passing c_null_ptr for descr_D and every D array. rocSPARSE is
-# therefore told a D term exists, goes looking for it, and dereferences null.
-# What the plain C = alpha*A*B case wants is c_null_ptr for beta itself.
+# its value: rocsparse_csrgemm.h says "descr_D, csr_val_D, csr_row_ptr_D, or
+# csr_col_ind_D are invalid if beta is valid". These tests pass c_loc(beta) for
+# beta = 0.0 -- a valid pointer -- while passing c_null_ptr for descr_D and
+# every D array, so rocSPARSE looks for a D term and dereferences null. The
+# plain C = alpha*A*B case wants c_null_ptr for beta itself. Stated so nobody
+# re-adds them unchanged.
 #
-# csrgeam has no D term, and its tests pass c_loc(alpha) and c_loc(beta) with
-# both scalars set to 1.0, so that explanation does not carry over to them.
+# csrgeam has no D term and its tests pass c_loc(alpha) and c_loc(beta) with
+# both set to 1.0, so that cause does not carry over; those stay commented out
+# pending an investigation rather than a guess.
 
 if(_have_hip_binding)
   foreach(_t IN LISTS ROCSPARSE_FORTRAN_TESTS)
