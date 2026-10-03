@@ -10,44 +10,24 @@ rocBLAS documentation is available at
 * Fix incorrect results and out-of-bounds reads from Level 1 ILP64 `dot` and `dotc`, including batched, strided-batched, and `_ex` forms, when a negative increment is wide enough to take the 64-bit increment path and `n` fits the single-block reduction. That path shifted by `(n - 1)` before calling the launcher, which applies the same walk, and the `y` shift tested `incx` rather than `incy`. The offsets are now passed through unshifted.
 ### Added
 
-* Generated Fortran bindings, as a single self-contained `rocblas` module (`use rocblas`,
-  link `roc::rocblas_fortran`). Built by default when a Fortran compiler is available;
-  controlled by `BUILD_FORTRAN_BINDINGS`, with `BUILD_FORTRAN_CLIENTS` and the tri-state
-  `FORTRAN_ARRAY_INTERFACES`. Found with `find_package(rocblas-fortran)`, installed per
-  compiler under `<CMAKE_INSTALL_LIBDIR>/fortran/<compiler>` and
-  `<CMAKE_INSTALL_INCLUDEDIR>/fortran/<compiler>`.
+* Generated Fortran bindings, as a single `rocblas` module: `use rocblas`, link
+  `roc::rocblas_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows),
+  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`,
+  `assumed-rank`). Found with `find_package(rocblas-fortran)`; the archive and `.mod` files
+  install per compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
 
 ### Changed
 
-* The Fortran binding is now generated from the rocBLAS headers instead of hand-written.
-  `library/include/rocblas_module.f90` is removed and is no longer installed alongside
-  the rocBLAS headers. It defined two modules, `rocblas` and `rocblas_enums`; the generated
-  binding defines only `rocblas`, with the enum constants folded in. `use rocblas` is
-  unchanged, but `use rocblas_enums` should become `use rocblas`. Rather than shipping a
-  `.f90` source to compile yourself, a compiled archive and `.mod` are installed; link
-  `roc::rocblas_fortran`.
-* The `rocblas` module exports the `bind(C)` interfaces and the enum constants, plus the
-  `rocblasCheck` status helper. The Fortran-side convenience layer that the generated
-  module carried when this change was first proposed is not part of the packaged track:
-  the strongly-typed `_typed` wrappers, the `_dptr` device-pointer specifics, the derived
-  types (`rocblas_handle_t`, `rocblas_half`, `rocblas_bfloat16`, `rocblas_float_complex`,
-  `rocblas_double_complex`) and the `_cstr` string helpers
-  (`rocblas_get_version_string_cstr`, `rocblas_get_commit_hash_string_cstr`) are not
-  emitted, and array overloads are generated only for the subset of routines the generator
-  supports -- every other routine is reached through the plain `type(c_ptr)` interface
-  under every tier. Handles and other opaque objects are `type(c_ptr)`, complex arguments
-  use the intrinsic `complex(c_float_complex)` and `complex(c_double_complex)`, and
-  pointer-mode scalars such as `alpha` and `beta` are `type(c_ptr)` so that one binding
-  covers both host and device pointer mode. This is a reduction relative to the binding as
-  first proposed during this release cycle, not to any released API: the hand-written
-  `rocblas_module.f90` it replaces declared plain `type(c_ptr)` interfaces and no derived
-  types of its own, and the generated module has never shipped.
-* Two `bind(C)` interfaces that the first draft of the generated module declared are not
-  emitted: `rocblas_device_malloc_alloc` and `rocblas_set_optimal_device_memory_size_impl`.
-  Both are variadic in the public headers and marked internal there, and a `bind(C)`
-  interface with a fixed argument list does not describe a variadic callee, so neither was
-  correctly callable. Neither appeared in the hand-written `rocblas_module.f90`, so no
-  released binding is affected.
+* `rocblas_enums` is merged into `rocblas`: the generated binding defines only `rocblas`, with
+  the enum constants folded in. `use rocblas` is unchanged; `use rocblas_enums` becomes
+  `use rocblas`.
+* The binding ships as a compiled archive and `.mod` set, not a `.f90` to compile yourself:
+  link `roc::rocblas_fortran` instead of adding the source to your build.
+
+### Removed
+
+* The hand-written `library/include/rocblas_module.f90`, no longer installed alongside the
+  rocBLAS headers.
 
 ## rocBLAS 5.7.0 for ROCm 10.1.0
 

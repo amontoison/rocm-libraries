@@ -36,9 +36,10 @@
 
 set(ROCBLAS_FORTRAN_COMPILER_DIR "@ROCBLAS_FORTRAN_COMPILER_DIR@")
 
-# Written by PATH_VARS, so the PACKAGE_INIT block above has already turned each
-# into an absolute path derived from where THIS file was found: the package
-# survives relocation and gets lib64 right. Everything below goes through them.
+# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
+# PACKAGE_INIT block above has already turned each into an absolute path derived
+# from where THIS file was found: the package survives relocation and gets lib64
+# right. Everything below goes through these two.
 #
 # PACKAGE_INIT is named without its @ delimiters, and has to stay that way: this
 # file is run through configure_file(@ONLY), which substitutes the token in
