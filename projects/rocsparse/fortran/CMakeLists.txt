@@ -38,8 +38,9 @@ endif()
 # enable_language(Fortran) fails to identify it.
 option(BUILD_FORTRAN_BINDINGS "Build the rocSPARSE Fortran bindings" "${UNIX}")
 
-# One switch for the binding tests and a library's Fortran clients. Guarded like
-# the bindings, so asking for them without the bindings is a skip, not an error.
+# One switch for the binding tests and a library's Fortran clients. ON by
+# default, but guarded like the bindings: asking for them when the bindings were
+# not built is a skip, not an error.
 option(BUILD_FORTRAN_CLIENTS "Build the rocSPARSE Fortran clients and binding tests" ON)
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
