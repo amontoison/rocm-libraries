@@ -25,9 +25,8 @@
 
 ! Exercises rocrand_get_version, the rocRAND library version query.
 !
-! Since the recent argument reclassification, 'version' is a plain
-! integer(c_int) output dummy (see hipfort_rocrand.F90), so the variable is
-! passed directly rather than wrapped in c_loc().
+! 'version' is a plain integer(c_int) output dummy in rocrand.F90, so it is
+! passed directly.
 !
 ! The test poisons the output variable first, so a binding that silently failed
 ! to write through would be caught. It then checks that the returned code is a

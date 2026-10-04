@@ -129,9 +129,9 @@ using ``-DCMAKE_MODULE_PATH``. By default, this file is installed in ``/opt/rocm
 
 In addition to the built-in CMake options, the following configuration options are available:
 
-* ``BUILD_FORTRAN_BINDINGS``: Controls whether to build the rocRAND Fortran bindings. Defaults to ``ON``,
-  but is skipped when no Fortran compiler is available. Use ``ROCRAND_BUILD_FORTRAN_BINDINGS`` to override
-  this for rocRAND alone.
+* ``BUILD_FORTRAN_BINDINGS``: Controls whether to build the rocRAND Fortran bindings. Defaults to ``ON``
+  on Linux, ``OFF`` on Windows, but is skipped when no Fortran compiler is available. Use
+  ``ROCRAND_BUILD_FORTRAN_BINDINGS`` to override this for rocRAND alone.
 * ``BUILD_FORTRAN_CLIENTS``: Controls whether to build the Fortran binding tests. Defaults to ``ON``,
   but is skipped when the bindings themselves were not built. Use ``ROCRAND_BUILD_FORTRAN_CLIENTS``
   to override this for rocRAND alone. Building rocRAND in tree additionally requires ``BUILD_TEST``,
