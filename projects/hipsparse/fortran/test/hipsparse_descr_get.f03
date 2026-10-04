@@ -43,10 +43,6 @@
 ! (c_associated). All scalar outputs are preset to -1 first, so a getter that
 ! writes nothing fails instead of silently matching a zero.
 !
-! Note: hipsparseDnVecGet / hipsparseSpVecGet still take 'mySize' as
-! type(c_ptr),value, so that one argument needs c_loc(); every other output
-! scalar is passed directly.
-!
 ! No hipsparse handle is required: the descriptor API is handle-free.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
@@ -75,7 +71,7 @@ program hipsparse_descr_get
 
   integer(c_int64_t) :: r_out, c_out, nnz_out
   integer(c_int64_t) :: rec_r, rec_c, rec_nnz
-  integer(c_int64_t), target :: sz_out
+  integer(c_int64_t) :: sz_out
   integer(kind(HIPSPARSE_FORMAT_CSR)) :: fmt
   integer(kind(HIPSPARSE_INDEX_BASE_ZERO)) :: base
   integer(kind(HIPSPARSE_INDEX_16U)) :: it1, it2
@@ -189,8 +185,7 @@ program hipsparse_descr_get
   call hipsparseCheck(hipsparseCreateDnVec(dnv, int(N,c_int64_t), d_x, HIP_R_64F))
 
   sz_out = -1; vt = -1; p_x = c_null_ptr
-  ! 'mySize' is still type(c_ptr),value in the binding, hence the c_loc here.
-  call hipsparseCheck(hipsparseDnVecGet(dnv, c_loc(sz_out), p_x, vt))
+  call hipsparseCheck(hipsparseDnVecGet(dnv, sz_out, p_x, vt))
   if (sz_out /= N .or. vt /= HIP_R_64F) then
     write(*,*) "FAILED! hipsparseDnVecGet size/value type ", sz_out, vt, " expected ", N, HIP_R_64F
     STOP 1
@@ -208,8 +203,7 @@ program hipsparse_descr_get
 
   sz_out = -1; nnz_out = -1; it1 = -1; base = -1; vt = -1
   p_idx = c_null_ptr; p_sv = c_null_ptr
-  ! Same caveat: 'mySize' is type(c_ptr),value while 'nnz' is a plain integer.
-  call hipsparseCheck(hipsparseSpVecGet(spv, c_loc(sz_out), nnz_out, p_idx, p_sv, it1, base, vt))
+  call hipsparseCheck(hipsparseSpVecGet(spv, sz_out, nnz_out, p_idx, p_sv, it1, base, vt))
   if (sz_out /= 8 .or. nnz_out /= 3) then
     write(*,*) "FAILED! hipsparseSpVecGet size/nnz ", sz_out, nnz_out, " expected ", 8, 3
     STOP 1
