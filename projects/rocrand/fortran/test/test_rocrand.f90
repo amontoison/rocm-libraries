@@ -126,7 +126,8 @@ contains
         real, target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        real, parameter :: mean = 0.0, stddev = 1.0, delta = 0.2
+        ! Not the standard normal, so a binding that drops mean or stddev cannot pass.
+        real, parameter :: mean = 2.0, stddev = 0.5, delta = 0.2
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
         ROCRAND_RNG_PSEUDO_DEFAULT))
@@ -146,7 +147,8 @@ contains
         double precision, target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        double precision, parameter :: mean = 0.0d0, stddev = 1.0d0, delta = 0.2d0
+        ! Not the standard normal, so a binding that drops mean or stddev cannot pass.
+        double precision, parameter :: mean = 2.0d0, stddev = 0.5d0, delta = 0.2d0
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
         ROCRAND_RNG_PSEUDO_DEFAULT))
@@ -175,10 +177,15 @@ contains
         output_size, mean, stddev))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
-        m = sum(h_x) / output_size
-        s = sqrt(sum((h_x - mean) ** 2) / output_size)
-        call assert_equals(log(m * m / sqrt(s + m * m)), mean, delta)
-        call assert_equals(sqrt(log(1.0 + s / (m * m))), stddev, delta)
+        ! If x is log-normal with parameters (mean, stddev) then log(x) is
+        ! normal with those moments. Log-normal samples are strictly
+        ! positive; check it first, as a NaN from log() would slip through
+        ! the range assertions below.
+        call assert_equals(.true., all(h_x > 0), 'log-normal sample was not positive')
+        m = sum(log(h_x)) / output_size
+        s = sqrt(sum((log(h_x) - m) ** 2) / output_size)
+        call assert_equals(m, mean, delta)
+        call assert_equals(s, stddev, delta)
         call assert_equals(hipSuccess, hipFree(d_x))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_destroy_generator(gen))
     end subroutine test_rocrand_generate_log_normal
@@ -198,10 +205,15 @@ contains
         output_size, mean, stddev))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
-        m = sum(h_x) / output_size
-        s = sqrt(sum((h_x - mean) ** 2) / output_size)
-        call assert_equals(log(m * m / sqrt(s + m * m)), mean, delta)
-        call assert_equals(sqrt(log(1.0 + s / (m * m))), stddev, delta)
+        ! If x is log-normal with parameters (mean, stddev) then log(x) is
+        ! normal with those moments. Log-normal samples are strictly
+        ! positive; check it first, as a NaN from log() would slip through
+        ! the range assertions below.
+        call assert_equals(.true., all(h_x > 0), 'log-normal sample was not positive')
+        m = sum(log(h_x)) / output_size
+        s = sqrt(sum((log(h_x) - m) ** 2) / output_size)
+        call assert_equals(m, mean, delta)
+        call assert_equals(s, stddev, delta)
         call assert_equals(hipSuccess, hipFree(d_x))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_destroy_generator(gen))
     end subroutine test_rocrand_generate_log_normal_double
