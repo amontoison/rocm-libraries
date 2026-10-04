@@ -207,11 +207,8 @@ if( BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES )
       # Set Fortran module output directory
       set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/hipblas)
 
-      # Linking rather than absorbing $<TARGET_OBJECTS:hipblas_fortran>: the
-      # binding is a real library now, with its own .mod directory and link
-      # interface, and hipblas_fortran_client only needs to compile against it and
-      # carry it forward.
-      # TEMPORARY, remove when ROCm/rocm-systems#11923 lands.
+      # hipblas_hip_stub is TEMPORARY: remove it when ROCm/rocm-systems#11923
+      # lands. The link to roc::hipblas_fortran stays.
       #
       # The shims declare their datatype arguments as integer(kind(HIP_R_16F)),
       # a hipDataType enumerator that the removed hipblas_enums module used to
@@ -232,6 +229,10 @@ if( BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES )
       # the target_link_libraries() call. The `use hip` lines do not change.
       set(hipblas_hip_stub ${CMAKE_CURRENT_SOURCE_DIR}/../fortran/hip_datatypes_stub.F90)
 
+      # Linking rather than absorbing $<TARGET_OBJECTS:hipblas_fortran>: the
+      # binding is a real library now, with its own .mod directory and link
+      # interface, and hipblas_fortran_client only needs to compile against it and
+      # carry it forward.
       if( BUILD_WITH_SOLVER )
         add_library(hipblas_fortran_client STATIC ${hipblas_f90_source_clients_solver} ${hipblas_hip_stub})
       else()
