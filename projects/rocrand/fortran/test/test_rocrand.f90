@@ -107,7 +107,7 @@ contains
         double precision, target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        double precision, parameter :: mean = 0.5, delta = 0.1
+        double precision, parameter :: mean = 0.5d0, delta = 0.1d0
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
         ROCRAND_RNG_PSEUDO_DEFAULT))
@@ -146,7 +146,7 @@ contains
         double precision, target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        double precision, parameter :: mean = 0.0, stddev = 1.0, delta = 0.2
+        double precision, parameter :: mean = 0.0d0, stddev = 1.0d0, delta = 0.2d0
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
         ROCRAND_RNG_PSEUDO_DEFAULT))
@@ -189,7 +189,7 @@ contains
         double precision, target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        double precision, parameter :: mean = 1.6, stddev = 0.25, delta = 0.2
+        double precision, parameter :: mean = 1.6d0, stddev = 0.25d0, delta = 0.2d0
         double precision :: m, s
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
@@ -212,7 +212,7 @@ contains
         integer(kind =4), target, dimension(128) :: h_x
         type(c_ptr) :: d_x
         integer(c_size_t), parameter :: output_size = 128
-        double precision, parameter :: lambda = 20.0
+        double precision, parameter :: lambda = 20.0d0
         call assert_equals(hipSuccess, hipMalloc(d_x, output_size * sizeof(h_x(1))))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_create_generator(gen, &
         ROCRAND_RNG_PSEUDO_DEFAULT))

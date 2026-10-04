@@ -284,22 +284,9 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 endif()
 
 if(BUILD_FORTRAN_CLIENTS)
-  # Enough for a STANDALONE build, but NOT for an in-tree one: CMake writes the
-  # chain of CTestTestfile.cmake that ctest walks down from a build root only
-  # when testing was enabled at the TOP level. Otherwise the tests build and
-  # register, and `ctest` at the rocRAND build root reports "Total Tests: 0".
+  # For a STANDALONE build. In tree the tests require BUILD_TEST (above), under
+  # which the rocRAND root calls enable_testing() itself.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
-      message(STATUS
-        "rocRAND: the Fortran binding tests are registered, but ctest discovers "
-        "tests only from a build root where testing was enabled at the top "
-        "level. If `ctest` there reports no tests, add include(CTest) or "
-        "enable_testing() to the top-level CMakeLists, or run ctest from "
-        "${CMAKE_CURRENT_BINARY_DIR}/test.")
-    endif()
-  endif()
   add_subdirectory(test)
 endif()
 
