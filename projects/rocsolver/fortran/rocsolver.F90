@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module rocsolver
   use rocblas, only: rocblas_diagonal_non_unit, rocblas_fill_upper, rocblas_operation_none, &
