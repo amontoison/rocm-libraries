@@ -195,7 +195,7 @@ program example_fortran_trmm
     integer tbegin(8)
     integer tend(8)
     real(8) timing, max_relative_error, relative_error
-    logical :: failure_in_gemv = .FALSE.
+    logical :: failure_in_trmm = .FALSE.
     real(c_double) :: res
 
     integer(c_int) :: n = 4
@@ -266,15 +266,9 @@ program example_fortran_trmm
     call date_and_time(values = tbegin)
 
     ! Call rocblas_dtrmm
-    call ROCBLAS_CHECK(rocblas_set_pointer_mode(handle, 0))
-#ifdef ROCBLAS_V3
-#define rocblas_dtrmm rocblas_dtrmm_outofplace
+    call ROCBLAS_CHECK(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host))
     call ROCBLAS_CHECK(rocblas_dtrmm(handle, side, uplo, transA, diag, m, n,&
                                      c_loc(alpha), dA, lda, dB, ldb, dC, ldc))
-#else
-    call ROCBLAS_CHECK(rocblas_dtrmm(handle, side, uplo, transA, diag, m, n,&
-                                     c_loc(alpha), dA, lda, dB, ldb         ))
-#endif
     call HIP_CHECK(hipDeviceSynchronize())
 
     ! Stop time
@@ -286,17 +280,16 @@ program example_fortran_trmm
     call trmm_reference(side, uplo, transA, diag, m, n, alpha, hA_gold, lda, hB_gold, ldb, hC_gold, ldc)
 
     max_relative_error = 0
-    do i = 1, size_A
+    do i = 1, size_C
         if(hc_gold(i).eq.0)then
-            relative_error = hc(i)
+            relative_error = abs(hc(i))
         else
-            relative_error = (hc_gold(i) - hc(i)) / hc_gold(i)
-            if(relative_error.lt.0) then
-                relative_error = - relative_error
-            endif
+            relative_error = abs((hc_gold(i) - hc(i)) / hc_gold(i))
         endif
-        if(relative_error.gt.max_relative_error)then
+        ! Negated so that a NaN error fails the test.
+        if(.not. (relative_error <= max_relative_error))then
             max_relative_error = relative_error
+            failure_in_trmm = .TRUE.
         endif
     end do
 
@@ -305,7 +298,7 @@ program example_fortran_trmm
     timing = (0.001d0 * tbegin(8) + tbegin(7) + 60d0 * tbegin(6) + 3600d0 * tbegin(5)) / 200d0 * 1000d0
     write(*,fmt='(A,F0.2,A)') '[rocblas_dtrmm] took ', timing, ' msec'
 
-    if(max_relative_error.gt.0) then
+    if(failure_in_trmm) then
         write(*,*) 'DTRMM TEST FAIL'
         write(*,*) 'relative error =', max_relative_error
     else

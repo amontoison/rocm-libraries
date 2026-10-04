@@ -168,7 +168,7 @@ program example_fortran_axpy
     call date_and_time(values = tbegin)
 
     ! Call rocblas_axpy
-    call ROCBLAS_CHECK(rocblas_set_pointer_mode(handle, 0))
+    call ROCBLAS_CHECK(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host))
     call ROCBLAS_CHECK(rocblas_daxpy(handle, n, c_loc(alpha), dx, 1, dy, 1))
     call HIP_CHECK(hipDeviceSynchronize())
 
