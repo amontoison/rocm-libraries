@@ -488,6 +488,9 @@ controlled by:
 The first two are one cache entry shared across the monorepo. To single rocSPARSE out, set
 ``ROCSPARSE_BUILD_FORTRAN_BINDINGS`` or ``ROCSPARSE_BUILD_FORTRAN_CLIENTS`` instead.
 
+The bindings are skipped when ``BUILD_ROCSPARSE_ILP64`` is ``ON``, because the module binds
+``rocsparse_int`` as a 32-bit ``integer(c_int)``.
+
 
 hipSPARSE
 =========
