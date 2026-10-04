@@ -360,12 +360,13 @@ if(BUILD_FORTRAN_CLIENTS AND NOT ROCBLAS_HAVE_FORTRAN_BINDINGS)
 endif()
 
 # Only now, with BUILD_FORTRAN_CLIENTS settled. The clients' gtest and benchmark
-# executables pull in libgfortran only when they carry Fortran objects, so
-# declaring this beside the other client components above would make every
-# package built with the bindings off depend on a runtime nothing in it links.
-# BUILD_CLIENTS is the same condition that guards those components, and is set
-# by the block above.
-if(BUILD_CLIENTS AND BUILD_FORTRAN_CLIENTS)
+# executables pull in libgfortran only when they carry Fortran objects built by
+# gfortran: amdflang links its own runtime, shipped with ROCm. Fortran is enabled
+# in fortran/, not here, so its compiler ID comes back as
+# ROCBLAS_FORTRAN_COMPILER_ID. BUILD_FORTRAN_CLIENTS is declared in clients/,
+# later, and defaults to ON, so an undefined value counts as ON.
+if(BUILD_CLIENTS AND ROCBLAS_FORTRAN_COMPILER_ID STREQUAL "GNU"
+   AND (BUILD_FORTRAN_CLIENTS OR NOT DEFINED BUILD_FORTRAN_CLIENTS))
   rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
   rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
   rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
