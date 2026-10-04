@@ -217,13 +217,6 @@ if(HIPSPARSE_BUILD_TESTING OR BUILD_TESTING)
         tests
         DEPENDS
         COMPONENT clients-common
-        DEB "${GFORTRAN_DEB}"
-        RPM "${GFORTRAN_RPM}"
-    )
-    rocm_package_setup_client_component(
-        tests
-        DEPENDS
-        COMPONENT clients-common
         DEB "${OPENMP_DEB}"
         RPM "${OPENMP_RPM}"
     )
@@ -241,8 +234,6 @@ endif()
 
 if(HIPSPARSE_BUILD_TESTING OR BUILD_TESTING)
     if(NOT WIN32)
-        rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
-        rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
         if(HIPSPARSE_ENABLE_OPENMP)
             rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${OPENMP_RPM}")
             rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${OPENMP_DEB}")
@@ -252,8 +243,6 @@ endif()
 
 if(HIPSPARSE_ENABLE_BENCHMARKS)
     if(NOT WIN32)
-        rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
-        rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_DEB}")
         if(HIPSPARSE_ENABLE_OPENMP)
             rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${OPENMP_RPM}")
             rocm_package_add_deb_dependencies(COMPONENT benchmarks DEPENDS "${OPENMP_DEB}")
