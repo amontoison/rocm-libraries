@@ -58,7 +58,7 @@ program hiprand_philox_poisson_test
     call hipCheck(hipMemcpy(c_loc(hx(1)), dx, Nbytes, hipMemcpyDeviceToHost))
 
     sample_mean = real(sum(hx), c_double) / real(N, c_double)
-    if (abs(sample_mean - lambda) > delta) then
+    if (.not. (abs(sample_mean - lambda) <= delta)) then
         write(*,*) "FAILED! mean out of tolerance: ", sample_mean
         call exit(1)
     end if

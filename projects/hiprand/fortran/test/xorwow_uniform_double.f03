@@ -59,9 +59,15 @@ program hiprand_xorwow_uniform_double_test
     ! Transfer data back to host memory
     call hipCheck(hipMemcpy(c_loc(hx(1)), dx, Nbytes, hipMemcpyDeviceToHost))
 
+    ! hipRAND's uniform output lies in (0, 1]; written so that a NaN fails.
+    if (.not. all(hx > 0.0_c_double .and. hx <= 1.0_c_double)) then
+        write(*,*) "FAILED! sample outside (0, 1]: ", minval(hx), maxval(hx)
+        call exit(1)
+    end if
+
     ! Verification: sample mean of (0,1] output should be near 0.5
     sample_mean = sum(hx) / real(N, c_double)
-    if (abs(sample_mean - expected_mean) > delta) then
+    if (.not. (abs(sample_mean - expected_mean) <= delta)) then
         write(*,*) "FAILED! mean out of tolerance: ", sample_mean
         call exit(1)
     end if

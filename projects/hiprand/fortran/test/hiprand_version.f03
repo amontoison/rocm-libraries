@@ -36,13 +36,13 @@
 !   * calls the query a second time and requires the same answer, so the
 !     result is a stable readback and not a stack address or stale slot.
 !
-! It deliberately does NOT compare against the compile-time HIPRAND_VERSION
-! macro: hipRAND on ROCm reports the underlying rocRAND version at runtime,
-! which legitimately differs from the installed header's value.
+! The runtime value is NOT compared against the module's HIPRAND_VERSION:
+! hipRAND on ROCm reports the underlying rocRAND version. Instead, in-tree CMake
+! passes this tree's version in HIPRAND_FORTRAN_EXPECTED_VERSION, and the
+! module's HIPRAND_VERSION constant must equal it (a stale binding fails).
 program hiprand_version_test
 
     use iso_c_binding
-    use hip
     use hiprand
 
     implicit none
@@ -51,6 +51,8 @@ program hiprand_version_test
 
     integer(c_int) :: version, version2
     integer(c_int) :: major, minor, patch
+    character(len=32) :: expected_str
+    integer :: expected, env_status, io_status
 
     write(*,"(a)",advance="no") "-- Running test 'hipRAND version' &
                                 &(Fortran 2003 interfaces) - "
@@ -90,6 +92,17 @@ program hiprand_version_test
     if (minor < 0 .or. minor > 999 .or. patch < 0 .or. patch > 99) then
        write(*,*) "FAILED! implausible hipRAND minor/patch version: ", minor, patch
        STOP 1
+    end if
+
+    call get_environment_variable("HIPRAND_FORTRAN_EXPECTED_VERSION", expected_str, &
+                                  status=env_status)
+    if (env_status == 0) then
+       read(expected_str, *, iostat=io_status) expected
+       if (io_status /= 0 .or. expected /= HIPRAND_VERSION) then
+          write(*,*) "FAILED! the module's HIPRAND_VERSION ", HIPRAND_VERSION, &
+                     " is not this tree's version ", trim(expected_str)
+          STOP 1
+       end if
     end if
 
     write(*,"(a,i0,a,i0,a,i0,a,i0,a)") " PASSED! hipRAND version: ", &

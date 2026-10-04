@@ -1,23 +1,34 @@
-# Tests for the hipRAND Fortran bindings: one executable per test, driven by
-# CTest -- 24 single-source programs, 23 of them one per (generator,
-# distribution) pair and one covering the version query, plus the FRUIT suite.
-# All but the version query create a generator and use a device, so they build
-# anywhere but only pass on a machine with a GPU.
-# Reached only from the parent, under BUILD_FORTRAN_CLIENTS.
+# MIT License
+#
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-# The Intel compilers do not recognize the .f03 source extension and skip such
-# files ("no action performed"). Force Fortran compilation with -Tf immediately
-# before the source; the LANGUAGE source property alone is not enough.
+# hipRAND Fortran binding tests: the .f03 programs and the FRUIT suite.
+
+# ifx/ifort skip .f03 files unless -Tf precedes the source.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# Unlike the binding itself, the RUNTIME tests are not self-contained: they
-# allocate and copy device memory, so each says `use hip` as well as
-# `use hiprand`. That makes the HIP Fortran binding a COMPILE-time dependency --
-# its .mod must exist, where libhiprand is only a link-time one. Standalone it
-# has to be found in an installed ROCm, built with this same compiler.
+# The tests `use hip`, so hip.mod (rocm-systems, same compiler) is required.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -30,11 +41,7 @@ if(NOT TARGET hip::hip_fortran)
     "bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
-# libhiprand itself, needed to link but not to compile. In-tree it arrives
-# through the hiprand_fortran link interface; standalone it has to be found.
-# hiprand-config.cmake does find_dependency(hip), and hip-config.cmake reaches
-# FindThreads, which hard-errors unless C or CXX is enabled, so C is enabled
-# here and compiles none of the sources below.
+# hip-config.cmake reaches FindThreads, which needs C or CXX enabled.
 if(NOT TARGET hip::hiprand)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -49,12 +56,7 @@ if(NOT TARGET hip::hiprand)
   return()
 endif()
 
-# Build one test executable and register it with CTest. Sources are the
-# arguments after `name`, relative to this directory; with none given the single
-# source is `${name}.f03`, which the runtime tests below rely on. The FRUIT
-# driver is multi-source and passes its five files explicitly so that it goes
-# through this same link line: the three link dependencies are the same for
-# both, and two copies would have to be kept in step by hand.
+# hiprand_fortran_add_test(<name> [sources...]); default source <name>.f03.
 function(hiprand_fortran_add_test name)
   set(srcs ${ARGN})
   if(NOT srcs)
@@ -67,32 +69,23 @@ function(hiprand_fortran_add_test name)
     endif()
     list(APPEND abs_srcs "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
   endforeach()
-  # Force language detection for .f03 in toolchains where CMake misses it.
   set_source_files_properties(${abs_srcs} PROPERTIES LANGUAGE Fortran)
   add_executable(hiprand_fortran_test_${name} ${abs_srcs})
-  # A multi-source test defines modules of its own, so each target needs a
-  # directory for them rather than colliding in the shared build directory.
+  # The FRUIT sources write .mod files; one directory per test avoids races.
   set_target_properties(hiprand_fortran_test_${name} PROPERTIES
     LINKER_LANGUAGE Fortran
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/${name}")
   target_link_libraries(hiprand_fortran_test_${name} PRIVATE
     hiprand_fortran hip::hip_fortran hip::hiprand)
-  # The tests call EXIT, a GNU extension in gfortran.
+  # EXIT is a GNU extension.
   target_compile_options(hiprand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME hiprand_fortran_${name} COMMAND hiprand_fortran_test_${name})
-  # Almost all of these draw numbers on a device, so without a GPU they fail for
-  # a reason that is not the binding being broken. The label marks them as
-  # needing a GPU, so a GPU-less machine can skip them with ctest -LE gpu.
+  # ctest -LE gpu skips them on a GPU-less machine.
   set_tests_properties(hiprand_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per (generator, distribution) pair: five generators against uniform and
-# normal in both precisions, with log-normal in both precisions and Poisson
-# through philox only, as those paths do not vary with the generator. Between
-# them they cover every hiprandGenerate* entry point the module exposes that
-# returns data a host can check the distribution of. hiprand_version is the
-# exception: it binds no generator and covers the version query alone.
+# Log-normal and Poisson do not vary with the generator: philox only.
 set(HIPRAND_FORTRAN_TESTS
     hiprand_version
     mrg32k3a_normal
@@ -124,14 +117,21 @@ if(_have_hip_binding)
     hiprand_fortran_add_test(${_t})
   endforeach()
 
-  # The FRUIT suite, which moved here with the binding it now exercises. It
-  # asserts on the status code of every call it makes, which is how it reaches
-  # entry points none of the tests above names: hiprandGenerate,
-  # hiprandGenerateSeeds, hiprandGenerateLongLong, hiprandCreateGeneratorHost,
-  # hiprandSetGeneratorOffset, hiprandCreatePoissonDistribution and
-  # hiprandDestroyDistribution. ONE executable over five sources: the two files
-  # of the vendored harness, the setup/teardown helper, the test module and the
-  # driver program.
+  # The version query touches no device.
+  set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES LABELS "")
+  # In-tree the module must carry this tree's version (hiprandGetVersion
+  # reports rocRAND's on ROCm, so the runtime value cannot serve).
+  get_target_property(_hiprand_aliased hip::hiprand ALIASED_TARGET)
+  if(_hiprand_aliased STREQUAL "hiprand"
+     AND hiprand_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+    math(EXPR _hiprand_code
+         "${CMAKE_MATCH_1} * 100000 + ${CMAKE_MATCH_2} * 100 + ${CMAKE_MATCH_3}")
+    set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES
+                         ENVIRONMENT "HIPRAND_FORTRAN_EXPECTED_VERSION=${_hiprand_code}")
+  endif()
+
+  # One CTest test: FRUIT reports its own per-case results; it also reaches the
+  # entry points the programs above do not (Generate, GenerateSeeds, ...).
   hiprand_fortran_add_test(fruit
       fruit/fruit_util.f90
       fruit/fruit.f90
