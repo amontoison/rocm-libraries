@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! rocsparse sgebsrmv example (general block-sparse matrix-vector multiply, single, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/
 !
 ! Computes y = alpha * A * x + beta * y for a BSR matrix A. Here A is
 ! block-diagonal with mb=nb=2 blocks of block_dim=2 (a 4x4 dense equivalent):
@@ -85,7 +85,7 @@ program sgebsrmv
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(mdim,c_size_t) * 4, hipMemcpyDeviceToHost))
 
   do i = 1, mdim
-     if (abs(hY(i) - hRef(i)) > 1.0e-5) then
+     if (.not. (abs(hY(i) - hRef(i)) <= 1.0e-5)) then
         write(*,*) "FAILED! y(", i, ") = ", hY(i), " expected ", hRef(i); call exit(1)
      end if
   end do

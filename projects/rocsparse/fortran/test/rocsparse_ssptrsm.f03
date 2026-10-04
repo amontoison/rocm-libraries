@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! ssptrsm example (single-precision sparse triangular solve with multiple rhs, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
 !
 ! Uses the generic spsm API on a lower-triangular L with a dense rhs matrix.
 ! Self-verifying: pick a known Y, form X = L*Y, solve L*C = X, and confirm C
@@ -135,7 +135,7 @@ program ssptrsm
   do j = 1,nrhs
     do i = 1,M
         error = abs(h_C(i,j) - h_Y(i,j)) / max(abs(h_Y(i,j)), 1.0)
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " at (", i, ",", j, ")"
             call exit(1)
         end if

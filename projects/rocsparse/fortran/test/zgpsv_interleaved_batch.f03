@@ -42,16 +42,16 @@ program rocsparse_zgpsv_interleaved_batch_test
 !     d  : main diagonal
 !     du : upper diagonal            (last entry is zero)
 !     dw : upper diagonal at distance 2 (last two entries are zero)
-    complex(8), target :: h_ds(M), h_dl(M), h_d(M), h_du(M), h_dw(M)
-    complex(8), target :: h_x(M), h_x_exact(M)
-    complex(8)         :: A(M,M)
+    complex(c_double_complex), target :: h_ds(M), h_dl(M), h_d(M), h_du(M), h_dw(M)
+    complex(c_double_complex), target :: h_x(M), h_x_exact(M)
+    complex(c_double_complex)         :: A(M,M)
 
     type(c_ptr) :: d_ds, d_dl, d_d, d_du, d_dw, d_x, d_buffer
 
     integer(c_size_t) :: buffer_size
-    integer(c_size_t), parameter :: elem = 16   ! sizeof(complex(8))
+    integer(c_size_t), parameter :: elem = 16   ! sizeof(complex(c_double_complex))
     integer :: i
-    real(8) :: err
+    real(c_double) :: err
 
     type(c_ptr) :: handle
 
@@ -145,7 +145,7 @@ program rocsparse_zgpsv_interleaved_batch_test
         err = max(err, abs(h_x(i) - h_x_exact(i)))
     end do
 
-    if (err > 1.0d-8) then
+    if (.not. all(abs(h_x(1:M) - h_x_exact(1:M)) <= 1.0d-8)) then
         write(*,*) 'FAILED! max error =', err
         call exit(1)
     end if

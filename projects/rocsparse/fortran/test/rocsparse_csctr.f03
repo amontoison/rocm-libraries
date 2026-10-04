@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! rocsparse ssctr example (scatter x_val -> y[x_ind], single, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/
 !
 ! Scatters the packed vector x_val into the dense vector y at the sparse index
 ! set x_ind, then checks the resulting dense vector.
@@ -59,7 +59,7 @@ program csctr
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(n,c_size_t) * 8, hipMemcpyDeviceToHost))
   do i = 1, n
-     if (abs(hY(i) - hExp(i)) > 1.0e-6) then
+     if (.not. (abs(hY(i) - hExp(i)) <= 1.0e-6)) then
         write(*,*) "FAILED! y(", i, ") = ", hY(i), " expected ", hExp(i); call exit(1)
      end if
   end do

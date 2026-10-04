@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! csddmm example (complex sampled dense-dense matrix multiplication, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
 !
 ! SDDMM computes C = alpha * (A * B) .* spy(C) + beta * C, where A and B are
 ! dense and C is sparse (CSR): the dense product A*B is only evaluated at the
@@ -121,7 +121,7 @@ program csddmm
 
   do i = 1,nnz
     error = abs(h_csr_val(i) - h_expected(i)) / max(abs(h_expected(i)), 1.0)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " at nnz ", i
         call exit(1)
     end if

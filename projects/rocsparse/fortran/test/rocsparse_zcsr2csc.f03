@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zcsr2csc example (double-precision complex CSR -> CSC conversion / sparse transpose, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/conversion.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/conversion.html
 !
 ! Converting A from CSR to CSC is equivalent to producing the CSR of A**T
 ! (csr2csc permutes values without conjugation). We check the resulting
@@ -117,7 +117,7 @@ program zcsr2csc
         call exit(1)
     end if
     error = abs(h_csc_val(i) - h_exp_val(i))
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! csc_val(", i, ") = ", h_csc_val(i), " expected ", h_exp_val(i)
         call exit(1)
     end if

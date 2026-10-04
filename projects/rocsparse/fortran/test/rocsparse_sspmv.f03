@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! sspmv example (single-precision sparse-matrix dense-vector multiply, y = alpha*A*x + beta*y, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
 !
 ! Uses the generic API: build a CSR descriptor for A and dense-vector
 ! descriptors for x and y, then run the three spmv stages
@@ -116,7 +116,7 @@ program sspmv
   ! Verify y == A*x
   do i = 1,M
     error = abs(h_y(i) - h_expected(i)) / max(abs(h_expected(i)), 1.0)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " y(", i, ") = ", h_y(i)
         call exit(1)
     end if

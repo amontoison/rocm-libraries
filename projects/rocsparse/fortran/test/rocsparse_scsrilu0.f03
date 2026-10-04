@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! rocsparse scsrilu0 example (incomplete LU, single, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/
 !
 ! Computes the ILU(0) factorization of a sparse matrix in place
 ! (buffer_size -> analysis -> compute, with a mat descriptor and a mat info
@@ -89,7 +89,7 @@ program scsrilu0
   call hipCheck(hipMemcpy(c_loc(hOut(1)), dVal, int(nnz,c_size_t) * 4, hipMemcpyDeviceToHost))
 
   do i = 1, nnz
-     if (abs(hOut(i) - hExp(i)) > 1.0e-5) then
+     if (.not. (abs(hOut(i) - hExp(i)) <= 1.0e-5)) then
         write(*,*) "FAILED! val(", i, ") = ", hOut(i), " expected ", hExp(i); call exit(1)
      end if
   end do

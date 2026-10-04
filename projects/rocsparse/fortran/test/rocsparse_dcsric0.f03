@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! rocsparse scsric0 example (incomplete Cholesky, single, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/
 !
 ! Computes the IC(0) factorization of an SPD sparse matrix in place
 ! (buffer_size -> analysis -> compute, with a mat descriptor and a mat info
@@ -90,9 +90,9 @@ program dcsric0
   call hipCheck(hipMemcpy(c_loc(hOut(1)), dVal, int(nnz,c_size_t) * 8, hipMemcpyDeviceToHost))
 
   ! Check the lower/diagonal entries (positions 1,3,4,6,7 in CSR order).
-  if (abs(hOut(1) - L11) > 1.0d-11 .or. abs(hOut(3) - L21) > 1.0d-11 .or. &
-      abs(hOut(4) - L22) > 1.0d-11 .or. abs(hOut(6) - L32) > 1.0d-11 .or. &
-      abs(hOut(7) - L33) > 1.0d-11) then
+  if (.not. (abs(hOut(1) - L11) <= 1.0d-11 .and. abs(hOut(3) - L21) <= 1.0d-11 .and. &
+      abs(hOut(4) - L22) <= 1.0d-11 .and. abs(hOut(6) - L32) <= 1.0d-11 .and. &
+      abs(hOut(7) - L33) <= 1.0d-11)) then
      write(*,*) "FAILED! L = ", hOut(1), hOut(3), hOut(4), hOut(6), hOut(7), &
                 " expected ", L11, L21, L22, L32, L33
      call exit(1)

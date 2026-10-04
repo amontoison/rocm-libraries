@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zcsrgeam example (double-precision complex sparse matrix addition, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/extra.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/extra.html
 !
 ! Two-phase flow: csrgeam_nnz (fills row_ptr_C and nnz_C) -> allocate
 ! col_ind_C/val_C -> csrgeam (computes C = alpha*A + beta*B). csrgeam needs no
@@ -147,7 +147,7 @@ program zcsrgeam
           call exit(1)
       end if
       error = abs(h_val_C(i) - h_exp_val(i)) / max(abs(h_exp_val(i)), 1.0_c_double)
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! val_C(", i, ") = ", h_val_C(i), " expected ", h_exp_val(i)
           call exit(1)
       end if

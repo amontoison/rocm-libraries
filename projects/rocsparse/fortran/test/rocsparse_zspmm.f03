@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zspmm example (double-precision complex sparse-matrix times dense-matrix, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
+! see: https://rocm.docs.amd.com/projects/rocSPARSE/en/latest/reference/generic.html
 !
 ! Uses the generic API: build a CSR descriptor for A and dense-matrix
 ! descriptors for B and C, then run the three spmm stages
@@ -131,7 +131,7 @@ program zspmm
   do j = 1,Ncol
     do i = 1,M
         error = abs(h_C(i,j) - h_expected(i,j)) / max(abs(h_expected(i,j)), 1.0_c_double)
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " at (", i, ",", j, ")"
             call exit(1)
         end if
