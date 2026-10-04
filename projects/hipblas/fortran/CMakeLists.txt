@@ -19,7 +19,12 @@
 # file defined two modules, hipblas and hipblas_enums; this one defines only
 # hipblas, enums folded in, so `use hipblas_enums` becomes `use hipblas`.
 
-cmake_minimum_required(VERSION 3.19)
+# Matches the hipBLAS root, which adds this directory unconditionally, so a
+# higher floor here would fail every configure on an older CMake, even one with
+# BUILD_FORTRAN_BINDINGS=OFF. Nothing below needs more: the one newer feature,
+# the Fortran_PREPROCESS property (3.18), is ignored by 3.17, which preprocesses
+# hipblas.F90 anyway because of its uppercase extension.
+cmake_minimum_required(VERSION 3.17)
 
 # Standalone (not a subdirectory of the hipBLAS build) this is its own project,
 # so the bindings can be built and packaged alone -- the supported path for a
@@ -61,23 +66,17 @@ option(BUILD_FORTRAN_BINDINGS "Build the hipBLAS Fortran bindings"
        "${_hipblas_fortran_default}")
 unset(_hipblas_fortran_default)
 
-# One switch for the binding tests and a library's Fortran clients. ON by
-# default, but guarded like the bindings: asking for them when the bindings were
-# not built is a skip, not an error.
-option(BUILD_FORTRAN_CLIENTS "Build the hipBLAS Fortran clients and binding tests" ON)
+# No option(BUILD_FORTRAN_CLIENTS) here: hipBLAS has no binding tests, and its
+# Fortran clients are declared by clients/cmake/build-options.cmake, which the
+# root includes right after this directory. A second option() here would run
+# first, fix the cache entry at ON, and leave that one's NOT WIN32 guard dead.
 
-# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
-# every library in the monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top
-# turns the whole Fortran track off. Each library also honours a name of its own
-# for when one has to be singled out. That override is the last word for the
-# BINDINGS only: the Fortran clients are GPU test and sample executables, so
-# clients/ turns them off whenever this directory produced no binding target,
-# whatever HIPBLAS_BUILD_FORTRAN_CLIENTS said.
+# BUILD_FORTRAN_BINDINGS is ONE cache entry shared by every library in the
+# monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top turns the whole Fortran
+# track off. HIPBLAS_BUILD_FORTRAN_BINDINGS singles this library out: it decides
+# this directory outright.
 if(DEFINED HIPBLAS_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${HIPBLAS_BUILD_FORTRAN_BINDINGS})
-endif()
-if(DEFINED HIPBLAS_BUILD_FORTRAN_CLIENTS)
-  set(BUILD_FORTRAN_CLIENTS ${HIPBLAS_BUILD_FORTRAN_CLIENTS})
 endif()
 
 # Which array-argument overloads the module exposes. One tri-state rather than a

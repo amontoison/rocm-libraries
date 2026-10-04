@@ -25,9 +25,10 @@
 ! real HIP binding. The only place the two could coexist is inside this build,
 ! where the include order is ours to control.
 !
-! Scope. Only the sixteen hipDataType enumerators the hipBLAS clients actually
-! reference, which happen to be the contiguous block 0..15. Values are copied
-! verbatim from the HIP binding, so the swap above is observably a no-op.
+! Scope. HIP's sixteen hipDataType enumerators of the contiguous block 0..15, of
+! which the hipBLAS clients use two: HIP_R_16F in the shims and HIP_R_32F in the
+! gemm_ex sample. Values are copied verbatim from the HIP binding, so the swap
+! above is observably a no-op.
 ! Deliberately NOT the whole hipDataType enumeration: a partial stub that is
 ! obviously a stub is easier to delete than a plausible copy of HIP's.
 

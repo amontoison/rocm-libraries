@@ -9,10 +9,10 @@ Documentation for hipBLAS is available at
 
 * Generated Fortran bindings, as a single `hipblas` module: `use hipblas`, link
   `roc::hipblas_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows
-  and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`,
-  `assumed-shape`, `assumed-rank`). Found with `find_package(hipblas-fortran)`; the archive and
-  `.mod` files install per compiler under `<libdir>/fortran/<compiler>` and
-  `<includedir>/fortran/<compiler>`.
+  and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES`
+  (`assumed-shape` by default; `none` or `assumed-rank`). Found with
+  `find_package(hipblas-fortran)`; the archive and `.mod` files install per compiler under
+  `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
 
 ### Changed
 
@@ -24,6 +24,12 @@ Documentation for hipBLAS is available at
   other `_ex` routines must now get them from HIP.
 * The binding ships as a compiled archive and `.mod` set, not a `.f90` to compile yourself:
   link `roc::hipblas_fortran` instead of adding the source to your build.
+* Output arguments are now typed variables passed by reference, as in the C API, instead of
+  `type(c_ptr), value`: `hipblasCreate` and `hipblasGetStream` (`type(c_ptr)`),
+  `hipblasGetPointerMode` and `hipblasGetAtomicsMode` (the enum kind) and
+  `hipblasGetBatchAlphaStride` and `hipblasGetBatchBetaStride` (`integer(c_int64_t)`). Pass the
+  variable itself: code passing `c_loc(x)` must pass `x`. The newly bound `hipblasGetMathMode`
+  (the enum kind) and `hipblasGetProperty` (`integer(c_int)`) follow the same convention.
 
 ### Removed
 

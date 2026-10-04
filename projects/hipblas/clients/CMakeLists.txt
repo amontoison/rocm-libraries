@@ -219,8 +219,9 @@ if( BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES )
       # hipDataType is HIP's, not hipBLAS's, so 57 scopes across
       # hipblas_fortran_blas{,_64}.f90 now say `use hip` and need a module to
       # resolve it against. ROCm does not ship a HIP Fortran binding yet, so one
-      # is compiled here from a stub carrying only the sixteen enumerators those
-      # scopes reference.
+      # is compiled here from a stub defining HIP's sixteen hipDataType
+      # enumerators 0..15, of which the clients use two: HIP_R_16F in the shims
+      # and HIP_R_32F in the gemm_ex sample.
       #
       # Build-only on purpose: added as a SOURCE of this archive, never
       # installed, exported or packaged, so no second hip.mod can reach an
