@@ -1051,7 +1051,7 @@ module rocsparse
        import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
                  rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: mySize
+       integer(c_int64_t) :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
@@ -1071,7 +1071,7 @@ module rocsparse
        import :: c_ptr, c_int64_t, rocsparse_indextype_i32, rocsparse_index_base_zero, &
                  rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: mySize
+       integer(c_int64_t) :: mySize
        integer(c_int64_t) :: nnz
        type(c_ptr) :: indices
        type(c_ptr) :: values
@@ -2515,9 +2515,9 @@ module rocsparse
     function rocsparse_spmat_get_strided_batch(descr, batch_count) &
        result(spmat_get_strided_batch) &
        bind(C, name="rocsparse_spmat_get_strided_batch")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_int, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: batch_count
+       integer(c_int) :: batch_count
        integer(kind(rocsparse_status_success)) :: spmat_get_strided_batch
     end function rocsparse_spmat_get_strided_batch
 
@@ -2681,9 +2681,9 @@ module rocsparse
     function rocsparse_dnvec_get(descr, mySize, values, data_type) &
        result(dnvec_get) &
        bind(C, name="rocsparse_dnvec_get")
-       import :: c_ptr, rocsparse_datatype_f16_r, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: mySize
+       integer(c_int64_t) :: mySize
        type(c_ptr) :: values
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: dnvec_get
@@ -2695,9 +2695,9 @@ module rocsparse
     function rocsparse_const_dnvec_get(descr, mySize, values, data_type) &
        result(const_dnvec_get) &
        bind(C, name="rocsparse_const_dnvec_get")
-       import :: c_ptr, rocsparse_datatype_f16_r, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: mySize
+       integer(c_int64_t) :: mySize
        type(c_ptr) :: values
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_status_success)) :: const_dnvec_get
@@ -2797,7 +2797,7 @@ module rocsparse
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
-       type(c_ptr), value :: ld
+       integer(c_int64_t) :: ld
        type(c_ptr) :: values
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_order_row)) :: order
@@ -2815,7 +2815,7 @@ module rocsparse
        type(c_ptr), value :: descr
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
-       type(c_ptr), value :: ld
+       integer(c_int64_t) :: ld
        type(c_ptr) :: values
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
        integer(kind(rocsparse_order_row)) :: order
@@ -2864,10 +2864,10 @@ module rocsparse
     function rocsparse_dnmat_get_strided_batch(descr, batch_count, batch_stride) &
        result(dnmat_get_strided_batch) &
        bind(C, name="rocsparse_dnmat_get_strided_batch")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_int, c_int64_t, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: batch_count
-       type(c_ptr), value :: batch_stride
+       integer(c_int) :: batch_count
+       integer(c_int64_t) :: batch_stride
        integer(kind(rocsparse_status_success)) :: dnmat_get_strided_batch
     end function rocsparse_dnmat_get_strided_batch
 
@@ -2890,10 +2890,10 @@ module rocsparse
     function rocsparse_dnvec_get_strided_batch(descr, batch_count, batch_stride) &
        result(dnvec_get_strided_batch) &
        bind(C, name="rocsparse_dnvec_get_strided_batch")
-       import :: c_ptr, rocsparse_status_success
+       import :: c_ptr, c_int, c_int64_t, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: batch_count
-       type(c_ptr), value :: batch_stride
+       integer(c_int) :: batch_count
+       integer(c_int64_t) :: batch_stride
        integer(kind(rocsparse_status_success)) :: dnvec_get_strided_batch
     end function rocsparse_dnvec_get_strided_batch
 
