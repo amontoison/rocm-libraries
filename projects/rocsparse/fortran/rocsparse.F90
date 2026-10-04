@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module rocsparse
   use, intrinsic :: iso_c_binding
@@ -596,7 +597,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr) :: handle
        type(c_ptr), value :: stream
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: handle_create
     end function rocsparse_handle_create
 
@@ -619,7 +620,7 @@ module rocsparse
        bind(C, name="rocsparse_handle_destroy")
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: handle_destroy
     end function rocsparse_handle_destroy
 
@@ -1569,7 +1570,7 @@ module rocsparse
        integer(kind(rocsparse_spgeam_input_alg)), value :: input
        type(c_ptr), value :: myData
        integer(c_size_t), value :: data_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spgeam_set_input
     end function rocsparse_spgeam_set_input
 
@@ -1636,7 +1637,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr) :: p_sptrsv_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_descr_create
     end function rocsparse_sptrsv_descr_create
 
@@ -1649,7 +1650,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: sptrsv_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_descr_destroy
     end function rocsparse_sptrsv_descr_destroy
 
@@ -1687,7 +1688,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsv_input_alg)), value :: input
        type(c_ptr), value :: myData
        integer(c_size_t), value :: data_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_set_input
     end function rocsparse_sptrsv_set_input
 
@@ -1705,7 +1706,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsv_output_zero_pivot_position)), value :: output
        type(c_ptr), value :: myData
        integer(c_size_t), value :: data_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_get_output
     end function rocsparse_sptrsv_get_output
 
@@ -1743,7 +1744,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsm_input_alg)), value :: input
        type(c_ptr), value :: myData
        integer(c_size_t), value :: data_size
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsm_set_input
     end function rocsparse_sptrsm_set_input
 
@@ -1761,7 +1762,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsm_output_zero_pivot_position)), value :: output
        type(c_ptr), value :: myData
        integer(c_size_t), value :: data_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsm_get_output
     end function rocsparse_sptrsm_get_output
 
@@ -1774,7 +1775,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr) :: p_spic0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_descr_create
     end function rocsparse_spic0_descr_create
 
@@ -1787,7 +1788,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spic0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_descr_destroy
     end function rocsparse_spic0_descr_destroy
 
@@ -1804,7 +1805,7 @@ module rocsparse
        integer(kind(rocsparse_spic0_input_alg)), value :: spic0_input
        type(c_ptr), value :: input
        integer(c_size_t), value :: input_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_set_input
     end function rocsparse_spic0_set_input
 
@@ -1821,7 +1822,7 @@ module rocsparse
        integer(kind(rocsparse_spic0_output_singularity)), value :: spic0_output
        type(c_ptr), value :: output
        integer(c_size_t), value :: output_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_get_output
     end function rocsparse_spic0_get_output
 
@@ -1834,7 +1835,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr) :: p_spilu0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_descr_create
     end function rocsparse_spilu0_descr_create
 
@@ -1847,7 +1848,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spilu0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_descr_destroy
     end function rocsparse_spilu0_descr_destroy
 
@@ -1864,7 +1865,7 @@ module rocsparse
        integer(kind(rocsparse_spilu0_input_alg)), value :: spilu0_input
        type(c_ptr), value :: input
        integer(c_size_t), value :: input_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_set_input
     end function rocsparse_spilu0_set_input
 
@@ -1881,7 +1882,7 @@ module rocsparse
        integer(kind(rocsparse_spilu0_output_singularity)), value :: spilu0_output
        type(c_ptr), value :: output
        integer(c_size_t), value :: output_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_get_output
     end function rocsparse_spilu0_get_output
 
@@ -1894,7 +1895,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr) :: p_spildlt0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_descr_create
     end function rocsparse_spildlt0_descr_create
 
@@ -1907,7 +1908,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: spildlt0_descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_descr_destroy
     end function rocsparse_spildlt0_descr_destroy
 
@@ -1924,7 +1925,7 @@ module rocsparse
        integer(kind(rocsparse_spildlt0_input_alg)), value :: spildlt0_input
        type(c_ptr), value :: input
        integer(c_size_t), value :: input_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_set_input
     end function rocsparse_spildlt0_set_input
 
@@ -1941,7 +1942,7 @@ module rocsparse
        integer(kind(rocsparse_spildlt0_output_singularity)), value :: spildlt0_output
        type(c_ptr), value :: output
        integer(c_size_t), value :: output_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_get_output
     end function rocsparse_spildlt0_get_output
 
@@ -2137,7 +2138,7 @@ module rocsparse
        integer(c_int64_t) :: cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
-       type(c_ptr), value :: ell_width
+       integer(c_int64_t) :: ell_width
        integer(kind(rocsparse_indextype_i32)) :: idx_type
        integer(kind(rocsparse_index_base_zero)) :: idx_base
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
@@ -2158,7 +2159,7 @@ module rocsparse
        integer(c_int64_t) :: cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
-       type(c_ptr), value :: ell_width
+       integer(c_int64_t) :: ell_width
        integer(kind(rocsparse_indextype_i32)) :: idx_type
        integer(kind(rocsparse_index_base_zero)) :: idx_base
        integer(kind(rocsparse_datatype_f16_r)) :: data_type
@@ -2178,8 +2179,8 @@ module rocsparse
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(kind(rocsparse_direction_row)) :: ell_block_dir
-       type(c_ptr), value :: ell_block_dim
-       type(c_ptr), value :: ell_cols
+       integer(c_int64_t) :: ell_block_dim
+       integer(c_int64_t) :: ell_cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
        integer(kind(rocsparse_indextype_i32)) :: idx_type
@@ -2201,8 +2202,8 @@ module rocsparse
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(kind(rocsparse_direction_row)) :: ell_block_dir
-       type(c_ptr), value :: ell_block_dim
-       type(c_ptr), value :: ell_cols
+       integer(c_int64_t) :: ell_block_dim
+       integer(c_int64_t) :: ell_cols
        type(c_ptr) :: ell_col_ind
        type(c_ptr) :: ell_val
        integer(kind(rocsparse_indextype_i32)) :: idx_type
@@ -2225,8 +2226,8 @@ module rocsparse
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(c_int64_t) :: nnz
-       type(c_ptr), value :: sell_slice_size
-       type(c_ptr), value :: sell_colval_size
+       integer(c_int64_t) :: sell_slice_size
+       integer(c_int64_t) :: sell_colval_size
        type(c_ptr) :: sell_slice_offsets
        type(c_ptr) :: sell_col_ind
        type(c_ptr) :: sell_val
@@ -2252,8 +2253,8 @@ module rocsparse
        integer(c_int64_t) :: rows
        integer(c_int64_t) :: cols
        integer(c_int64_t) :: nnz
-       type(c_ptr), value :: sell_slice_size
-       type(c_ptr), value :: sell_colval_size
+       integer(c_int64_t) :: sell_slice_size
+       integer(c_int64_t) :: sell_colval_size
        type(c_ptr) :: sell_slice_offsets
        type(c_ptr) :: sell_col_ind
        type(c_ptr) :: sell_val
@@ -2272,14 +2273,14 @@ module rocsparse
                                data_type) &
        result(bsr_get) &
        bind(C, name="rocsparse_bsr_get")
-       import :: c_ptr, rocsparse_direction_row, rocsparse_indextype_i32, rocsparse_index_base_zero, &
-                 rocsparse_datatype_f16_r, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_direction_row, rocsparse_indextype_i32, &
+                 rocsparse_index_base_zero, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: brows
-       type(c_ptr), value :: bcols
-       type(c_ptr), value :: bnnz
+       integer(c_int64_t) :: brows
+       integer(c_int64_t) :: bcols
+       integer(c_int64_t) :: bnnz
        integer(kind(rocsparse_direction_row)) :: block_dir
-       type(c_ptr), value :: block_dim
+       integer(c_int64_t) :: block_dim
        type(c_ptr) :: bsr_row_ptr
        type(c_ptr) :: bsr_col_ind
        type(c_ptr) :: bsr_val
@@ -2298,14 +2299,14 @@ module rocsparse
                                      data_type) &
        result(const_bsr_get) &
        bind(C, name="rocsparse_const_bsr_get")
-       import :: c_ptr, rocsparse_direction_row, rocsparse_indextype_i32, rocsparse_index_base_zero, &
-                 rocsparse_datatype_f16_r, rocsparse_status_success
+       import :: c_ptr, c_int64_t, rocsparse_direction_row, rocsparse_indextype_i32, &
+                 rocsparse_index_base_zero, rocsparse_datatype_f16_r, rocsparse_status_success
        type(c_ptr), value :: descr
-       type(c_ptr), value :: brows
-       type(c_ptr), value :: bcols
-       type(c_ptr), value :: bnnz
+       integer(c_int64_t) :: brows
+       integer(c_int64_t) :: bcols
+       integer(c_int64_t) :: bnnz
        integer(kind(rocsparse_direction_row)) :: block_dir
-       type(c_ptr), value :: block_dim
+       integer(c_int64_t) :: block_dim
        type(c_ptr) :: bsr_row_ptr
        type(c_ptr) :: bsr_col_ind
        type(c_ptr) :: bsr_val
@@ -2660,7 +2661,7 @@ module rocsparse
        integer(kind(rocsparse_datatype_f16_r)), value :: data_type
        type(c_ptr), value :: const_values
        type(c_ptr), value :: values
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: dnvec_descr_create_scalar
     end function rocsparse_dnvec_descr_create_scalar
 
@@ -4542,7 +4543,7 @@ module rocsparse
        type(c_ptr), value :: P
        integer(kind(rocsparse_spic0_stage_analysis)), value :: spic0_stage
        integer(c_size_t) :: p_buffer_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0_buffer_size
     end function rocsparse_spic0_buffer_size
 
@@ -4561,7 +4562,7 @@ module rocsparse
        integer(kind(rocsparse_spic0_stage_analysis)), value :: spic0_stage
        integer(c_size_t), value :: buffer_size_in_bytes
        type(c_ptr), value :: buffer
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spic0
     end function rocsparse_spic0
 
@@ -4576,7 +4577,7 @@ module rocsparse
        type(c_ptr), value :: alpha
        type(c_ptr), value :: source
        type(c_ptr), value :: target
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spmat_scale
     end function rocsparse_spmat_scale
 
@@ -4594,7 +4595,7 @@ module rocsparse
        type(c_ptr), value :: P
        integer(kind(rocsparse_spildlt0_stage_analysis)), value :: spildlt0_stage
        integer(c_size_t) :: p_buffer_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0_buffer_size
     end function rocsparse_spildlt0_buffer_size
 
@@ -4613,7 +4614,7 @@ module rocsparse
        integer(kind(rocsparse_spildlt0_stage_analysis)), value :: spildlt0_stage
        integer(c_size_t), value :: buffer_size_in_bytes
        type(c_ptr), value :: buffer
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spildlt0
     end function rocsparse_spildlt0
 
@@ -4631,7 +4632,7 @@ module rocsparse
        type(c_ptr), value :: P
        integer(kind(rocsparse_spilu0_stage_analysis)), value :: spilu0_stage
        integer(c_size_t) :: p_buffer_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0_buffer_size
     end function rocsparse_spilu0_buffer_size
 
@@ -4650,7 +4651,7 @@ module rocsparse
        integer(kind(rocsparse_spilu0_stage_analysis)), value :: spilu0_stage
        integer(c_size_t), value :: buffer_size_in_bytes
        type(c_ptr), value :: buffer
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spilu0
     end function rocsparse_spilu0
 
@@ -4661,11 +4662,11 @@ module rocsparse
                               y, compute_type, alg, stage, buffer_size, temp_buffer) &
        result(spitsv) &
        bind(C, name="rocsparse_spitsv")
-       import :: c_ptr, rocsparse_operation_none, rocsparse_datatype_f16_r, &
+       import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_datatype_f16_r, &
                  rocsparse_spitsv_alg_default, rocsparse_spitsv_stage_buffer_size, c_size_t, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
        integer(kind(rocsparse_operation_none)), value :: trans
@@ -4796,7 +4797,7 @@ module rocsparse
        type(c_ptr), value :: Y
        integer(kind(rocsparse_sptrsm_stage_analysis)), value :: sptrsm_stage
        integer(c_size_t) :: buffer_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsm_buffer_size
     end function rocsparse_sptrsm_buffer_size
 
@@ -4816,7 +4817,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsm_stage_analysis)), value :: sptrsm_stage
        integer(c_size_t), value :: buffer_size_in_bytes
        type(c_ptr), value :: buffer
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsm
     end function rocsparse_sptrsm
 
@@ -4835,7 +4836,7 @@ module rocsparse
        type(c_ptr), value :: y
        integer(kind(rocsparse_sptrsv_stage_analysis)), value :: sptrsv_stage
        integer(c_size_t) :: buffer_size_in_bytes
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv_buffer_size
     end function rocsparse_sptrsv_buffer_size
 
@@ -4855,7 +4856,7 @@ module rocsparse
        integer(kind(rocsparse_sptrsv_stage_analysis)), value :: sptrsv_stage
        integer(c_size_t), value :: buffer_size_in_bytes
        type(c_ptr), value :: buffer
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: sptrsv
     end function rocsparse_sptrsv
 
@@ -4931,7 +4932,7 @@ module rocsparse
        integer(c_int64_t), value :: num_extras
        type(c_ptr), value :: gamma_vec
        type(c_ptr) :: z_vecs
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spmv_set_extra
     end function rocsparse_spmv_set_extra
 
@@ -4944,7 +4945,7 @@ module rocsparse
        import :: c_ptr, rocsparse_status_success
        type(c_ptr), value :: handle
        type(c_ptr), value :: descr
-       type(c_ptr) :: p_error
+       type(c_ptr), optional :: p_error
        integer(kind(rocsparse_status_success)) :: spmv_clear_extra
     end function rocsparse_spmv_clear_extra
 
@@ -5296,10 +5297,10 @@ module rocsparse
                                       myInfo, x, y, policy, temp_buffer) &
        result(scsritsv_solve) &
        bind(C, name="rocsparse_scsritsv_solve")
-       import :: c_ptr, rocsparse_operation_none, c_int, rocsparse_solve_policy_auto, &
+       import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
        integer(kind(rocsparse_operation_none)), value :: trans
@@ -5326,10 +5327,10 @@ module rocsparse
                                       myInfo, x, y, policy, temp_buffer) &
        result(dcsritsv_solve) &
        bind(C, name="rocsparse_dcsritsv_solve")
-       import :: c_ptr, rocsparse_operation_none, c_int, rocsparse_solve_policy_auto, &
+       import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
        integer(kind(rocsparse_operation_none)), value :: trans
@@ -5356,10 +5357,10 @@ module rocsparse
                                       myInfo, x, y, policy, temp_buffer) &
        result(ccsritsv_solve) &
        bind(C, name="rocsparse_ccsritsv_solve")
-       import :: c_ptr, rocsparse_operation_none, c_int, rocsparse_solve_policy_auto, &
+       import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
        integer(kind(rocsparse_operation_none)), value :: trans
@@ -5386,10 +5387,10 @@ module rocsparse
                                       myInfo, x, y, policy, temp_buffer) &
        result(zcsritsv_solve) &
        bind(C, name="rocsparse_zcsritsv_solve")
-       import :: c_ptr, rocsparse_operation_none, c_int, rocsparse_solve_policy_auto, &
+       import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
        integer(kind(rocsparse_operation_none)), value :: trans
@@ -5420,7 +5421,7 @@ module rocsparse
        import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        integer(c_int), value :: host_nfreeiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
@@ -5452,7 +5453,7 @@ module rocsparse
        import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        integer(c_int), value :: host_nfreeiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
@@ -5484,7 +5485,7 @@ module rocsparse
        import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        integer(c_int), value :: host_nfreeiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history
@@ -5516,7 +5517,7 @@ module rocsparse
        import :: c_ptr, c_int, rocsparse_operation_none, rocsparse_solve_policy_auto, &
                  rocsparse_status_success
        type(c_ptr), value :: handle
-       type(c_ptr), value :: host_nmaxiter
+       integer(c_int) :: host_nmaxiter
        integer(c_int), value :: host_nfreeiter
        type(c_ptr), value :: host_tol
        type(c_ptr), value :: host_history

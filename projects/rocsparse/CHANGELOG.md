@@ -38,7 +38,8 @@ Documentation for rocSPARSE is available at
   * `rocsparse_zdoti`: the result argument is `myResult`, a `type(c_ptr)` by value, agreeing with
     the other `doti` and `dotci` forms, where it was `result`, a `complex(c_double_complex)`.
   * `rocsparse_dprune_csr2csr_by_percentage`: `percentage` is `real(c_double)`, not `real(c_float)`.
-  * `rocsparse_handle_create`: `p_error` is a `type(c_ptr)` by reference, not by value.
+  * `rocsparse_handle_create`: `p_error` is an optional `type(c_ptr)` by reference, not by value:
+    omit it where you passed `c_null_ptr`, which now hands over the address of a null pointer.
   * `rocsparse_get_git_rev`: `rev` is a `type(c_ptr)` by value rather than a `character(c_char)`
     assumed-size array, so pass `c_loc(buffer)`.
   * Keyword-argument callers only, where a dummy collided with a Fortran keyword or took the
