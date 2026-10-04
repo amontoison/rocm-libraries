@@ -1,17 +1,34 @@
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell cop-
+# ies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IM-
+# PLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNE-
+# CTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# ########################################################################
+
 # Classic Intel toolchain (ifort). Deprecated by Intel in favour of ifx; kept for sites still pinned to it.
 #
 # Usage, from projects/hipblas/fortran:
 #   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel-classic.cmake
 #
-# The compilers are looked up on PATH. Only the Fortran one actually matters
-# here: the bindings are pure Fortran, and the C entry points they bind to come
-# from libhipblas at link time.
-#
-# Free form and C preprocessing are requested by the CMakeLists via the
-# Fortran_FORMAT and Fortran_PREPROCESS target properties, so CMake emits
-# whichever flag this compiler expects and none is hardcoded here. No
-# line-length flag is needed either: the generated source wraps at 112 columns,
-# inside the 132 the free-form standard guarantees.
+# No format or line-length flag: the generated source fits within the 132
+# free-form columns, and the CMakeLists sets Fortran_FORMAT/Fortran_PREPROCESS.
 
 set(CMAKE_Fortran_COMPILER ifort CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       icx CACHE FILEPATH "C compiler")
