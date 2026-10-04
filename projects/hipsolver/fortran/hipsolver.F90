@@ -2643,7 +2643,7 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int), value :: lda
        integer(c_int), value :: strideP
-       type(c_ptr), value :: lwork
+       integer(c_int) :: lwork
        integer(c_int), value :: batch_count
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: SgetrfBatched_bufferSize
     end function hipsolverSgetrfBatched_bufferSize
@@ -2661,7 +2661,7 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int), value :: lda
        integer(c_int), value :: strideP
-       type(c_ptr), value :: lwork
+       integer(c_int) :: lwork
        integer(c_int), value :: batch_count
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DgetrfBatched_bufferSize
     end function hipsolverDgetrfBatched_bufferSize
@@ -2679,7 +2679,7 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int), value :: lda
        integer(c_int), value :: strideP
-       type(c_ptr), value :: lwork
+       integer(c_int) :: lwork
        integer(c_int), value :: batch_count
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: CgetrfBatched_bufferSize
     end function hipsolverCgetrfBatched_bufferSize
@@ -2697,7 +2697,7 @@ module hipsolver
        type(c_ptr), value :: A
        integer(c_int), value :: lda
        integer(c_int), value :: strideP
-       type(c_ptr), value :: lwork
+       integer(c_int) :: lwork
        integer(c_int), value :: batch_count
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: ZgetrfBatched_bufferSize
     end function hipsolverZgetrfBatched_bufferSize
@@ -10543,7 +10543,7 @@ module hipsolver
        result(DnXlarft_bufferSize) &
        bind(C, name="hipsolverDnXlarft_bufferSize")
        import :: c_ptr, HIPSOLVER_DIRECT_FORWARD, HIPSOLVER_STOREV_COLUMNWISE, c_int64_t, c_int, &
-                 HIPSOLVER_STATUS_SUCCESS
+                 c_size_t, HIPSOLVER_STATUS_SUCCESS
        type(c_ptr), value :: handle
        type(c_ptr), value :: params
        integer(kind(HIPSOLVER_DIRECT_FORWARD)), value :: myDirect
@@ -10559,8 +10559,8 @@ module hipsolver
        type(c_ptr), value :: T
        integer(c_int64_t), value :: ldt
        integer(c_int), value :: computeType
-       type(c_ptr), value :: lworkOnDevice
-       type(c_ptr), value :: lworkOnHost
+       integer(c_size_t) :: lworkOnDevice
+       integer(c_size_t) :: lworkOnHost
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnXlarft_bufferSize
     end function hipsolverDnXlarft_bufferSize
 
