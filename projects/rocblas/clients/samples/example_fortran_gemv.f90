@@ -153,8 +153,8 @@ program example_fortran_gemv
     integer(c_int) :: i, element
 
     ! Create rocBLAS handle
-    type(c_ptr), target :: handle
-    call ROCBLAS_CHECK(rocblas_create_handle(c_loc(handle)))
+    type(c_ptr) :: handle
+    call ROCBLAS_CHECK(rocblas_create_handle(handle))
 
     ! Allocate host-side memory
     allocate(hA(size_A))
