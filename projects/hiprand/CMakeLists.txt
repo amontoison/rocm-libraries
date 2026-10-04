@@ -57,12 +57,9 @@ project(hipRAND CXX)
 
 # Build options
 
-# The backend selector comes FIRST, ahead of the option() block below, because
-# BUILD_FORTRAN_BINDINGS's default is computed from it: option() only honours
-# its default when it CREATES the cache entry, so a BUILD_WITH_LIB read before
-# this line would be empty and the Fortran default would silently have been the
-# ROCm one on every backend. A move, not a change -- nothing between here and
-# its old position used it.
+# BUILD_WITH_LIB must be defined above option(BUILD_FORTRAN_BINDINGS) below,
+# because that option's default reads it, and option() only honours its default
+# when it CREATES the cache entry.
 set(BUILD_WITH_LIB "ROCM" CACHE STRING "Select backend library to build with (ROCM or CUDA)")
 set_property(CACHE BUILD_WITH_LIB PROPERTY STRINGS "ROCM" "CUDA")
 

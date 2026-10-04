@@ -82,8 +82,8 @@ function(hiprand_fortran_add_test name)
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME hiprand_fortran_${name} COMMAND hiprand_fortran_test_${name})
   # Almost all of these draw numbers on a device, so without a GPU they fail for
-  # a reason that is not the binding being broken. The label lets a build
-  # machine with no GPU still run the suite meaningfully: ctest -LE gpu.
+  # a reason that is not the binding being broken. The label marks them as
+  # needing a GPU, so a GPU-less machine can skip them with ctest -LE gpu.
   set_tests_properties(hiprand_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
@@ -94,6 +94,7 @@ endfunction()
 # returns data a host can check the distribution of. hiprand_version is the
 # exception: it binds no generator and covers the version query alone.
 set(HIPRAND_FORTRAN_TESTS
+    hiprand_version
     mrg32k3a_normal
     mrg32k3a_normal_double
     mrg32k3a_uniform
@@ -109,7 +110,6 @@ set(HIPRAND_FORTRAN_TESTS
     philox_poisson
     philox_uniform
     philox_uniform_double
-    hiprand_version
     sobol32_normal
     sobol32_normal_double
     sobol32_uniform
