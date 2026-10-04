@@ -95,7 +95,7 @@ program rocfft_example
 
   do i = 1, int(N)
      error = abs(cmplx(hx(i)%x, hx(i)%y, kind=8) - x_ref(i))
-     if(error > error_max * sum(abs(x_in)))then
+     if (.not. (error <= error_max * sum(abs(x_in)))) then
         write(*,*) "FAILED! i = ", i, " error = ", error, " hx(i) = ", hx(i)%x, hx(i)%y
         call exit(1)
      end if

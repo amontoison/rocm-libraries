@@ -101,7 +101,7 @@ program rocfft_c2c_2d_z
   ! After forward+inverse the data should equal Ntot times the original input.
   do i = 1, Ntot
      error = abs(hx(i)%x - Ntot * hx_input(i)%x) + abs(hx(i)%y - Ntot * hx_input(i)%y)
-     if (error > error_max * Ntot) then
+     if (.not. (error <= error_max * Ntot)) then
         write(*,*) "FAILED! i=", i, " error=", error
         call rocfftCheck(rocfft_cleanup())
         STOP 1

@@ -50,13 +50,15 @@ program rocfft_stream_z
      type(c_ptr) :: info = c_null_ptr
      type(c_ptr) :: plan_fwd = c_null_ptr
      type(c_ptr) :: plan_bwd = c_null_ptr
+     type(c_ptr) :: work = c_null_ptr
+     integer(c_size_t) :: work_size = 0
   end type fft_t
 
   type(fft_t) :: ffts(Nfft)
   type(double2), allocatable, target, dimension(:,:) :: hx, hx_input
   integer(c_size_t), allocatable, target, dimension(:) :: lengths
   integer(c_size_t), parameter :: one = 1
-  integer(c_size_t) :: work_size
+  integer(c_size_t) :: work_fwd, work_bwd
   integer :: i, k
   double precision :: error
   double precision, parameter :: error_max = 1.0d-8
@@ -108,11 +110,16 @@ program rocfft_stream_z
                                          one,&
                                          c_null_ptr))
 
-     ! A simple 1D in-place transform needs no extra work buffer.
-     call rocfftCheck(rocfft_plan_get_work_buffer_size(ffts(k)%plan_fwd, work_size))
-     if (work_size /= 0) then
-        write(*,*) "FAILED! unexpected work buffer size ", work_size
-        STOP 1
+     ! Each transform runs on its own stream, so each gets its own work buffer,
+     ! sized from what its two plans report.
+     call rocfftCheck(rocfft_plan_get_work_buffer_size(ffts(k)%plan_fwd, work_fwd))
+     call rocfftCheck(rocfft_plan_get_work_buffer_size(ffts(k)%plan_bwd, work_bwd))
+     ffts(k)%work_size = max(work_fwd, work_bwd)
+     if (ffts(k)%work_size > 0) then
+        call hipCheck(hipMalloc(ffts(k)%work, ffts(k)%work_size))
+        call rocfftCheck(rocfft_execution_info_set_work_buffer(ffts(k)%info, &
+                                                               ffts(k)%work, &
+                                                               ffts(k)%work_size))
      end if
   end do
 
@@ -137,6 +144,7 @@ program rocfft_stream_z
      call rocfftCheck(rocfft_execution_info_destroy(ffts(k)%info))
      call hipCheck(hipStreamDestroy(ffts(k)%stream))
      call hipCheck(hipFree(ffts(k)%buf))
+     if (c_associated(ffts(k)%work)) call hipCheck(hipFree(ffts(k)%work))
   end do
 
   ! rocFFT is unnormalized, so each round trip yields N*input.
@@ -144,7 +152,7 @@ program rocfft_stream_z
      do i = 1, N
         error = abs(hx(i,k)%x - N * hx_input(i,k)%x) &
               + abs(hx(i,k)%y - N * hx_input(i,k)%y)
-        if (error > error_max * N) then
+        if (.not. (error <= error_max * N)) then
            write(*,*) "FAILED! k=", k, " i=", i, " error=", error
            call rocfftCheck(rocfft_cleanup())
            STOP 1

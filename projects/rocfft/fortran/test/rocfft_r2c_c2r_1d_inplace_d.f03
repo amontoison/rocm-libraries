@@ -124,7 +124,7 @@ program rocfft_r2c_c2r_1d_inplace_d
   ! Only the first N reals hold the signal; the padding is scratch space.
   do i = 1, N
      error = abs(hr(i) - N * hr_input(i))
-     if (error > error_max * N) then
+     if (.not. (error <= error_max * N)) then
         write(*,*) "FAILED! i=", i, " error=", error
         call rocfftCheck(rocfft_cleanup())
         STOP 1

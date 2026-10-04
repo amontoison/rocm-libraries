@@ -120,7 +120,7 @@ program rocfft_plan_print_z
      do i = 1, Nx
         error = abs(hx(i,j)%x - N * hx_input(i,j)%x) &
               + abs(hx(i,j)%y - N * hx_input(i,j)%y)
-        if (error > error_max * N) then
+        if (.not. (error <= error_max * N)) then
            write(*,*) "FAILED! i=", i, " j=", j, " error=", error
            call rocfftCheck(rocfft_cleanup())
            STOP 1

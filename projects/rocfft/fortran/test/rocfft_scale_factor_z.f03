@@ -109,7 +109,7 @@ program rocfft_scale_factor_z
 
   do i = 1, N
      error = abs(hx(i)%x - hx_input(i)%x) + abs(hx(i)%y - hx_input(i)%y)
-     if (error > error_max * N) then
+     if (.not. (error <= error_max * N)) then
         write(*,*) "FAILED! i=", i, " error=", error
         call rocfftCheck(rocfft_cleanup())
         STOP 1

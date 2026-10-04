@@ -75,7 +75,7 @@ program rocfft_field_brick_z
   call hipCheck(hipGetDeviceCount(ndev))
   if (ndev < 2_c_int) then
     write(*,*) "SKIPPED (requires 2 GPUs)"
-    stop
+    stop 77
   end if
 
   ! The field/brick API is marked experimental in the rocFFT headers.
@@ -214,7 +214,7 @@ program rocfft_field_brick_z
         else
           err = abs(hbuf(pos))
         end if
-        if (err > tol * dble(Ntot)) then
+        if (.not. (err <= tol * dble(Ntot))) then
           write(*,*) "FAILED! bin=(", ix, ",", iy, &
                      ") got=", hbuf(pos), " err=", err
           call rocfftCheck(rocfft_cleanup())

@@ -130,7 +130,7 @@ program rocfft_callback_z
   ! trip still yields N*input.
   do i = 1, N
      error = abs(hx(i)%x - N * hx_input(i)%x) + abs(hx(i)%y - N * hx_input(i)%y)
-     if (error > error_max * N) then
+     if (.not. (error <= error_max * N)) then
         write(*,*) "FAILED! i=", i, " error=", error
         call rocfftCheck(rocfft_cleanup())
         STOP 1
