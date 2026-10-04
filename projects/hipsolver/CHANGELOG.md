@@ -26,8 +26,9 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   part of `hipsolver`, so code that said `use hipsolver_enums` should now say `use hipsolver`. A static
   archive and a `.mod` are installed in place of the shared library and the `.f90` source to compile
   yourself; link `roc::hipsolver_fortran`. Output arguments the old module declared
-  `type(c_ptr), value` -- the `lwork` of every `_bufferSize` routine, and the `residual` and
-  `executed_sweeps` of the gesvdj/syevj getters -- are now typed and passed by reference, as are the
+  `type(c_ptr), value` -- the `lwork` of every `_bufferSize` routine, the `residual` and
+  `executed_sweeps` of the gesvdj/syevj getters, and the `niters` of `hipsolver{SS,DD,CC,ZZ}gels` and
+  `hipsolver{SS,DD,CC,ZZ}gesv` -- are now typed and passed by reference, as are the
   outputs of the routines new to the module (`nev`, the deterministic `mode`, the Rf getters): callers
   must drop the `c_loc()` and pass the variable itself.
 * The handle and info outputs of `hipsolverCreate`, `hipsolverGetStream`, `hipsolverCreateGesvdjInfo` and

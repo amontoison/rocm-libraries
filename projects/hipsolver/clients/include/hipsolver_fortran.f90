@@ -1108,7 +1108,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverSSgels(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1132,7 +1132,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverDDgels(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1156,7 +1156,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverCCgels(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1180,7 +1180,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverZZgels(handle, m, n, nrhs, A, lda, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1430,7 +1430,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverSSgesv(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1454,7 +1454,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverDDgesv(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1478,7 +1478,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverCCgesv(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, work, lwork, niters, info)
@@ -1502,7 +1502,7 @@ module hipsolver_interface
         integer(c_int), value :: ldx
         type(c_ptr), value :: work
         integer(c_size_t), value :: lwork
-        type(c_ptr), value :: niters
+        integer(c_int) :: niters
         type(c_ptr), value :: info
         integer(c_int) :: res
         res = hipsolverZZgesv(handle, n, nrhs, A, lda, ipiv, B, ldb, X, ldx, work, lwork, niters, info)

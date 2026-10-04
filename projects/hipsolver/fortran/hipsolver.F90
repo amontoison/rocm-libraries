@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module hipsolver
   use, intrinsic :: iso_c_binding
@@ -1498,7 +1499,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: SSgels
     end function hipsolverSSgels
@@ -1523,7 +1524,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DDgels
     end function hipsolverDDgels
@@ -1548,7 +1549,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: CCgels
     end function hipsolverCCgels
@@ -1573,7 +1574,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: ZZgels
     end function hipsolverZZgels
@@ -1822,7 +1823,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: SSgesv
     end function hipsolverSSgesv
@@ -1847,7 +1848,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DDgesv
     end function hipsolverDDgesv
@@ -1872,7 +1873,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: CCgesv
     end function hipsolverCCgesv
@@ -1897,7 +1898,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: ZZgesv
     end function hipsolverZZgesv
@@ -6704,7 +6705,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnSSgels
     end function hipsolverDnSSgels
@@ -6729,7 +6730,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnDDgels
     end function hipsolverDnDDgels
@@ -6754,7 +6755,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnCCgels
     end function hipsolverDnCCgels
@@ -6779,7 +6780,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnZZgels
     end function hipsolverDnZZgels
@@ -7036,7 +7037,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnSSgesv
     end function hipsolverDnSSgesv
@@ -7061,7 +7062,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnDDgesv
     end function hipsolverDnDDgesv
@@ -7086,7 +7087,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnCCgesv
     end function hipsolverDnCCgesv
@@ -7111,7 +7112,7 @@ module hipsolver
        integer(c_int), value :: ldx
        type(c_ptr), value :: work
        integer(c_size_t), value :: lwork
-       type(c_ptr), value :: niters
+       integer(c_int) :: niters
        type(c_ptr), value :: devInfo
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: DnZZgesv
     end function hipsolverDnZZgesv
@@ -11149,7 +11150,7 @@ module hipsolver
        integer(c_int), value :: nnzA
        type(c_ptr), value :: h_csrRowPtrA
        type(c_ptr), value :: h_csrColIndA
-       type(c_ptr) :: h_csrValA_array
+       type(c_ptr), value :: h_csrValA_array
        integer(c_int), value :: nnzL
        type(c_ptr), value :: h_csrRowPtrL
        type(c_ptr), value :: h_csrColIndL
@@ -11199,7 +11200,7 @@ module hipsolver
        integer(c_int), value :: nnzA
        type(c_ptr), value :: csrRowPtrA
        type(c_ptr), value :: csrColIndA
-       type(c_ptr) :: csrValA_array
+       type(c_ptr), value :: csrValA_array
        type(c_ptr), value :: P
        type(c_ptr), value :: Q
        type(c_ptr), value :: handle
@@ -11219,7 +11220,7 @@ module hipsolver
        integer(c_int), value :: nrhs
        type(c_ptr), value :: Temp
        integer(c_int), value :: ldt
-       type(c_ptr) :: XF_array
+       type(c_ptr), value :: XF_array
        integer(c_int), value :: ldxf
        integer(kind(HIPSOLVER_STATUS_SUCCESS)) :: RfBatchSolve
     end function hipsolverRfBatchSolve
