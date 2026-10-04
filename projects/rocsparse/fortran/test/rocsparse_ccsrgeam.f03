@@ -71,7 +71,6 @@ program ccsrgeam
   type(c_ptr) :: d_row_ptr_A, d_col_ind_A, d_val_A
   type(c_ptr) :: d_row_ptr_B, d_col_ind_B, d_val_B
   type(c_ptr) :: d_row_ptr_C, d_col_ind_C, d_val_C
-  type(c_ptr) :: d_nnz_C
 
   type(c_ptr) :: handle, descr_A, descr_B, descr_C
 
@@ -94,7 +93,6 @@ program ccsrgeam
   call hipCheck(hipMalloc(d_col_ind_B, size_ciB * 4))
   call hipCheck(hipMalloc(d_val_B,     size_vB * 8))
   call hipCheck(hipMalloc(d_row_ptr_C, size_rpA * 4))
-  call hipCheck(hipMalloc(d_nnz_C,     4_c_size_t))
 
   ! Copy A and B to device
   call hipCheck(hipMemcpy(d_row_ptr_A, c_loc(h_row_ptr_A(1)), size_rpA * 4, hipMemcpyHostToDevice))
@@ -105,11 +103,11 @@ program ccsrgeam
   call hipCheck(hipMemcpy(d_val_B,     c_loc(h_val_B(1)),     size_vB * 8,  hipMemcpyHostToDevice))
 
   ! Phase 1: compute the sparsity of C (row_ptr_C + total nnz_C)
+  ! nnz_C is host memory: the handle is in the default host pointer mode.
   call rocsparseCheck(rocsparse_csrgeam_nnz(handle, M, N, &
                           descr_A, nnz_A, d_row_ptr_A, d_col_ind_A, &
                           descr_B, nnz_B, d_row_ptr_B, d_col_ind_B, &
-                          descr_C, d_row_ptr_C, d_nnz_C))
-  call hipCheck(hipMemcpy(c_loc(nnz_C), d_nnz_C, 4_c_size_t, hipMemcpyDeviceToHost))
+                          descr_C, d_row_ptr_C, c_loc(nnz_C)))
 
   ! Allocate C column indices and values now that nnz_C is known
   call hipCheck(hipMalloc(d_col_ind_C, int(nnz_C,c_size_t) * 4))
@@ -166,7 +164,6 @@ program ccsrgeam
   call hipCheck(hipFree(d_col_ind_B))
   call hipCheck(hipFree(d_val_B))
   call hipCheck(hipFree(d_row_ptr_C))
-  call hipCheck(hipFree(d_nnz_C))
   call rocsparseCheck(rocsparse_destroy_mat_descr(descr_A))
   call rocsparseCheck(rocsparse_destroy_mat_descr(descr_B))
   call rocsparseCheck(rocsparse_destroy_mat_descr(descr_C))

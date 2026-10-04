@@ -80,8 +80,8 @@ set(ROCSPARSE_FORTRAN_TESTS
     ddoti
     rocsparse_cbsrmv
     rocsparse_ccsr2csc
-#   rocsparse_ccsrgeam
-#   rocsparse_ccsrgemm
+    rocsparse_ccsrgeam
+    rocsparse_ccsrgemm
     rocsparse_ccsric0
     rocsparse_ccsrilu0
     rocsparse_cgebsrmv
@@ -97,8 +97,8 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_csr2coo
     rocsparse_dbsrmv
     rocsparse_dcsr2csc
-#   rocsparse_dcsrgeam
-#   rocsparse_dcsrgemm
+    rocsparse_dcsrgeam
+    rocsparse_dcsrgemm
     rocsparse_dcsric0
     rocsparse_dcsrilu0
     rocsparse_descr_get
@@ -114,8 +114,8 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_pointer_mode
     rocsparse_sbsrmv
     rocsparse_scsr2csc
-#   rocsparse_scsrgeam
-#   rocsparse_scsrgemm
+    rocsparse_scsrgeam
+    rocsparse_scsrgemm
     rocsparse_scsric0
     rocsparse_scsrilu0
     rocsparse_sgebsrmv
@@ -131,8 +131,8 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_version
     rocsparse_zbsrmv
     rocsparse_zcsr2csc
-#   rocsparse_zcsrgeam
-#   rocsparse_zcsrgemm
+    rocsparse_zcsrgeam
+    rocsparse_zcsrgemm
     rocsparse_zcsric0
     rocsparse_zcsrilu0
     rocsparse_zgebsrmv
@@ -145,21 +145,6 @@ set(ROCSPARSE_FORTRAN_TESTS
     rocsparse_zsptrsm
     rocsparse_zsptrsv
     zgpsv_interleaved_batch)
-
-# The csrgeam and csrgemm tests are commented out above, all four precisions of
-# each, because they segfault.
-#
-# csrgemm selects what it computes from whether beta is a NULL POINTER, not from
-# its value: rocsparse_csrgemm.h says "descr_D, csr_val_D, csr_row_ptr_D, or
-# csr_col_ind_D are invalid if beta is valid". These tests pass c_loc(beta) for
-# beta = 0.0 -- a valid pointer -- while passing c_null_ptr for descr_D and
-# every D array, so rocSPARSE looks for a D term and dereferences null. The
-# plain C = alpha*A*B case wants c_null_ptr for beta itself. Stated so nobody
-# re-adds them unchanged.
-#
-# csrgeam has no D term and its tests pass c_loc(alpha) and c_loc(beta) with
-# both set to 1.0, so that cause does not carry over; those stay commented out
-# pending an investigation rather than a guess.
 
 if(_have_hip_binding)
   foreach(_t IN LISTS ROCSPARSE_FORTRAN_TESTS)
