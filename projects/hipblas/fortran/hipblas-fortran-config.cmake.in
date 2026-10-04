@@ -1,76 +1,55 @@
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell cop-
+# ies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IM-
+# PLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNE-
+# CTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# ########################################################################
+
 # Config package for the hipBLAS Fortran bindings.
 #
 #   find_package(hipblas-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE roc::hipblas_fortran)
 #
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is portable across neither compilers nor versions of one
-# compiler. This package checks that the consumer's compiler matches, and fails
-# with a named diagnostic rather than hitting an unreadable .mod much later.
+# One archive and .mod set is installed per Fortran compiler. Set
+# HIPBLAS_FORTRAN_COMPILER_DIR before find_package to pick one explicitly.
 
 @PACKAGE_INIT@
 
-set(HIPBLAS_FORTRAN_COMPILER_DIR "@HIPBLAS_FORTRAN_COMPILER_DIR@")
+set(_hipblas_built_dir "@HIPBLAS_FORTRAN_COMPILER_DIR@")
 
-# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# preamble above has already turned each into an absolute path derived from
-# where THIS file was found: the package survives relocation and gets lib64
-# right. Everything below goes through these two.
-#
-# The token that expands into that preamble is described rather than spelled
-# out, and has to stay that way: configure_package_config_file() substitutes
-# every occurrence of it, comments included, so naming it here would splice a
-# second copy of the whole block into the middle of this sentence.
+# Absolute, relocatable paths written by PATH_VARS (see PACKAGE_INIT above).
 set(_hipblas_libdir "@PACKAGE_HIPBLAS_FORTRAN_LIBDIR@")
 set(_hipblas_incdir "@PACKAGE_HIPBLAS_FORTRAN_INCLUDEDIR@")
 
-# A consumer asks "is a hipBLAS Fortran binding available here?" through
-# hipblas_FORTRAN_FOUND, which is set whether this package is reached directly
-# by find_package(hipblas-fortran) or alongside hipblas-config.cmake, with which
-# it is co-installed in lib/cmake/hipblas. It stays FALSE on every early return.
 set(hipblas_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(hipblas-fortran_FOUND FALSE)
-  # One argument, not several: set() with several builds a LIST, and
-  # find_package renders a list with a semicolon at every element boundary.
   string(CONCAT hipblas-fortran_NOT_FOUND_MESSAGE
       "The hipBLAS Fortran bindings need Fortran enabled before find_package: "
       "add Fortran to your project() languages, or call enable_language(Fortran).")
   return()
 endif()
 
-# This MUST mirror the mapping in projects/hipblas/fortran/CMakeLists.txt: it
-# recomputes, for the compiler the CONSUMER is using, the same directory name
-# the bindings were installed under. The two cannot share code -- this file runs
-# in a consumer's build, long after ours is gone -- so they are kept in step by
-# hand. Get it wrong and the check can never match, and the package then rejects
-# every consumer over a compiler mismatch that does not exist.
-if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(_hipblas_fc "gfortran")
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
-  set(_hipblas_fc "amdflang")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Cray")
-  set(_hipblas_fc "ftn")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-  set(_hipblas_fc "ifx")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-  set(_hipblas_fc "ifort")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-  set(_hipblas_fc "nvfortran")
-else()
-  get_filename_component(_hipblas_fc "${CMAKE_Fortran_COMPILER}" NAME_WE)
-  string(TOLOWER "${_hipblas_fc}" _hipblas_fc)
-endif()
-
-# A site installing several versions of one compiler side by side overrides
-# HIPBLAS_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so accept
-# the derived name, or that name followed by a separator and anything; strict
-# equality would reject exactly the sites that used the documented override.
-#
-# By length and substring rather than regex: _hipblas_fc can be an arbitrary
-# basename on the fallback branch above, and CMake has no regex-escape, so a
-# compiler called g++.wrapper or flang(2) would mismatch silently or abort.
+# Accepts FC itself or FC plus a separator and suffix (gfortran-13). Not a regex:
+# FC may be an arbitrary basename, and CMake has no regex-escape.
 function(_hipblas_dir_matches DIR FC OUT)
   set(${OUT} FALSE PARENT_SCOPE)
   if(DIR STREQUAL FC)
@@ -88,52 +67,65 @@ function(_hipblas_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use. The recorded
-# HIPBLAS_FORTRAN_COMPILER_DIR is only a default: a prefix can hold artifacts
-# for several compilers at once, while the config package is written once and
-# names whichever install ran last, so trusting it blindly would reject a
-# consumer whose .mod is present. Prefer the consumer's OWN compiler when its
-# artifacts are installed here, and fall back to the recorded directory.
+file(GLOB _hipblas_avail RELATIVE "${_hipblas_incdir}" "${_hipblas_incdir}/*")
+
 set(_hipblas_dir "")
-if(EXISTS "${_hipblas_incdir}/${_hipblas_fc}/hipblas.mod")
-  set(_hipblas_dir "${_hipblas_fc}")
+if(DEFINED HIPBLAS_FORTRAN_COMPILER_DIR)
+  if(NOT EXISTS "${_hipblas_incdir}/${HIPBLAS_FORTRAN_COMPILER_DIR}/hipblas.mod" OR
+     NOT EXISTS "${_hipblas_libdir}/${HIPBLAS_FORTRAN_COMPILER_DIR}/libhipblas_fortran.a")
+    set(hipblas-fortran_FOUND FALSE)
+    string(CONCAT hipblas-fortran_NOT_FOUND_MESSAGE
+        "HIPBLAS_FORTRAN_COMPILER_DIR is '${HIPBLAS_FORTRAN_COMPILER_DIR}', but "
+        "no hipblas.mod and libhipblas_fortran.a are installed under "
+        "${_hipblas_incdir}/${HIPBLAS_FORTRAN_COMPILER_DIR} and "
+        "${_hipblas_libdir}/${HIPBLAS_FORTRAN_COMPILER_DIR}. Available: "
+        "${_hipblas_avail}.")
+    return()
+  endif()
+  set(_hipblas_dir "${HIPBLAS_FORTRAN_COMPILER_DIR}")
 else()
-  _hipblas_dir_matches("${HIPBLAS_FORTRAN_COMPILER_DIR}" "${_hipblas_fc}" _hipblas_ok)
-  if(_hipblas_ok)
-    set(_hipblas_dir "${HIPBLAS_FORTRAN_COMPILER_DIR}")
+  # Must mirror the mapping in projects/hipblas/fortran/CMakeLists.txt.
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(_hipblas_fc "gfortran")
+  elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
+    set(_hipblas_fc "amdflang")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Cray")
+    set(_hipblas_fc "ftn")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+    set(_hipblas_fc "ifx")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    set(_hipblas_fc "ifort")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    set(_hipblas_fc "nvfortran")
+  else()
+    get_filename_component(_hipblas_fc "${CMAKE_Fortran_COMPILER}" NAME_WE)
+    string(TOLOWER "${_hipblas_fc}" _hipblas_fc)
+  endif()
+
+  # A prefix can hold several compilers' artifacts; the recorded one is a fallback.
+  if(EXISTS "${_hipblas_incdir}/${_hipblas_fc}/hipblas.mod")
+    set(_hipblas_dir "${_hipblas_fc}")
+  else()
+    _hipblas_dir_matches("${_hipblas_built_dir}" "${_hipblas_fc}" _hipblas_ok)
+    if(_hipblas_ok)
+      set(_hipblas_dir "${_hipblas_built_dir}")
+    endif()
+  endif()
+
+  if(NOT _hipblas_dir)
+    set(hipblas-fortran_FOUND FALSE)
+    string(CONCAT hipblas-fortran_NOT_FOUND_MESSAGE
+        "This project builds with ${_hipblas_fc}, but no hipblas.mod for it is "
+        "installed under ${_hipblas_incdir}. Available: "
+        "${_hipblas_avail}. A Fortran .mod cannot be shared across compilers; "
+        "rebuild the bindings with ${_hipblas_fc}, or set "
+        "HIPBLAS_FORTRAN_COMPILER_DIR to the directory to use.")
+    return()
   endif()
 endif()
 
-if(NOT _hipblas_dir)
-  # Name what IS installed, so the reader can see whether they need to rebuild
-  # or merely point at an existing directory.
-  file(GLOB _hipblas_avail RELATIVE "${_hipblas_incdir}"
-       "${_hipblas_incdir}/*")
-  set(hipblas-fortran_FOUND FALSE)
-  string(CONCAT hipblas-fortran_NOT_FOUND_MESSAGE
-      "This project builds with ${_hipblas_fc}, but no hipblas.mod for it is "
-      "installed under ${_hipblas_incdir}. Available: "
-      "${_hipblas_avail}. A Fortran .mod cannot be shared across compilers; "
-      "rebuild the bindings with ${_hipblas_fc}, or set "
-      "HIPBLAS_FORTRAN_COMPILER_DIR to the directory to use.")
-  return()
-endif()
-
-# The C library the binding declares bind(C) interfaces into: a link-time
-# dependency of the imported target, so it must be imported before the include()
-# below, or roc::hipblas_fortran would point at an undefined roc::hipblas.
-#
-# The outer guard is written by fortran/CMakeLists.txt as a literal TRUE or
-# FALSE, TRUE only when the archive really carries roc::hipblas in its link
-# interface: the bindings compile against nothing, so they build on a host with
-# no hipBLAS installed, and requiring the package here regardless would fail
-# find_package over a dependency this one does not have.
-#
-# hipblas-config.cmake does find_dependency(hip), whose hip-config.cmake reaches
-# FindThreads and hard-errors unless C or CXX is enabled. Enabling a language
-# from a config package is unusual and deliberate: the alternative is every
-# Fortran consumer writing enable_language(C) after an error naming nothing of
-# theirs.
+# Written TRUE only when the archive links roc::hipblas, which must be imported
+# before the targets file. hip's config needs C or CXX enabled (FindThreads).
 if(@HIPBLAS_FORTRAN_NEEDS_C_PACKAGE@)
   if(NOT TARGET roc::hipblas)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
@@ -146,10 +138,8 @@ endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/hipblas-fortran-targets.cmake")
 
-# The targets file hardcodes the directory the package was BUILT with. When the
-# consumer's compiler resolved to a different one above, repoint the imported
-# target at it, otherwise the .mod found and the archive linked would disagree.
-if(NOT _hipblas_dir STREQUAL "${HIPBLAS_FORTRAN_COMPILER_DIR}")
+# The targets file hardcodes the directory the package was built with.
+if(NOT _hipblas_dir STREQUAL "${_hipblas_built_dir}")
   set_target_properties(roc::hipblas_fortran PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${_hipblas_incdir}/${_hipblas_dir}")
   get_target_property(_hipblas_cfgs roc::hipblas_fortran IMPORTED_CONFIGURATIONS)
