@@ -29,7 +29,12 @@ Documentation for hipBLAS is available at
   `hipblasGetPointerMode` and `hipblasGetAtomicsMode` (the enum kind) and
   `hipblasGetBatchAlphaStride` and `hipblasGetBatchBetaStride` (`integer(c_int64_t)`). Pass the
   variable itself: code passing `c_loc(x)` must pass `x`. The newly bound `hipblasGetMathMode`
-  (the enum kind) and `hipblasGetProperty` (`integer(c_int)`) follow the same convention.
+  (the enum kind), `hipblasGetProperty` and `hipblasGetVersion` (`integer(c_int)`) follow the
+  same convention.
+* On the CUDA backend the Fortran gtests, benchmark and samples are no longer built by default,
+  since the bindings are OFF there: pass `-DBUILD_FORTRAN_BINDINGS=ON` to keep them.
+* `rmake.py` builds use ROCm's `amdflang` for Fortran when present, falling back to `gfortran`;
+  the client packages depend on `libgfortran` only when `gfortran` built them.
 
 ### Removed
 
