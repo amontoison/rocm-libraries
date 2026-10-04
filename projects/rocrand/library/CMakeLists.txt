@@ -52,13 +52,13 @@ configure_file(
 
 add_library(rocrand ${rocRAND_HIP_SRCS})
 
-# The namespaced spelling an INSTALLED rocRAND exports, made available in tree
-# as well. Every sibling library adds this next to its add_library; rocRAND was
-# the one that did not, so an in-tree consumer testing for roc::rocrand found
-# nothing and fell through to find_package(rocrand), which TheRock's dependency
-# provider rejects as an undeclared dependency on a package the super-project is
-# itself building.
-add_library(roc::rocrand ALIAS rocrand)
+# In-tree roc::rocrand, so fortran/ need not find_package(rocrand) (TheRock's
+# dependency provider rejects that). Not under USE_SYSTEM_LIB: the alias would
+# make the root's find_package(rocrand) return early, and the tests would
+# silently link this library instead of the system one.
+if(NOT USE_SYSTEM_LIB)
+  add_library(roc::rocrand ALIAS rocrand)
+endif()
 
 if(WIN32)
     configure_file("${PROJECT_SOURCE_DIR}/library/include/rocrand/rocrand_in.rc.in"
