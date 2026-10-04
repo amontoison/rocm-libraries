@@ -135,8 +135,8 @@ program example_fortran_bsrsv
 
 !   rocsparse_get_git_rev takes a char*, so the binding takes a type(c_ptr) and
 !   the destination is an interoperable character array rather than a Fortran
-!   string. The C side writes a NUL-terminated revision, so the buffer is one
-!   byte longer than the text printed from it.
+!   string. rocsparse_get_git_rev writes the NUL-terminated revision string;
+!   the buffer matches the 64 bytes the C clients use.
     character(kind=c_char), target :: rev_buf(64)
     character(len=12) :: rev
 
