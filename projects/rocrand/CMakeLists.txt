@@ -34,15 +34,8 @@ endif()
 # Build options
 include(CMakeDependentOption)
 
-# Declared here as well as in fortran/, so that print_configuration_summary()
-# below, which runs before add_subdirectory(fortran), has a value to report.
-# The second option() call in the subdirectory reuses this cache entry.
-#
-# "${UNIX}": OFF on Windows, where ROCm ships no Fortran compiler at all --
-# TheRock builds LLVM without flang there. This is the declaration that wins,
-# since it creates the cache entry first; fortran/ carries the same default so
-# that a standalone configure of that directory agrees. The full reasoning is
-# in fortran/CMakeLists.txt.
+# Also declared here so that the configuration summary, printed before
+# add_subdirectory(fortran), has a value; OFF on Windows (no ROCm Fortran compiler).
 option(BUILD_FORTRAN_BINDINGS "Build the rocRAND Fortran bindings" "${UNIX}")
 option(BUILD_TEST "Build tests (requires googletest)" OFF)
 option(BUILD_BENCHMARK "Build benchmarks" OFF)
@@ -213,15 +206,8 @@ else()
   add_subdirectory(library)
 endif()
 
-# Fortran bindings, generated from the headers above and committed next to them.
-# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF
-# or when no Fortran compiler is available, so a C-only site is unaffected.
-#
-# Outside the branch above on purpose. That branch decides whether librocrand is
-# BUILT here or taken from the system under USE_SYSTEM_LIB; the bindings need it
-# linked, not built, and resolve it from the prefix path when the in-tree target
-# is absent. Inheriting the skip would silently drop bindings the build could
-# perfectly well produce and install.
+# Fortran bindings; self-guarding. Outside the branch above: they only need
+# librocrand to link, and find an installed one when it is not built here.
 add_subdirectory(fortran)
 
 if(BUILD_TEST OR BUILD_BENCHMARK)

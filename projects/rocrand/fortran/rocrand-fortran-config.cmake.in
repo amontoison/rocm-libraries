@@ -1,137 +1,126 @@
-# Config package for the rocRAND Fortran bindings.
+# MIT License
 #
+# Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Config package for the rocRAND Fortran bindings:
 #   find_package(rocrand-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE roc::rocrand_fortran)
-#
-# The bindings ship as one archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is not portable across compilers. This package checks that the
-# consumer is building with the compiler the bindings were installed for, and
-# fails with a named diagnostic rather than hitting an unreadable .mod later.
+# Set ROCRAND_FORTRAN_COMPILER_DIR to pick the per-compiler directory yourself.
 
 @PACKAGE_INIT@
 
-set(ROCRAND_FORTRAN_COMPILER_DIR "@ROCRAND_FORTRAN_COMPILER_DIR@")
+set(_rocrand_built_dir "@ROCRAND_FORTRAN_COMPILER_DIR@")
 
-# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# preamble above has already turned each into an absolute path derived from
-# where THIS file was found: the package survives relocation and gets lib64
-# right. The preamble is named, never spelled: its token is substituted wherever
-# it appears, comments included, so writing it here would splice in a copy.
+# Do not spell the preamble's token in this file: it is substituted everywhere.
 set(_rocrand_libdir "@PACKAGE_ROCRAND_FORTRAN_LIBDIR@")
 set(_rocrand_incdir "@PACKAGE_ROCRAND_FORTRAN_INCLUDEDIR@")
 
-# How a consumer asks "is a rocRAND Fortran binding available here?". Set
-# whether this package is reached directly by find_package(rocrand-fortran) or
-# alongside rocrand-config.cmake, with which it is co-installed in
-# lib/cmake/rocrand. It stays FALSE on every early return below.
 set(rocrand_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(rocrand-fortran_FOUND FALSE)
-  # One argument, not several: set() with multiple arguments builds a LIST, and
-  # find_package renders a list with a semicolon at every element boundary, so a
-  # message split across lines would read "... find_package: ;add Fortran ...".
   string(CONCAT rocrand-fortran_NOT_FOUND_MESSAGE
       "The rocRAND Fortran bindings need Fortran enabled before find_package: "
       "add Fortran to your project() languages, or call enable_language(Fortran).")
   return()
 endif()
 
-# This MUST mirror the mapping in projects/rocrand/fortran/CMakeLists.txt
-# exactly: it recomputes, for the compiler the CONSUMER is using, the same
-# directory name the bindings were installed under. The two cannot share code --
-# this file runs in a consumer's build, long after ours is gone -- so they are
-# kept in step by hand. Get it wrong and the check can never match: the package
-# then rejects every consumer over a mismatch that does not exist.
-if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(_rocrand_fc "gfortran")
-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
-  set(_rocrand_fc "amdflang")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Cray")
-  set(_rocrand_fc "ftn")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
-  set(_rocrand_fc "ifx")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-  set(_rocrand_fc "ifort")
-elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
-  set(_rocrand_fc "nvfortran")
-else()
-  get_filename_component(_rocrand_fc "${CMAKE_Fortran_COMPILER}" NAME_WE)
-  string(TOLOWER "${_rocrand_fc}" _rocrand_fc)
-endif()
-
-# A site that installs several versions of one compiler side by side overrides
-# ROCRAND_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so the
-# recorded directory is accepted when it is the derived name, or that name
-# followed by a separator and anything; strict equality would reject exactly the
-# sites that used the documented override. The layout records no version, so
-# gfortran 13 and gfortran 15 are indistinguishable here.
-#
-# Done by length and substring rather than regex: _rocrand_fc comes from the
-# basename fallback above, so it is an arbitrary file name, and with no
-# regex-escape in CMake a compiler called g++.wrapper or flang(2) would either
-# mismatch silently or abort CMake with a regex error.
-function(_rocrand_dir_matches DIR FC OUT)
-  set(${OUT} FALSE PARENT_SCOPE)
-  if(DIR STREQUAL FC)
-    set(${OUT} TRUE PARENT_SCOPE)
+if(DEFINED ROCRAND_FORTRAN_COMPILER_DIR)
+  # The consumer chose the directory: use exactly that one.
+  set(_rocrand_dir "${ROCRAND_FORTRAN_COMPILER_DIR}")
+  if(NOT EXISTS "${_rocrand_incdir}/${_rocrand_dir}/rocrand.mod")
+    file(GLOB _rocrand_avail RELATIVE "${_rocrand_incdir}"
+         "${_rocrand_incdir}/*")
+    set(rocrand-fortran_FOUND FALSE)
+    string(CONCAT rocrand-fortran_NOT_FOUND_MESSAGE
+        "ROCRAND_FORTRAN_COMPILER_DIR is '${_rocrand_dir}', but there is no "
+        "${_rocrand_incdir}/${_rocrand_dir}/rocrand.mod. Available: "
+        "${_rocrand_avail}.")
     return()
   endif()
-  string(LENGTH "${FC}" _n)
-  string(LENGTH "${DIR}" _dn)
-  if(_dn GREATER _n)
-    string(SUBSTRING "${DIR}" 0 ${_n} _head)
-    string(SUBSTRING "${DIR}" ${_n} 1 _sep)
-    if(_head STREQUAL FC AND _sep MATCHES "^[-._]$")
+else()
+  # MUST match the mapping in projects/rocrand/fortran/CMakeLists.txt.
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(_rocrand_fc "gfortran")
+  elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
+    set(_rocrand_fc "amdflang")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Cray")
+    set(_rocrand_fc "ftn")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "IntelLLVM")
+    set(_rocrand_fc "ifx")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    set(_rocrand_fc "ifort")
+  elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
+    set(_rocrand_fc "nvfortran")
+  else()
+    get_filename_component(_rocrand_fc "${CMAKE_Fortran_COMPILER}" NAME_WE)
+    string(TOLOWER "${_rocrand_fc}" _rocrand_fc)
+  endif()
+
+  # Accepts FC or FC<sep>suffix (e.g. gfortran-13.3.0). Not a regex: FC can be
+  # an arbitrary file name and CMake has no regex-escape.
+  function(_rocrand_dir_matches DIR FC OUT)
+    set(${OUT} FALSE PARENT_SCOPE)
+    if(DIR STREQUAL FC)
       set(${OUT} TRUE PARENT_SCOPE)
+      return()
+    endif()
+    string(LENGTH "${FC}" _n)
+    string(LENGTH "${DIR}" _dn)
+    if(_dn GREATER _n)
+      string(SUBSTRING "${DIR}" 0 ${_n} _head)
+      string(SUBSTRING "${DIR}" ${_n} 1 _sep)
+      if(_head STREQUAL FC AND _sep MATCHES "^[-._]$")
+        set(${OUT} TRUE PARENT_SCOPE)
+      endif()
+    endif()
+  endfunction()
+
+  # Prefer the consumer's own compiler; the built directory is only a fallback.
+  set(_rocrand_dir "")
+  if(EXISTS "${_rocrand_incdir}/${_rocrand_fc}/rocrand.mod")
+    set(_rocrand_dir "${_rocrand_fc}")
+  else()
+    _rocrand_dir_matches("${_rocrand_built_dir}" "${_rocrand_fc}" _rocrand_ok)
+    if(_rocrand_ok)
+      set(_rocrand_dir "${_rocrand_built_dir}")
     endif()
   endif()
-endfunction()
 
-# Which per-compiler directory to use. A prefix can hold artifacts for several
-# compilers at once, but the config package is written once, so the recorded
-# ROCRAND_FORTRAN_COMPILER_DIR names whichever install ran LAST and trusting it
-# blindly rejects a consumer whose .mod is present. Prefer the consumer's OWN
-# compiler when its artifacts are here, and fall back to the recorded value.
-set(_rocrand_dir "")
-if(EXISTS "${_rocrand_incdir}/${_rocrand_fc}/rocrand.mod")
-  set(_rocrand_dir "${_rocrand_fc}")
-else()
-  _rocrand_dir_matches("${ROCRAND_FORTRAN_COMPILER_DIR}" "${_rocrand_fc}" _rocrand_ok)
-  if(_rocrand_ok)
-    set(_rocrand_dir "${ROCRAND_FORTRAN_COMPILER_DIR}")
+  if(NOT _rocrand_dir)
+    file(GLOB _rocrand_avail RELATIVE "${_rocrand_incdir}"
+         "${_rocrand_incdir}/*")
+    set(rocrand-fortran_FOUND FALSE)
+    string(CONCAT rocrand-fortran_NOT_FOUND_MESSAGE
+        "This project builds with ${_rocrand_fc}, but no rocrand.mod for it is "
+        "installed under ${_rocrand_incdir}. Available: "
+        "${_rocrand_avail}. A Fortran .mod cannot be shared across compilers; "
+        "rebuild the bindings with ${_rocrand_fc}, or set "
+        "ROCRAND_FORTRAN_COMPILER_DIR to the directory to use.")
+    return()
   endif()
 endif()
 
-if(NOT _rocrand_dir)
-  # Name what IS installed, so the reader can see whether they need to rebuild
-  # or merely point at an existing directory.
-  file(GLOB _rocrand_avail RELATIVE "${_rocrand_incdir}"
-       "${_rocrand_incdir}/*")
-  set(rocrand-fortran_FOUND FALSE)
-  string(CONCAT rocrand-fortran_NOT_FOUND_MESSAGE
-      "This project builds with ${_rocrand_fc}, but no rocrand.mod for it is "
-      "installed under ${_rocrand_incdir}. Available: "
-      "${_rocrand_avail}. A Fortran .mod cannot be shared across compilers; "
-      "rebuild the bindings with ${_rocrand_fc}, or set "
-      "ROCRAND_FORTRAN_COMPILER_DIR to the directory to use.")
-  return()
-endif()
-
-# The C library the binding declares bind(C) interfaces into. It is a link-time
-# dependency of the imported target, so it must be imported BEFORE the include()
-# below, or roc::rocrand_fortran would point at an undefined roc::rocrand and
-# the generate step would fail.
-#
-# rocrand-config.cmake in turn does find_dependency(hip), and hip-config.cmake
-# reaches FindThreads, which hard-errors unless C or CXX is enabled. Enabling a
-# language from a config package is unusual, and deliberate: the alternative is
-# making every Fortran consumer write enable_language(C) after an error that
-# names nothing they wrote.
-#
-# Guarded on the flag fortran/CMakeLists.txt writes from the same condition that
-# decided the link: the bindings can legitimately be built where no C library
-# was found, and then depend on no rocRAND package at all.
+# roc::rocrand must exist before the targets file is read. C is enabled because
+# hip-config.cmake reaches FindThreads.
 if(@ROCRAND_FORTRAN_NEEDS_C_PACKAGE@)
   if(NOT TARGET roc::rocrand)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
@@ -144,10 +133,8 @@ endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/rocrand-fortran-targets.cmake")
 
-# The targets file hardcodes the directory the package was BUILT with. When the
-# consumer's compiler resolved to a different one above, repoint the imported
-# target at it, otherwise the .mod found and the archive linked would disagree.
-if(NOT _rocrand_dir STREQUAL "${ROCRAND_FORTRAN_COMPILER_DIR}")
+# The targets file hardcodes the built directory; repoint it if another was chosen.
+if(NOT _rocrand_dir STREQUAL "${_rocrand_built_dir}")
   set_target_properties(roc::rocrand_fortran PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${_rocrand_incdir}/${_rocrand_dir}")
   get_target_property(_rocrand_cfgs roc::rocrand_fortran IMPORTED_CONFIGURATIONS)
