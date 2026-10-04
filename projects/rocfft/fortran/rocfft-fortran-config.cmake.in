@@ -25,9 +25,8 @@ set(_rocfft_libdir "@PACKAGE_ROCFFT_FORTRAN_LIBDIR@")
 set(_rocfft_incdir "@PACKAGE_ROCFFT_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a rocFFT Fortran binding available here?" through
-# rocfft_FORTRAN_FOUND, which is set whether this package is reached directly by
-# find_package(rocfft-fortran) or through an OPTIONAL include from
-# rocfft-config.cmake. It stays FALSE on every early return below.
+# rocfft_FORTRAN_FOUND, which find_package(rocfft-fortran) sets. It stays FALSE
+# on every early return below.
 set(rocfft_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)

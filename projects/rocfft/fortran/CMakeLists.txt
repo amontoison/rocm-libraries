@@ -300,7 +300,7 @@ endif()
 # library's own client/test switch; the condition below is the one rocFFT guards
 # add_subdirectory( clients ) with, and the root resolves those three switches
 # before reaching this directory so that both read the same values. It is a
-# floor: nothing a user can pass turns the tests back on in a library-only build.
+# ceiling: nothing a user can pass turns the tests back on in a library-only build.
 # Standalone that switch does not exist. Set as a plain variable: the cache entry
 # is shared monorepo-wide, so turning it off here must stay scoped here.
 #
@@ -371,15 +371,12 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocfft-fortran-config.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocfft"
         COMPONENT devel)
 
-# That placement is what lets rocfft-config.cmake pick the bindings up with a
-# bare include(rocfft-fortran-config.cmake OPTIONAL). But
-# find_package(rocfft-fortran), the other documented spelling, searches
-# lib/cmake/rocfft-fortran*, which lib/cmake/rocfft does not match. A forwarder
-# gives that search somewhere to land without duplicating the real config and its
-# targets file.
+# find_package(rocfft-fortran), though, searches lib/cmake/rocfft-fortran*,
+# which lib/cmake/rocfft does not match. A forwarder gives that search somewhere
+# to land without duplicating the real config and its targets file.
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocfft-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the rocFFT C package, in
-# lib/cmake/rocfft, so that rocfft-config.cmake can include it as a sibling. This
+# lib/cmake/rocfft, so that one CMAKE_PREFIX_PATH entry finds both. This
 # file only exists so that find_package(rocfft-fortran) resolves to the same
 # place.
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../rocfft/rocfft-fortran-config.cmake\")

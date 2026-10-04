@@ -230,14 +230,7 @@ endif()
 
 add_subdirectory( library )
 
-# Resolved here, ahead of fortran/, rather than immediately before
-# add_subdirectory( clients ) where it used to sit. The Fortran binding tests are
-# clients too, and fortran/ decides whether to build them from the same three
-# switches this block computes; read before the block runs, BUILD_CLIENTS_TESTS
-# and its siblings are simply not defined yet, and a -DBUILD_CLIENTS=ON build
-# would silently drop the Fortran tests. Nothing between here and the clients
-# guard below depends on the order, because build-options.cmake only declares
-# options and the two blocks after it only derive plain variables from them.
+# Must stay ahead of add_subdirectory( fortran ), which reads the client switches.
 include( clients/cmake/build-options.cmake )
 
 # Build clients of the library
