@@ -1,52 +1,52 @@
-# Config package for the rocSPARSE Fortran bindings.
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights Reserved.
 #
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+# ########################################################################
+
+
+# Config package for the rocSPARSE Fortran bindings:
 #   find_package(rocsparse-fortran REQUIRED)
 #   target_link_libraries(my_app PRIVATE roc::rocsparse_fortran)
-#
-# The bindings ship as one static archive and one .mod set PER FORTRAN COMPILER,
-# because a .mod is portable across neither compilers nor versions of one
-# compiler. This package checks that the consumer's compiler matches, and fails
-# with a named diagnostic rather than hitting an unreadable .mod much later.
+# One archive and .mod set per Fortran compiler, under a per-compiler directory.
 
 @PACKAGE_INIT@
 
-set(ROCSPARSE_FORTRAN_COMPILER_DIR "@ROCSPARSE_FORTRAN_COMPILER_DIR@")
+set(_rocsparse_built_dir "@ROCSPARSE_FORTRAN_COMPILER_DIR@")
 
-# Where the per-compiler subdirectories live. Written by PATH_VARS, so the
-# PACKAGE_INIT block above has already turned each into an absolute path derived
-# from where THIS file was found: the package survives relocation and gets lib64
-# right. Everything below goes through these two.
-#
-# PACKAGE_INIT is named without its @ markers, and has to stay that way:
-# configure_package_config_file() substitutes EVERY occurrence of the token,
-# comments included, so spelling it in full would stamp a second copy of the
-# whole boilerplate into the middle of the installed config.
+# PATH_VARS, so already absolute and relocatable. Never spell PACKAGE_INIT with
+# its @ markers in a comment: configure_package_config_file substitutes it.
 set(_rocsparse_libdir "@PACKAGE_ROCSPARSE_FORTRAN_LIBDIR@")
 set(_rocsparse_incdir "@PACKAGE_ROCSPARSE_FORTRAN_INCLUDEDIR@")
 
-# A consumer asks "is a rocSPARSE Fortran binding available here?" through
-# rocsparse_FORTRAN_FOUND, which is set whether this package is reached directly
-# by find_package(rocsparse-fortran) or alongside rocsparse-config.cmake, with
-# which it is co-installed in lib/cmake/rocsparse. It stays FALSE on every early
-# return below.
 set(rocsparse_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)
   set(rocsparse-fortran_FOUND FALSE)
-  # One argument, not several: set() with several builds a LIST, and
-  # find_package renders a list with a semicolon at every element boundary.
   string(CONCAT rocsparse-fortran_NOT_FOUND_MESSAGE
       "The rocSPARSE Fortran bindings need Fortran enabled before find_package: "
       "add Fortran to your project() languages, or call enable_language(Fortran).")
   return()
 endif()
 
-# This MUST mirror the mapping in projects/rocsparse/fortran/CMakeLists.txt: it
-# recomputes, for the compiler the CONSUMER is using, the same directory name
-# the bindings were installed under. The two cannot share code -- this file runs
-# in a consumer's build, long after ours is gone -- so they are kept in step by
-# hand. Get it wrong and the check can never match, and the package then rejects
-# every consumer over a compiler mismatch that does not exist.
+# Must mirror the mapping in fortran/CMakeLists.txt.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_rocsparse_fc "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
@@ -64,15 +64,8 @@ else()
   string(TOLOWER "${_rocsparse_fc}" _rocsparse_fc)
 endif()
 
-# A site installing several versions of one compiler side by side overrides
-# ROCSPARSE_FORTRAN_COMPILER_DIR with a suffixed name (gfortran-13.3.0), so
-# accept the derived name, or that name followed by a separator and anything;
-# strict equality would reject exactly the sites that used the documented
-# override.
-#
-# By length and substring rather than regex: _rocsparse_fc can be an arbitrary
-# basename on the fallback branch above, and CMake has no regex-escape, so a
-# compiler called g++.wrapper or flang(2) would mismatch silently or abort.
+# Accepts the derived name or a suffixed one (gfortran-13.3.0). No regex:
+# _rocsparse_fc can be an arbitrary basename and CMake has no regex-escape.
 function(_rocsparse_dir_matches DIR FC OUT)
   set(${OUT} FALSE PARENT_SCOPE)
   if(DIR STREQUAL FC)
@@ -90,25 +83,29 @@ function(_rocsparse_dir_matches DIR FC OUT)
   endif()
 endfunction()
 
-# Which per-compiler directory to use. The recorded
-# ROCSPARSE_FORTRAN_COMPILER_DIR is only a default: a prefix can hold artifacts
-# for several compilers at once, while the config package is written once and
-# names whichever install ran last, so trusting it blindly would reject a
-# consumer whose .mod is present. Prefer the consumer's OWN compiler when its
-# artifacts are installed here, and fall back to the recorded directory.
+# A consumer's ROCSPARSE_FORTRAN_COMPILER_DIR is used as is. Otherwise prefer
+# the consumer's own compiler, then the directory the package was built with.
 set(_rocsparse_dir "")
-if(EXISTS "${_rocsparse_incdir}/${_rocsparse_fc}/rocsparse.mod")
+if(DEFINED ROCSPARSE_FORTRAN_COMPILER_DIR)
+  if(NOT EXISTS "${_rocsparse_incdir}/${ROCSPARSE_FORTRAN_COMPILER_DIR}/rocsparse.mod")
+    set(rocsparse-fortran_FOUND FALSE)
+    string(CONCAT rocsparse-fortran_NOT_FOUND_MESSAGE
+        "ROCSPARSE_FORTRAN_COMPILER_DIR is '${ROCSPARSE_FORTRAN_COMPILER_DIR}', "
+        "but there is no rocsparse.mod in "
+        "${_rocsparse_incdir}/${ROCSPARSE_FORTRAN_COMPILER_DIR}.")
+    return()
+  endif()
+  set(_rocsparse_dir "${ROCSPARSE_FORTRAN_COMPILER_DIR}")
+elseif(EXISTS "${_rocsparse_incdir}/${_rocsparse_fc}/rocsparse.mod")
   set(_rocsparse_dir "${_rocsparse_fc}")
 else()
-  _rocsparse_dir_matches("${ROCSPARSE_FORTRAN_COMPILER_DIR}" "${_rocsparse_fc}" _rocsparse_ok)
+  _rocsparse_dir_matches("${_rocsparse_built_dir}" "${_rocsparse_fc}" _rocsparse_ok)
   if(_rocsparse_ok)
-    set(_rocsparse_dir "${ROCSPARSE_FORTRAN_COMPILER_DIR}")
+    set(_rocsparse_dir "${_rocsparse_built_dir}")
   endif()
 endif()
 
 if(NOT _rocsparse_dir)
-  # Name what IS installed, so the reader can see whether they need to rebuild
-  # or merely point at an existing directory.
   file(GLOB _rocsparse_avail RELATIVE "${_rocsparse_incdir}"
        "${_rocsparse_incdir}/*")
   set(rocsparse-fortran_FOUND FALSE)
@@ -121,21 +118,8 @@ if(NOT _rocsparse_dir)
   return()
 endif()
 
-# The C library the binding declares bind(C) interfaces into: a link-time
-# dependency of the imported target, so it must be imported before the include()
-# below, or roc::rocsparse_fortran would point at an undefined roc::rocsparse.
-#
-# The outer guard is substituted as a literal TRUE or FALSE by the build, TRUE
-# only when roc::rocsparse really is in the archive's link interface: the
-# bindings compile against nothing, so they can be built on a machine with no
-# rocSPARSE installed, and demanding the C package then would fail a build that
-# has no problem.
-#
-# rocsparse-config.cmake does find_dependency(hip), whose hip-config.cmake
-# reaches FindThreads and hard-errors unless C or CXX is enabled. Enabling a
-# language from a config package is unusual and deliberate: the alternative is
-# every Fortran consumer writing enable_language(C) after an error naming
-# nothing of theirs.
+# TRUE only when the archive links roc::rocsparse; its find_dependency(hip)
+# needs C or CXX enabled (FindThreads).
 if(@ROCSPARSE_FORTRAN_NEEDS_C_PACKAGE@)
   if(NOT TARGET roc::rocsparse)
     if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
@@ -148,10 +132,8 @@ endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/rocsparse-fortran-targets.cmake")
 
-# The targets file hardcodes the directory the package was BUILT with. When the
-# consumer's compiler resolved to a different one above, repoint the imported
-# target at it, otherwise the .mod found and the archive linked would disagree.
-if(NOT _rocsparse_dir STREQUAL "${ROCSPARSE_FORTRAN_COMPILER_DIR}")
+# The targets file names the built directory; repoint it at the one chosen.
+if(NOT _rocsparse_dir STREQUAL _rocsparse_built_dir)
   set_target_properties(roc::rocsparse_fortran PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${_rocsparse_incdir}/${_rocsparse_dir}")
   get_target_property(_rocsparse_cfgs roc::rocsparse_fortran IMPORTED_CONFIGURATIONS)

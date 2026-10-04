@@ -1,24 +1,36 @@
-# Tests for the rocSPARSE Fortran bindings.
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights Reserved.
 #
-# One executable per test, driven by CTest. Each builds its input on the host,
-# copies it into device memory and drives one rocSPARSE routine through the
-# binding, so they build anywhere but only pass on a machine with a GPU.
-# Reached only from the parent CMakeLists, under BUILD_FORTRAN_CLIENTS.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+# ########################################################################
 
-# The Intel compilers (ifx/ifort) do not recognize the .f03 source extension and
-# skip such files ("no action performed"). Force Fortran compilation by inserting
-# -Tf immediately before the source in the compile rule; the LANGUAGE Fortran
-# source property alone is not enough.
+# rocSPARSE Fortran binding tests: one CTest executable per test, GPU required.
+
+# ifx/ifort skip .f03 sources unless told the language with -Tf.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# The tests allocate and copy device memory, so each says `use hip` as well as
-# `use rocsparse`. That makes the HIP Fortran binding a COMPILE-time dependency
-# -- its .mod must exist -- where librocsparse is only a link-time one. In-tree
-# hip::hip_fortran comes from projects/hip/fortran; standalone it has to be
-# found in an installed ROCm, built with this same compiler.
+# The tests `use hip`: hip::hip_fortran comes from find_package(hip-fortran),
+# built with this same compiler.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -31,11 +43,7 @@ if(NOT TARGET hip::hip_fortran)
     "Fortran bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
-# librocsparse itself, needed to link but not to compile. In-tree it arrives
-# through the rocsparse_fortran link interface; standalone it has to be found.
-# rocsparse-config.cmake does find_dependency(hip), whose hip-config.cmake
-# reaches FindThreads and hard-errors unless C or CXX is enabled, so C is
-# enabled here purely to satisfy it (it compiles none of the sources below).
+# Standalone librocsparse has to be found; its find_dependency(hip) needs C.
 if(NOT TARGET roc::rocsparse)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -50,14 +58,11 @@ if(NOT TARGET roc::rocsparse)
   return()
 endif()
 
-# Build <name>.f03 into one executable and register it with CTest as
-# rocsparse_fortran_<name>, labelled gpu.
 function(rocsparse_fortran_add_test name)
   set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
   if(NOT EXISTS "${src}")
     message(FATAL_ERROR "Missing test source: ${src}")
   endif()
-  # Force language detection for .f03 in toolchains where CMake misses it.
   set_source_files_properties("${src}" PROPERTIES LANGUAGE Fortran)
   add_executable(rocsparse_fortran_test_${name} "${src}")
   set_target_properties(rocsparse_fortran_test_${name} PROPERTIES LINKER_LANGUAGE Fortran)
@@ -67,15 +72,10 @@ function(rocsparse_fortran_add_test name)
   target_compile_options(rocsparse_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
   add_test(NAME rocsparse_fortran_${name} COMMAND rocsparse_fortran_test_${name})
-  # These open a rocSPARSE handle and allocate device memory, so they fail
-  # without a GPU, which is not the binding being broken. The label lets a
-  # GPU-less build machine still run the suite: ctest -LE gpu.
+  # Needs a GPU; a GPU-less machine can run ctest -LE gpu.
   set_tests_properties(rocsparse_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per routine family and precision, carried over from hipFORT's rocSPARSE
-# suite: the SpMV/SpMM kernels, the conversion routines, the incomplete
-# factorizations and the triangular solves, each across the s/d/c/z types.
 set(ROCSPARSE_FORTRAN_TESTS
     ddoti
     rocsparse_cbsrmv

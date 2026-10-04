@@ -130,12 +130,8 @@ if( NOT BUILD_FORTRAN_CLIENTS )
   option( BUILD_FORTRAN_CLIENTS "Build rocSPARSE clients requiring Fortran capabilities" ON )
 endif( )
 
-# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are one cache entry shared by
-# every library in the monorepo; these single rocSPARSE out. Applied here, as
-# plain variables scoped to this project, so that both fortran/ and clients/ --
-# siblings, neither of which sees the other's variables -- read the override.
-# fortran/ repeats it for its standalone configure. Before the ASan block below,
-# which must still be able to force the Fortran clients off.
+# Per-library overrides of the shared BUILD_FORTRAN_* entries, seen by fortran/
+# and clients/; before the ASan block, which forces the Fortran clients off.
 if(DEFINED ROCSPARSE_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCSPARSE_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -282,7 +278,8 @@ endif( )
 
 if( BUILD_CLIENTS_ONLY OR BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
   set( BUILD_CLIENTS ON )
-  if( BUILD_CLIENTS_TESTS )
+  # fortran/ registers its binding tests under BUILD_FORTRAN_CLIENTS.
+  if( BUILD_CLIENTS_TESTS OR BUILD_FORTRAN_CLIENTS )
     enable_testing()
   endif()
   if(NOT CLIENTS_OS)
@@ -295,18 +292,8 @@ if( BUILD_CLIENTS_ONLY OR BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_
     set(OPENMP_RPM "libgomp")
     set(OPENMP_DEB "libomp-dev")
   endif()
-  set(GFORTRAN_RPM "libgfortran4")
-  set(GFORTRAN_DEB "libgfortran4")
-  if(CLIENTS_OS STREQUAL "centos" OR CLIENTS_OS STREQUAL "rhel" OR CLIENTS_OS STREQUAL "almalinux")
-    if(CLIENTS_OS_VERSION VERSION_GREATER_EQUAL "8")
-      set(GFORTRAN_RPM "libgfortran")
-    endif()
-  elseif(CLIENTS_OS STREQUAL "ubuntu" AND CLIENTS_OS_VERSION VERSION_GREATER_EQUAL "20.04")
-    set(GFORTRAN_DEB "libgfortran5")
-  elseif(CLIENTS_OS STREQUAL "sles" AND OPENMP_FOUND)
+  if(CLIENTS_OS STREQUAL "sles" AND OPENMP_FOUND)
     set(OPENMP_RPM "libgomp1")
-  elseif(CLIENTS_OS STREQUAL "mariner" OR CLIENTS_OS STREQUAL "azurelinux")
-    set(GFORTRAN_RPM "gfortran")
   endif()
 
   rocm_package_setup_component(clients)
@@ -336,30 +323,8 @@ if (NOT BUILD_CLIENTS_ONLY)
   add_subdirectory(library)
 endif()
 
-# Fortran bindings, generated from the headers above and committed next to them.
-# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF,
-# when BUILD_ROCSPARSE_ILP64 is ON, or when no Fortran compiler is available, so
-# a C-only site is unaffected.
-#
-# Outside the BUILD_CLIENTS_ONLY branch on purpose, and not merely for symmetry
-# with the other libraries. That branch decides whether librocsparse is BUILT
-# here; the bindings need it linked, not built, and resolve it from the prefix
-# path when the in-tree target is absent.
-#
-# Inheriting the skip would drop a client artifact from a clients-only build:
-# the bindings' own test suite lives in fortran/test, is gated on
-# BUILD_FORTRAN_CLIENTS (which defaults to ON), and is the only thing that
-# exercises the generated module. -DBUILD_CLIENTS_ONLY=ON would skip this
-# directory and silently build no binding tests at all. The Fortran samples
-# under clients/samples are NOT the reason: that block is gated on
-# `if(TARGET rocsparse)`, and a clients-only build has only the imported
-# roc::rocsparse, so those samples never build there either way.
-#
-# The cost is that a clients-only build also emits this directory's devel
-# install rules -- the rocsparse_fortran archive, the .mod files, the shipped
-# rocsparse.F90 and the rocsparse-fortran package config. They are the same
-# rules a library build emits, writing the same files, so a clients-only
-# install simply lays down the bindings alongside the clients.
+# Fortran bindings; self-guarded. Outside the BUILD_CLIENTS_ONLY branch so a
+# clients-only build still builds the binding tests against the installed library.
 add_subdirectory(fortran)
 
 # Trigger client builds if selected

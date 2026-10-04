@@ -1,58 +1,43 @@
-# Fortran bindings for rocSPARSE.
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights Reserved.
 #
-# rocsparse.F90 is GENERATED from the rocSPARSE C headers by the rocm-fortran
-# generator and committed next to the library it binds, so a header change and
-# its binding travel in the same pull request. Do not edit it: regenerate it.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# It is one self-contained module, `rocsparse`, with one bind(C) interface per
-# entry point (731 distinct bind(C) names), the enum constants and the
-# rocsparseCheck status helper. Every handle and descriptor is an opaque
-# type(c_ptr), the representation the hand-written binding also used: no derived
-# types, no _typed or _dptr overloads, no character variants, no docstrings.
-# Array overloads cover only the subset of routines the generator supports;
-# every other routine is reached through type(c_ptr) under every tier.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# A Fortran binding compiles against nothing, so this directory needs no
-# rocSPARSE C target to build. librocsparse is required to LINK an executable,
-# and is carried as the target's link interface.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 #
-# This REPLACES the hand-written library/src/rocsparse.f90 and
-# rocsparse_enums.f90, removed in the same commit. That binding was shipped and
-# built by default, and the clients' Fortran samples were compiled from it; they
-# now compile against this module and link the target exported here.
+# ########################################################################
+
+
+# Fortran bindings for rocSPARSE. rocsparse.F90 is generated from the C headers:
+# regenerate it, do not edit it.
 
 cmake_minimum_required(VERSION 3.19)
 
-# Standalone (not a subdirectory of the rocSPARSE build) this is its own
-# project, so the bindings can be built and packaged alone -- the supported path
-# for a Fortran compiler other than the amdflang ROCm ships them built with.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(rocsparse-fortran LANGUAGES NONE)
 endif()
 
-# Guarded, so a site with no Fortran compiler can still build the C library.
-# "${UNIX}" rather than ON because ROCm ships no Fortran compiler on Windows at
-# all: TheRock adds flang to LLVM_ENABLE_PROJECTS only in the non-WIN32 branch
-# of compiler/pre_hook_amd-llvm.cmake, so the amdflang preference below finds
-# nothing, the probe falls through to a stray gfortran, and
-# enable_language(Fortran) fails to identify it.
+# Not on Windows: ROCm ships no Fortran compiler there.
 option(BUILD_FORTRAN_BINDINGS "Build the rocSPARSE Fortran bindings" "${UNIX}")
 
-# One switch for the binding tests and a library's Fortran clients. ON by
-# default, but guarded like the bindings: asking for them when the bindings were
-# not built is a skip, not an error.
 option(BUILD_FORTRAN_CLIENTS "Build the rocSPARSE Fortran clients and binding tests" ON)
 
-# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
-# every library in the monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top
-# turns the whole Fortran track off. Each library also honours a name of its own
-# for when one has to be singled out. In-tree the rocSPARSE root applies these
-# overrides before it adds this directory and clients/, so both see them; the
-# copy here is what makes them work standalone, and in-tree it reapplies the
-# same value. For the CLIENTS half the override is a ceiling, not a guarantee:
-# the gate further down forces BUILD_FORTRAN_CLIENTS off in any in-tree build
-# that is not building rocSPARSE's clients, an explicit
-# ROCSPARSE_BUILD_FORTRAN_CLIENTS=ON included.
+# The BUILD_FORTRAN_* cache entries are shared by the whole monorepo; these
+# single rocSPARSE out. The root applies them too, before its ASan override.
 if(DEFINED ROCSPARSE_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCSPARSE_BUILD_FORTRAN_BINDINGS})
 endif()
@@ -60,19 +45,8 @@ if(DEFINED ROCSPARSE_BUILD_FORTRAN_CLIENTS)
   set(BUILD_FORTRAN_CLIENTS ${ROCSPARSE_BUILD_FORTRAN_CLIENTS})
 endif()
 
-# Which array-argument overloads the module exposes. One tri-state rather than a
-# boolean per tier, because the two upper tiers are alternatives, not additions:
-# an assumed-rank dummy is not distinguishable by rank from the per-rank
-# specifics, so assumed-rank REPLACES them (see the translation below). Array
-# overloads exist only for the subset of routines the generator supports; every
-# other routine keeps the plain type(c_ptr) interface under all three, so no
-# entry point becomes unreachable by choosing a tier.
-#
-#   none           the raw type(c_ptr) surface only (Fortran 2003)
-#   assumed-shape  + per-rank dimension(:) overloads (Fortran 2008): the default,
-#                  and what the bindings shipped in ROCm are built with
-#   assumed-rank   + one dimension(..) overload for each of those routines
-#                  (Fortran 2018)
+# The two upper tiers are alternatives: assumed-rank replaces the per-rank
+# overloads. Routines without array overloads keep type(c_ptr) under all three.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -82,18 +56,8 @@ if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
 
-# ILP64 makes rocsparse_int an int64_t, while the generated module binds every
-# rocsparse_int argument as integer(c_int) and carries nothing that tells the
-# two builds apart: it would compile, link against an ILP64 librocsparse, and
-# then pass four bytes where the library reads eight. Silently ABI-incompatible
-# is the one failure mode a binding must not have, so none is built at all.
-#
-# A skip rather than a FATAL_ERROR, because a C-only ILP64 build is legitimate
-# and has to keep configuring. No rocsparse_fortran target is created, so
-# clients/, which gates its Fortran samples on that target, skips them exactly
-# as it does when no compiler was found. Only the in-tree flag is visible:
-# standalone against an installed ILP64 librocsparse there is nothing to read,
-# and avoiding that mismatch remains the caller's.
+# ILP64 makes rocsparse_int 64-bit but the module binds it as integer(c_int), so
+# skip rather than build a silently ABI-incompatible binding.
 if(BUILD_ROCSPARSE_ILP64)
   message(STATUS
     "rocSPARSE: BUILD_ROCSPARSE_ILP64 widens rocsparse_int to int64_t, which "
@@ -102,12 +66,7 @@ if(BUILD_ROCSPARSE_ILP64)
   return()
 endif()
 
-# The monorepo root probes for a Fortran compiler ONCE and publishes
-# ROCM_HAVE_FORTRAN. That name is deliberately neither rocm-libraries' nor
-# rocm-systems': rocSPARSE is regularly built inside a rocm-systems tree, and a
-# repo-specific name would read the wrong variable, or none. The rocm-libraries
-# root still publishes ROCM_LIBS_HAVE_FORTRAN, honoured as a legacy spelling.
-# The local probe is the standalone path, where there is no root to ask.
+# The monorepo root probes once; ROCM_LIBS_HAVE_FORTRAN is the legacy spelling.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
@@ -115,27 +74,15 @@ elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
 else()
   include(CheckLanguage)
 
-  # check_language() writes the CACHE entry CMAKE_Fortran_COMPILER, which
-  # rocm-cmake's ROCMChecks watches to catch a project setting a toolchain
-  # variable behind the toolchain file's back; it cannot tell a legitimate probe
-  # from a violation, and hard-fails under -DROCM_ERROR_TOOLCHAIN_VAR=ON, which
-  # CI turns on. Silence it across the probe and restore it after. Plain
-  # variables, not cache ones: they shadow the cache for this scope only, which
-  # is what the callback reads. Both names must be cleared -- the callback
-  # escalates on ROCM_ERROR_TOOLCHAIN_VAR before it looks at the warn flag.
+  # rocm-cmake's ROCMChecks watches CMAKE_Fortran_COMPILER and fails under
+  # ROCM_ERROR_TOOLCHAIN_VAR=ON; silence it across the probe.
   set(_rocm_warn_toolchain_var "${ROCM_WARN_TOOLCHAIN_VAR}")
   set(_rocm_error_toolchain_var "${ROCM_ERROR_TOOLCHAIN_VAR}")
   set(ROCM_WARN_TOOLCHAIN_VAR OFF)
   set(ROCM_ERROR_TOOLCHAIN_VAR OFF)
 
-  # Prefer ROCm's own amdflang. check_language(Fortran) takes the first compiler
-  # on the search path, which on a ROCm CI image is the system gfortran: that is
-  # how the bindings ended up installed under fortran/gfortran/ while the
-  # documentation promises fortran/amdflang/. Look beside the clang already
-  # compiling this project, plus ROCM_PATH when standalone, NO_DEFAULT_PATH so a
-  # stray amdflang cannot win. An explicit CMAKE_Fortran_COMPILER or FC always
-  # wins: a .mod is compiler-specific, so whoever asked meant it. This MUST run
-  # before check_language(), a no-op once CMAKE_Fortran_COMPILER is defined.
+  # Prefer ROCm's amdflang over the first compiler on PATH (often gfortran);
+  # an explicit CMAKE_Fortran_COMPILER or FC always wins.
   if(NOT CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
     set(_rocm_fc_hints)
     foreach(_rocm_fc_cc "${CMAKE_CXX_COMPILER}" "${CMAKE_C_COMPILER}"
@@ -145,15 +92,17 @@ else()
         list(APPEND _rocm_fc_hints "${_rocm_fc_dir}")
       endif()
     endforeach()
-    if(ROCM_PATH)
-      list(APPEND _rocm_fc_hints "${ROCM_PATH}/lib/llvm/bin" "${ROCM_PATH}/bin")
-    endif()
+    foreach(_rocm_fc_root "${ROCM_PATH}" "$ENV{ROCM_PATH}" "/opt/rocm")
+      if(_rocm_fc_root)
+        list(APPEND _rocm_fc_hints "${_rocm_fc_root}/bin"
+                                   "${_rocm_fc_root}/lib/llvm/bin")
+      endif()
+    endforeach()
     if(_rocm_fc_hints)
+      unset(_rocm_amdflang CACHE)
       find_program(_rocm_amdflang NAMES amdflang HINTS ${_rocm_fc_hints}
                    NO_DEFAULT_PATH)
-      # Confirm it runs before committing to it: a ROCm tree can carry a dangling
-      # amdflang symlink, and check_language() does nothing once the variable is
-      # set, so the failure would surface far later as a broken enable_language.
+      # A ROCm tree can carry a dangling amdflang symlink.
       if(_rocm_amdflang)
         execute_process(COMMAND "${_rocm_amdflang}" --version
                         RESULT_VARIABLE _rocm_fc_rc
@@ -164,10 +113,12 @@ else()
         endif()
         unset(_rocm_fc_rc)
       endif()
+      unset(_rocm_amdflang CACHE)
     endif()
     unset(_rocm_fc_hints)
     unset(_rocm_fc_cc)
     unset(_rocm_fc_dir)
+    unset(_rocm_fc_root)
   endif()
 
   check_language(Fortran)
@@ -190,10 +141,6 @@ endif()
 
 enable_language(Fortran)
 
-# Here rather than beside the install() rules, because the install layout is
-# also baked into the target's INSTALL_INTERFACE include directory, set well
-# before them. Nothing may hardcode lib/: a distro gets
-# CMAKE_INSTALL_LIBDIR=lib64, and a literal lib/fortran then names nothing.
 include(GNUInstallDirs)
 
 if(NOT FORTRAN_ARRAY_INTERFACES MATCHES "^(none|assumed-shape|assumed-rank)$")
@@ -204,17 +151,10 @@ endif()
 
 add_library(rocsparse_fortran STATIC rocsparse.F90)
 
-# roc::, the namespace rocSPARSE exports its C library under, so a consumer is
-# not made to remember two namespaces for two halves of one package.
 add_library(roc::rocsparse_fortran ALIAS rocsparse_fortran)
 
-# A .mod is not portable across compilers, so the artifacts install under a
-# per-compiler directory and two compilers can live side by side in one prefix.
-# Named after the compiler a user actually types (amdflang, gfortran), not after
-# CMake's ID, so the -I/-L paths in the documentation work on a raw link line.
-# Derived from the ID rather than the basename of CMAKE_Fortran_COMPILER, which
-# would be wrong for an MPI wrapper (mpif90), a versioned binary (gfortran-13),
-# an absolute path or the Cray wrapper (ftn).
+# A .mod is compiler-specific, so artifacts install per compiler, named as the
+# user types it. Must match the mapping in rocsparse-fortran-config.cmake.in.
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(_fc_name "gfortran")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")     # Flang, LLVMFlang
@@ -228,62 +168,34 @@ elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
 elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
   set(_fc_name "nvfortran")
 else()
-  # Unknown compiler: the lowercased basename is the best guess available.
   get_filename_component(_fc_name "${CMAKE_Fortran_COMPILER}" NAME_WE)
   string(TOLOWER "${_fc_name}" _fc_name)
 endif()
 
-# Deliberately lossy: a .mod is tied to the compiler VERSION too, so gfortran 13
-# and 14 install to the same directory and the second overwrites the first. That
-# is the documented layout (include/fortran/gfortran) and the right default for
-# the usual one-compiler-per-prefix case; a site installing several versions of
-# the SAME compiler sets ROCSPARSE_FORTRAN_COMPILER_DIR itself, e.g.
-# gfortran-13.
+# Versions of one compiler share a directory; set this (e.g. gfortran-13) to
+# install several side by side.
 set(ROCSPARSE_FORTRAN_COMPILER_DIR "${_fc_name}" CACHE STRING
     "Per-compiler subdirectory the .mod and the archive install under")
 
 set(_moddir "${CMAKE_CURRENT_BINARY_DIR}/include")
 set_target_properties(rocsparse_fortran PROPERTIES
   Fortran_MODULE_DIRECTORY "${_moddir}"
-  # Uppercase .F90: the array overloads sit behind preprocessor guards.
   Fortran_PREPROCESS ON
-  # Stated explicitly so CMake emits the compiler's own flag for it rather than
-  # relying on the extension.
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# Translate the tri-state into the macro the generated source is guarded with.
-# Exactly one macro is defined: the tiers are mutually exclusive, and none
-# defines neither, leaving the raw type(c_ptr) surface the generics fall back to.
-# Compiling rocsparse.F90 by hand with both set is harmless but yields
-# assumed-rank -- both regions of the source, the generic interfaces and the
-# procedure bodies, test USE_ASSUMED_RANK ahead of USE_ASSUMED_SHAPE, and
-# preprocessing with both is byte-identical to USE_ASSUMED_RANK alone (checked
-# clean with amdflang -cpp -fsyntax-only).
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
   target_compile_definitions(rocsparse_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
   target_compile_definitions(rocsparse_fortran PRIVATE USE_ASSUMED_RANK=1)
 endif()
 
-# No line-length flag: the generator wraps the emitted source at 112 columns,
-# inside the 132 free-form Fortran guarantees, so every compiler reads it
-# without a vendor-specific option.
-
 target_include_directories(rocsparse_fortran PUBLIC
   "$<BUILD_INTERFACE:${_moddir}>"
   "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/fortran/${ROCSPARSE_FORTRAN_COMPILER_DIR}>")
 
-# Link interface only: roc::rocsparse is needed to link an executable, not to
-# build this archive. Standalone it has to be looked for -- testing for the
-# target without ever calling find_package would mean it is never found, the
-# archive would export no link interface at all, and every consumer would hit
-# undefined references despite linking roc::rocsparse_fortran as documented.
-#
-# rocsparse-config.cmake does find_dependency(hip), whose hip-config.cmake
-# reaches FindThreads and hard-errors unless C or CXX is enabled, so C is
-# enabled here (it compiles nothing). QUIET: the bindings build with no
-# rocSPARSE installed.
+# Link interface only. rocsparse-config.cmake's find_dependency(hip) needs C or
+# CXX enabled (FindThreads).
 if(NOT TARGET roc::rocsparse)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -291,13 +203,7 @@ if(NOT TARGET roc::rocsparse)
   find_package(rocsparse QUIET)
 endif()
 
-# Record which of the two happened: the template calls find_dependency(rocsparse)
-# only when the archive really carries roc::rocsparse in its link interface. A
-# package built without the C library has an empty link interface, so requiring
-# the consumer to find rocSPARSE would be over-strict about a dependency this
-# package does not have. Spelled TRUE/FALSE and never left empty -- it is
-# substituted straight into an if() in the installed config, and a bare if()
-# there is a syntax error that breaks every consumer's find_package.
+# Substituted into an if() in the installed config, so never left empty.
 if(TARGET roc::rocsparse)
   target_link_libraries(rocsparse_fortran INTERFACE roc::rocsparse)
   set(ROCSPARSE_FORTRAN_NEEDS_C_PACKAGE TRUE)
@@ -308,19 +214,8 @@ else()
     "link interface; a consumer will have to link it (-lrocsparse) itself.")
 endif()
 
-# The binding tests below are GPU runtime executables, so in-tree they belong to
-# the client/test track: a library-only build has no business producing test
-# binaries. The condition is the one rocSPARSE guards add_subdirectory(clients)
-# with, BUILD_CLIENTS, so the two cannot disagree.
-#
-# It sits here, next to the one place that reads the switch, rather than beside
-# the option block: everything above can still return early, and announcing a
-# skipped test suite there would report a reason that is not the operative one.
-#
-# Standalone the tests are the point, so the library's switch does not exist and
-# BUILD_FORTRAN_CLIENTS stands on its own. Set as a plain variable deliberately:
-# the cache entry is one switch shared by every library, so turning it off here
-# must stay scoped to this directory and must not be written back.
+# In-tree the binding tests follow BUILD_CLIENTS; a plain variable, so the
+# shared cache entry is not written back.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
    AND BUILD_FORTRAN_CLIENTS
    AND NOT BUILD_CLIENTS)
@@ -329,40 +224,23 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   set(BUILD_FORTRAN_CLIENTS OFF)
 endif()
 
+# The uninstrumented Fortran executables cannot link an ASan librocsparse.
+if(BUILD_FORTRAN_CLIENTS AND BUILD_ADDRESS_SANITIZER)
+  message(STATUS
+    "rocSPARSE: address sanitizer is enabled, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
-  # enable_testing() here is enough for a STANDALONE build but NOT for an
-  # in-tree one: CMake writes the chain of CTestTestfile.cmake that ctest walks
-  # only when testing was enabled at the TOP level. The rocSPARSE root calls
-  # enable_testing() only under BUILD_CLIENTS_TESTS; without it the tests are
-  # built and registered but `ctest` from the top of the rocSPARSE build
-  # reports "Total Tests: 0" -- a silent nothing. So say it.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
-     AND NOT BUILD_CLIENTS_TESTS)
-    message(STATUS
-      "rocSPARSE: the Fortran binding tests are registered, but BUILD_CLIENTS_TESTS "
-      "is off, so testing is not enabled at the top of the rocSPARSE build and "
-      "`ctest` there will not list them. Turn BUILD_CLIENTS_TESTS on, or run "
-      "ctest from ${CMAKE_CURRENT_BINARY_DIR}/test.")
-  endif()
   add_subdirectory(test)
 endif()
 
 include(CMakePackageConfigHelpers)
 
-# Beside rocsparse-config.cmake, so one CMAKE_PREFIX_PATH entry finds both
-# halves. rocRAND and hipRAND cannot do this and install to
-# lib/cmake/<lib>-fortran alone: their shipped <lib>-config.cmake carries a bare
-# unguarded include() of a sibling <lib>-fortran-config.cmake, so a file here
-# would recurse. rocsparse-config.cmake mentions Fortran nowhere, checked
-# against an installed ROCm, so it uses the shared layout.
 set(_fortran_pkgdir "${CMAKE_INSTALL_LIBDIR}/cmake/rocsparse")
 
-# COMPONENT devel on every rule below: an archive, a set of .mod files, the
-# generated source and the CMake package are all development artifacts. It is
-# also what rocm-cmake defaults to, and what the hand-written .f90 these replace
-# shipped as, so omitting it would be a packaging regression. Plain install(),
-# not rocm_install(): standalone, rocm-cmake was never loaded.
+# Plain install(): standalone, rocm-cmake is not loaded.
 install(TARGETS rocsparse_fortran
         EXPORT rocsparse-fortran-targets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/fortran/${ROCSPARSE_FORTRAN_COMPILER_DIR}"
@@ -372,11 +250,7 @@ install(DIRECTORY "${_moddir}/"
         COMPONENT devel
         FILES_MATCHING PATTERN "*.mod")
 
-# The generated source, so a user on a compiler ROCm ships no .mod for can
-# rebuild the binding, from source that cannot drift from the installed
-# librocsparse. Under share/, not include/: it is not compiler-specific, and the
-# config below enumerates include/fortran/ to report which compilers are
-# installed, so a source file among them would be listed as one.
+# Under share/, not include/fortran/, which the config lists as compilers.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/rocsparse.F90"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/rocsparse/fortran"
         COMPONENT devel)
@@ -386,9 +260,6 @@ install(EXPORT rocsparse-fortran-targets
         DESTINATION "${_fortran_pkgdir}"
         COMPONENT devel)
 
-# Kept out of the template so that neither side spells lib/ or include/
-# literally: a literal lib/fortran is wrong the moment CMAKE_INSTALL_LIBDIR is
-# lib64, and the config would hand out an IMPORTED_LOCATION that does not exist.
 set(ROCSPARSE_FORTRAN_LIBDIR     "${CMAKE_INSTALL_LIBDIR}/fortran")
 set(ROCSPARSE_FORTRAN_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/fortran")
 
@@ -396,25 +267,12 @@ configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/rocsparse-fortran-config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/rocsparse-fortran-config.cmake"
   INSTALL_DESTINATION "${_fortran_pkgdir}"
-  # PATH_VARS: @PACKAGE_INIT@ rewrites each into an absolute path computed from
-  # where the config was FOUND, so the package survives relocation and gets
-  # lib64 right. ROCSPARSE_FORTRAN_COMPILER_DIR stays a plain @-substitution: it
-  # is a bare directory NAME, and PATH_VARS would resolve it under the prefix.
   PATH_VARS ROCSPARSE_FORTRAN_LIBDIR ROCSPARSE_FORTRAN_INCLUDEDIR)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocsparse-fortran-config.cmake"
         DESTINATION "${_fortran_pkgdir}"
         COMPONENT devel)
 
-# The real config lands in lib/cmake/rocsparse, beside the C package, so that
-# rocsparse-config.cmake could pick it up with a bare include(... OPTIONAL) once
-# rocm_export_targets grows a hook for it. Its existing INCLUDE argument is NOT
-# that hook: it emits a non-OPTIONAL include(), and emits it BEFORE the targets
-# file, so a config reached that way would run before roc::rocsparse exists.
-#
-# find_package(rocsparse-fortran), the documented spelling, searches
-# lib/cmake/rocsparse-fortran*, which lib/cmake/rocsparse does not match, so it
-# needs somewhere to land. A forwarder rather than a second copy of the config,
-# which would need its own targets file and be a second thing to keep in step.
+# find_package(rocsparse-fortran) searches lib/cmake/rocsparse-fortran*.
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocsparse-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the rocSPARSE C package, in
 # lib/cmake/rocsparse, so that rocsparse-config.cmake can include it as a sibling.
@@ -426,17 +284,11 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/forward/rocsparse-fortran-config.cmak
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocsparse-fortran"
         COMPONENT devel)
 
-# A version file, so that find_package(rocsparse-fortran 5.1) resolves rather
-# than failing on a missing one. SameMajorVersion, because the module's bind(C)
-# surface tracks the C API's compatibility promise. Read from THIS tree's
-# top-level CMakeLists, not from rocsparse_VERSION: in a standalone build that
-# variable is set by the find_package(rocsparse) above and reports whatever
-# rocSPARSE is INSTALLED, not the headers these bindings were generated from.
+# Read from this tree's root, not rocsparse_VERSION, which standalone reports
+# the INSTALLED rocSPARSE.
 set(_fortran_version "")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt")
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt" _rocsparse_root)
-  # rocSPARSE spells it set(VERSION_STRING "5.1.0") and passes the variable to
-  # rocm_setup_version, so match the assignment, not the call.
   string(REGEX MATCH "set\\([ \t]*VERSION_STRING[ \t]+\"([0-9]+\\.[0-9]+\\.[0-9]+)\""
          _m "${_rocsparse_root}")
   if(CMAKE_MATCH_1)
@@ -450,11 +302,7 @@ if(_fortran_version)
     "${CMAKE_CURRENT_BINARY_DIR}/rocsparse-fortran-config-version.cmake"
     VERSION "${_fortran_version}"
     COMPATIBILITY SameMajorVersion)
-  # In BOTH package directories, necessarily: CMake looks for
-  # <pkg>-config-version.cmake NEXT TO the <pkg>-config.cmake it actually
-  # resolved. find_package(rocsparse-fortran 5.1) resolves the forwarder, so a
-  # version file only beside the real config is never consulted and the
-  # versioned call fails even though the version matches.
+  # Beside both configs: CMake reads the version file next to the one it found.
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocsparse-fortran-config-version.cmake"
           DESTINATION "${_fortran_pkgdir}"
           COMPONENT devel)
@@ -462,9 +310,6 @@ if(_fortran_version)
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/rocsparse-fortran"
           COMPONENT devel)
 else()
-  # Better no version file than a wrong one: without it an unversioned
-  # find_package still succeeds, whereas a wrong number makes a versioned one
-  # succeed and link the wrong .mod.
   message(STATUS
     "rocSPARSE: could not determine the version for the Fortran package, so no "
     "rocsparse-fortran-config-version.cmake is installed; "
