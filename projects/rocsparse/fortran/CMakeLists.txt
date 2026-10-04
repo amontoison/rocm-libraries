@@ -46,9 +46,12 @@ option(BUILD_FORTRAN_CLIENTS "Build the rocSPARSE Fortran clients and binding te
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
 # every library in the monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top
 # turns the whole Fortran track off. Each library also honours a name of its own
-# for when one has to be singled out. For the CLIENTS half that override is a
-# ceiling, not a guarantee: the gate further down forces BUILD_FORTRAN_CLIENTS
-# off in any in-tree build that is not building rocSPARSE's clients, an explicit
+# for when one has to be singled out. In-tree the rocSPARSE root applies these
+# overrides before it adds this directory and clients/, so both see them; the
+# copy here is what makes them work standalone, and in-tree it reapplies the
+# same value. For the CLIENTS half the override is a ceiling, not a guarantee:
+# the gate further down forces BUILD_FORTRAN_CLIENTS off in any in-tree build
+# that is not building rocSPARSE's clients, an explicit
 # ROCSPARSE_BUILD_FORTRAN_CLIENTS=ON included.
 if(DEFINED ROCSPARSE_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCSPARSE_BUILD_FORTRAN_BINDINGS})
@@ -75,14 +78,6 @@ set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
              none assumed-shape assumed-rank)
 
-# Reports whether the bindings were really BUILT, unlike ROCM_HAVE_FORTRAN,
-# which says only that a compiler exists. Guarded because standalone this is the
-# top-level scope, where PARENT_SCOPE warns under -Wdev and therefore fails
-# under -Werror=dev, and standalone has to configure cleanly.
-if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  set(ROCSPARSE_HAVE_FORTRAN_BINDINGS FALSE PARENT_SCOPE)
-endif()
-
 if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
@@ -94,11 +89,11 @@ endif()
 # is the one failure mode a binding must not have, so none is built at all.
 #
 # A skip rather than a FATAL_ERROR, because a C-only ILP64 build is legitimate
-# and has to keep configuring. ROCSPARSE_HAVE_FORTRAN_BINDINGS is already FALSE
-# in the parent scope here, so clients/ skips its Fortran samples exactly as it
-# does when no compiler was found. Only the in-tree flag is visible: standalone
-# against an installed ILP64 librocsparse there is nothing to read, and avoiding
-# that mismatch remains the caller's.
+# and has to keep configuring. No rocsparse_fortran target is created, so
+# clients/, which gates its Fortran samples on that target, skips them exactly
+# as it does when no compiler was found. Only the in-tree flag is visible:
+# standalone against an installed ILP64 librocsparse there is nothing to read,
+# and avoiding that mismatch remains the caller's.
 if(BUILD_ROCSPARSE_ILP64)
   message(STATUS
     "rocSPARSE: BUILD_ROCSPARSE_ILP64 widens rocsparse_int to int64_t, which "
@@ -313,10 +308,6 @@ else()
     "link interface; a consumer will have to link it (-lrocsparse) itself.")
 endif()
 
-if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  set(ROCSPARSE_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
-endif()
-
 # The binding tests below are GPU runtime executables, so in-tree they belong to
 # the client/test track: a library-only build has no business producing test
 # binaries. The condition is the one rocSPARSE guards add_subdirectory(clients)
@@ -341,20 +332,18 @@ endif()
 if(BUILD_FORTRAN_CLIENTS)
   # enable_testing() here is enough for a STANDALONE build but NOT for an
   # in-tree one: CMake writes the chain of CTestTestfile.cmake that ctest walks
-  # only when testing was enabled at the TOP level. Enabled just here, the tests
-  # are built and registered but `ctest` from the top of the rocSPARSE build
+  # only when testing was enabled at the TOP level. The rocSPARSE root calls
+  # enable_testing() only under BUILD_CLIENTS_TESTS; without it the tests are
+  # built and registered but `ctest` from the top of the rocSPARSE build
   # reports "Total Tests: 0" -- a silent nothing. So say it.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
-      message(STATUS
-        "rocSPARSE: the Fortran binding tests are registered, but ctest discovers "
-        "tests only from a build root where testing was enabled at the top "
-        "level. If `ctest` there reports no tests, add include(CTest) or "
-        "enable_testing() to the top-level CMakeLists, or run ctest from "
-        "${CMAKE_CURRENT_BINARY_DIR}/test.")
-    endif()
+  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
+     AND NOT BUILD_CLIENTS_TESTS)
+    message(STATUS
+      "rocSPARSE: the Fortran binding tests are registered, but BUILD_CLIENTS_TESTS "
+      "is off, so testing is not enabled at the top of the rocSPARSE build and "
+      "`ctest` there will not list them. Turn BUILD_CLIENTS_TESTS on, or run "
+      "ctest from ${CMAKE_CURRENT_BINARY_DIR}/test.")
   endif()
   add_subdirectory(test)
 endif()

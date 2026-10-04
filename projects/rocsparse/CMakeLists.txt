@@ -129,6 +129,19 @@ option(BUILD_WITH_DIAGONAL_SOLVE "Enable the diagonal solve in rocsparse_sptrsv 
 if( NOT BUILD_FORTRAN_CLIENTS )
   option( BUILD_FORTRAN_CLIENTS "Build rocSPARSE clients requiring Fortran capabilities" ON )
 endif( )
+
+# BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are one cache entry shared by
+# every library in the monorepo; these single rocSPARSE out. Applied here, as
+# plain variables scoped to this project, so that both fortran/ and clients/ --
+# siblings, neither of which sees the other's variables -- read the override.
+# fortran/ repeats it for its standalone configure. Before the ASan block below,
+# which must still be able to force the Fortran clients off.
+if(DEFINED ROCSPARSE_BUILD_FORTRAN_BINDINGS)
+  set(BUILD_FORTRAN_BINDINGS ${ROCSPARSE_BUILD_FORTRAN_BINDINGS})
+endif()
+if(DEFINED ROCSPARSE_BUILD_FORTRAN_CLIENTS)
+  set(BUILD_FORTRAN_CLIENTS ${ROCSPARSE_BUILD_FORTRAN_CLIENTS})
+endif()
 option(BUILD_DOCS "Build documentation" OFF)
 
 if(BUILD_WITH_OFFLOAD_COMPRESS)
@@ -324,8 +337,9 @@ if (NOT BUILD_CLIENTS_ONLY)
 endif()
 
 # Fortran bindings, generated from the headers above and committed next to them.
-# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF
-# or when no Fortran compiler is available, so a C-only site is unaffected.
+# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF,
+# when BUILD_ROCSPARSE_ILP64 is ON, or when no Fortran compiler is available, so
+# a C-only site is unaffected.
 #
 # Outside the BUILD_CLIENTS_ONLY branch on purpose, and not merely for symmetry
 # with the other libraries. That branch decides whether librocsparse is BUILT
