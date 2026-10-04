@@ -1,21 +1,32 @@
-# Tests for the hipSOLVER Fortran bindings: one executable per test, driven by
-# CTest. They factor or diagonalize a small matrix on a device, so they build
-# anywhere but only pass on a machine with a GPU. Reached only from the parent
-# CMakeLists, under BUILD_FORTRAN_CLIENTS.
+# ########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell cop-
+# ies of the Software, and to permit persons to whom the Software is furnished
+# to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IM-
+# PLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNE-
+# CTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# ########################################################################
 
-# The Intel compilers (ifx/ifort) do not recognize the .f03 extension and skip
-# such files ("no action performed"). Inserting -Tf before the source forces
-# Fortran compilation; the LANGUAGE source property alone is not enough.
+# ifx/ifort skip .f03 files; -Tf forces Fortran, which the LANGUAGE property alone does not.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# The tests allocate and copy device memory, so each says `use hip`. That makes
-# the HIP Fortran binding a COMPILE-time dependency: its .mod must exist, where
-# libhipsolver is only a link-time one. hip::hip_fortran comes from
-# find_package(hip-fortran) -- an installed ROCm whose HIP binding was built with
-# this same compiler -- unless an enclosing project already defined the target.
+# The tests say `use hip`, so a hip.mod from this compiler is needed to compile them.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -28,10 +39,7 @@ if(NOT TARGET hip::hip_fortran)
     "bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
-# libhipsolver itself, needed to link but not to compile. In-tree it arrives
-# through the hipsolver_fortran link interface; standalone it has to be found,
-# and C is enabled first for the same FindThreads reason as in the parent
-# CMakeLists. It compiles none of the sources below.
+# C is enabled because hip-config.cmake reaches FindThreads.
 if(NOT TARGET roc::hipsolver)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -46,33 +54,25 @@ if(NOT TARGET roc::hipsolver)
   return()
 endif()
 
-# Build <name>.f03 into one executable and register it with CTest as
-# hipsolver_fortran_<name>.
 function(hipsolver_fortran_add_test name)
   set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
   if(NOT EXISTS "${src}")
     message(FATAL_ERROR "Missing test source: ${src}")
   endif()
-  # Force language detection for .f03 in toolchains where CMake misses it.
   set_source_files_properties("${src}" PROPERTIES LANGUAGE Fortran)
   add_executable(hipsolver_fortran_test_${name} "${src}")
   set_target_properties(hipsolver_fortran_test_${name} PROPERTIES LINKER_LANGUAGE Fortran)
   target_link_libraries(hipsolver_fortran_test_${name} PRIVATE
     hipsolver_fortran hip::hip_fortran roc::hipsolver)
   # The tests call EXIT, a GNU extension in gfortran.
-  target_compile_options(hipsolver_fortran_test_${name} PRIVATE
-    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(hipsolver_fortran_test_${name} PRIVATE -std=gnu)
+  endif()
   add_test(NAME hipsolver_fortran_${name} COMMAND hipsolver_fortran_test_${name})
-  # These fail without a GPU, which is not the binding being broken, so the
-  # label lets a GPU-less machine run the suite with ctest -LE gpu.
+  # Lets a GPU-less machine skip them with ctest -LE gpu.
   set_tests_properties(hipsolver_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per routine family and precision, carried over from hipFORT's hipSOLVER
-# suite: the factorizations, the orthogonal factor routines, the symmetric and
-# Hermitian eigensolvers and the SVDs, each across the s/d/c/z types the API
-# defines them for. Plus a few covering the query routines, whose outputs the C
-# API fills by reference: deterministic mode, the Rf parameters, the syevj info.
 set(HIPSOLVER_FORTRAN_TESTS
     hipsolver_cgeqrf
     hipsolver_cgesvd
