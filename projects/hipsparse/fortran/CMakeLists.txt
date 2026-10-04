@@ -326,6 +326,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   set(BUILD_FORTRAN_CLIENTS OFF)
 endif()
 
+# Under ASAN libhipsparse is instrumented and the uninstrumented Fortran test
+# executables cannot link against it (rocSPARSE turns its Fortran clients off
+# for the same reason).
+if(BUILD_FORTRAN_CLIENTS AND HIPSPARSE_ENABLE_ASAN)
+  message(STATUS
+    "hipSPARSE: address sanitizer is enabled, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
   # Load-bearing on both paths. Standalone this is the only enable_testing() in
   # the build. In-tree it is still needed, because hipSPARSE's root adds this
