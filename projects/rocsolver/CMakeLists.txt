@@ -34,6 +34,24 @@ if(NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 endif()
 
+# Decided before project(): the first enable_language(Fortran) fixes the compiler for
+# the whole tree. Prefer amdflang for the bindings, but keep gfortran wherever the
+# test/benchmark clients link the host LAPACK, a gfortran build needing its runtime.
+set(_rocsolver_prefer_amdflang ON)
+if(DEFINED ROCSOLVER_BUILD_FORTRAN_BINDINGS)
+  set(_rocsolver_prefer_amdflang ${ROCSOLVER_BUILD_FORTRAN_BINDINGS})
+elseif(DEFINED BUILD_FORTRAN_BINDINGS)
+  set(_rocsolver_prefer_amdflang ${BUILD_FORTRAN_BINDINGS})
+endif()
+if(BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS
+   OR (NOT DEFINED BUILD_CLIENTS_TESTS AND BUILD_TESTING))
+  set(_rocsolver_prefer_amdflang OFF)
+endif()
+if(_rocsolver_prefer_amdflang)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake)
+  rocm_fortran_prefer_amdflang()
+endif()
+unset(_rocsolver_prefer_amdflang)
 if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
   set(CMAKE_Fortran_COMPILER  "gfortran")
 endif()
@@ -254,9 +272,11 @@ add_subdirectory(common)
 
 if(BUILD_LIBRARY)
   add_subdirectory(library)
-  # Fortran bindings, generated from the headers above and committed next to
-  # them. Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS
-  # is OFF or when no Fortran compiler is available, so a C-only site is unaffected.
+  # ctest only sees the Fortran binding tests, registered under these switches, if testing is enabled here.
+  if(BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES)
+    enable_testing()
+  endif()
+  # Returns early when the bindings are off or no Fortran compiler is found.
   add_subdirectory(fortran)
 endif()
 

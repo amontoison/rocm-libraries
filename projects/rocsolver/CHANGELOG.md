@@ -26,6 +26,10 @@ Full documentation for rocSOLVER is available at the [rocSOLVER documentation](h
   spellings through the `rocblas` module instead.
 
 ### Changed
+
+* The default Fortran compiler is now ROCm's `amdflang` when the Fortran bindings are built and the test and
+  benchmark clients are not. It stays `gfortran` when those clients are built, since they link the host LAPACK.
+
 ### Removed
 ### Optimized
 

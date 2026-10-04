@@ -1,21 +1,37 @@
-# Tests for the rocSOLVER Fortran bindings: one executable per test, driven by
-# CTest. They factor or diagonalize a small matrix on a device, so they build
-# anywhere but only pass on a machine with a GPU. Reached only from the parent
-# CMakeLists, under BUILD_FORTRAN_CLIENTS.
+# ##########################################################################
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+# ##########################################################################
 
-# The Intel compilers (ifx/ifort) do not recognize the .f03 extension and skip
-# such files ("no action performed"). Inserting -Tf before the source forces
-# Fortran compilation; the LANGUAGE source property alone is not enough.
+# ifx/ifort skip .f03 files; -Tf forces Fortran, which the LANGUAGE property alone does not.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   string(REPLACE "<SOURCE>" "-Tf <SOURCE>"
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# The tests allocate and copy device memory, so each says `use hip`. That makes
-# the HIP Fortran binding a COMPILE-time dependency: its .mod must exist, where
-# librocsolver is only a link-time one. hip::hip_fortran comes from
-# find_package(hip-fortran) -- an installed ROCm whose HIP binding was built with
-# this same compiler -- unless an enclosing project already defined the target.
+# The tests say `use hip`, so a hip.mod from this compiler is needed to compile them.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -28,10 +44,7 @@ if(NOT TARGET hip::hip_fortran)
     "bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
-# librocsolver itself, needed to link but not to compile. In-tree it arrives
-# through the rocsolver_fortran link interface; standalone it has to be found,
-# and C is enabled first for the same FindThreads reason as in the parent
-# CMakeLists. It compiles none of the sources below.
+# C is enabled because hip-config.cmake reaches FindThreads.
 if(NOT TARGET roc::rocsolver)
   if(NOT CMAKE_C_COMPILER_LOADED AND NOT CMAKE_CXX_COMPILER_LOADED)
     enable_language(C)
@@ -46,33 +59,25 @@ if(NOT TARGET roc::rocsolver)
   return()
 endif()
 
-# Build <name>.f03 into one executable and register it with CTest as
-# rocsolver_fortran_<name>. No explicit rocblas_fortran: rocsolver_fortran
-# carries it PUBLIC, so the rocblas.mod the tests need comes with it.
 function(rocsolver_fortran_add_test name)
   set(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.f03")
   if(NOT EXISTS "${src}")
     message(FATAL_ERROR "Missing test source: ${src}")
   endif()
-  # Force language detection for .f03 in toolchains where CMake misses it.
   set_source_files_properties("${src}" PROPERTIES LANGUAGE Fortran)
   add_executable(rocsolver_fortran_test_${name} "${src}")
   set_target_properties(rocsolver_fortran_test_${name} PROPERTIES LINKER_LANGUAGE Fortran)
   target_link_libraries(rocsolver_fortran_test_${name} PRIVATE
     rocsolver_fortran hip::hip_fortran roc::rocsolver)
   # The tests call EXIT, a GNU extension in gfortran.
-  target_compile_options(rocsolver_fortran_test_${name} PRIVATE
-    $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(rocsolver_fortran_test_${name} PRIVATE -std=gnu)
+  endif()
   add_test(NAME rocsolver_fortran_${name} COMMAND rocsolver_fortran_test_${name})
-  # These fail without a GPU, which is not the binding being broken, so the
-  # label lets a GPU-less machine run the suite with ctest -LE gpu.
+  # Lets a GPU-less machine skip them with ctest -LE gpu.
   set_tests_properties(rocsolver_fortran_${name} PROPERTIES LABELS "gpu")
 endfunction()
 
-# One per routine family and precision, carried over from hipFORT's rocSOLVER
-# suite: the factorizations, the solvers, the orthogonal factor routines, the
-# symmetric and Hermitian eigensolvers and the SVDs, each across the s/d/c/z
-# types the API defines them for.
 set(ROCSOLVER_FORTRAN_TESTS
     rocsolver_alg_mode
     rocsolver_cgebrd
