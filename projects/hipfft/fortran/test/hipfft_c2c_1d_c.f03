@@ -76,7 +76,7 @@ program hipfft_c2c_1d_c
   ! hipFFT is unnormalized, so forward+inverse yields N times the original input.
   do i = 1, N
      error = abs(hx(i)%x - N * hx_input(i)%x) + abs(hx(i)%y - N * hx_input(i)%y)
-     if (error > error_max * N) then
+     if (.not. (error <= error_max * N)) then
         write(*,*) "FAILED! i=", i, " error=", error
         STOP 1
      end if

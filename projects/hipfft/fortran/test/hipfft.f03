@@ -77,7 +77,7 @@ program hipfft_example
   call hipfftCheck(hipfftPlan1d(plan, int(N, 4), HIPFFT_Z2Z, 1))
 
   call hipfftCheck(hipfftExecZ2Z(plan, dx, dx, direction))
-  
+
 
   call hipCheck(hipDeviceSynchronize())
 
@@ -87,7 +87,7 @@ program hipfft_example
 
   do i = 1, int(N)
      error = abs(cmplx(hx(i)%x, hx(i)%y, kind=8) - x_ref(i))
-     if(error > error_max * sum(abs(x_in)))then
+     if (.not. (error <= error_max * sum(abs(x_in)))) then
         write(*,*) "FAILED! i = ", i, " error = ", error, " hx(i) = ", hx(i)%x, hx(i)%y
         call exit(1)
      end if
@@ -96,7 +96,7 @@ program hipfft_example
   deallocate(hx, x_in, x_ref)
   deallocate(lengths)
 
-  
+
   call hipfftcheck( hipfftDestroy(plan))
 
   write(*,*) "PASSED!"

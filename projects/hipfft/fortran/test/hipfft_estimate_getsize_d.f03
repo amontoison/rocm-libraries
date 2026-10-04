@@ -121,7 +121,7 @@ program hipfft_estimate_getsize_d
   call hipCheck(hipFree(dx_c))
 
   ! DC bin = sum of real inputs = N1d (all ones).
-  if (abs(hcx(1) - cmplx(dble(N1d), 0.0d0, kind=c_double_complex)) > tol * N1d) then
+  if (.not. (abs(hcx(1) - cmplx(dble(N1d), 0.0d0, kind=c_double_complex)) <= tol * N1d)) then
     write(*,*) "FAILED! DC bin error"
     STOP 1
   end if

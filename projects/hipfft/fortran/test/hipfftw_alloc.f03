@@ -79,13 +79,13 @@ program hipfftw_alloc_test
     else
       error = abs(y(j+1))
     end if
-    max_error = max(max_error, error)
+    if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
   end do
 
   call fftw_free(pr)
   call fftw_free(pc)
 
-  if (max_error > tol) then
+  if (.not. (max_error <= tol)) then
     write(*,*) "FAILED! double precision: max error = ", max_error
     call exit(1)
   end if
@@ -117,13 +117,13 @@ program hipfftw_alloc_test
     else
       error = abs(ys(j+1))
     end if
-    max_error = max(max_error, error)
+    if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
   end do
 
   call fftwf_free(pr)
   call fftwf_free(pc)
 
-  if (max_error > tol_s) then
+  if (.not. (max_error <= tol_s)) then
     write(*,*) "FAILED! single precision: max error = ", max_error
     call exit(1)
   end if

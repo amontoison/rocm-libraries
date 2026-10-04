@@ -75,10 +75,10 @@ program hipfftw_r2c_c2r_test
     else
       error = abs(hresult_c(j+1))
     end if
-    max_error = max(max_error, error)
+    if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
   end do
 
-  if (max_error > tol) then
+  if (.not. (max_error <= tol)) then
     write(*,*) "FAILED! R2C: max error = ", max_error
     call exit(1)
   end if
@@ -96,10 +96,10 @@ program hipfftw_r2c_c2r_test
   max_error = 0.0d0
   do j = 1, N
     error = abs(hresult_r(j) - dble(N) * hx(j))
-    max_error = max(max_error, error)
+    if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
   end do
 
-  if (max_error > tol) then
+  if (.not. (max_error <= tol)) then
     write(*,*) "FAILED! C2R round-trip: max error = ", max_error
     call exit(1)
   end if

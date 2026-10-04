@@ -72,10 +72,10 @@ program hipfftw_c2c_test
     else
       error = abs(hresult(j+1))
     end if
-    max_error = max(max_error, error)
+    if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
   end do
 
-  if (max_error > tol) then
+  if (.not. (max_error <= tol)) then
     write(*,*) "FAILED! max error = ", max_error
     call exit(1)
   end if

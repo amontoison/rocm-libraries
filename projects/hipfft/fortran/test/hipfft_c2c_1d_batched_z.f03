@@ -96,7 +96,7 @@ program hipfft_c2c_1d_batched_z
   ! not Ntot) times the original input for each element.
   do i = 1, Ntot
      error = abs(hx(i)%x - N * hx_input(i)%x) + abs(hx(i)%y - N * hx_input(i)%y)
-     if (error > error_max * N) then
+     if (.not. (error <= error_max * N)) then
         write(*,*) "FAILED! i=", i, " error=", error
         STOP 1
      end if

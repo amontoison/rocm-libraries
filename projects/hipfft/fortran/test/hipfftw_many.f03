@@ -73,7 +73,7 @@ contains
   subroutine report(max_err, tolerance, nfail)
     double precision, intent(in) :: max_err, tolerance
     integer, intent(inout) :: nfail
-    if (max_err > tolerance) then
+    if (.not. (max_err <= tolerance)) then
       write(*,'(a,es12.4,a)') "FAILED (max_err=", max_err, ")"
       nfail = nfail + 1
     else
@@ -134,7 +134,7 @@ contains
           expected = cmplx(0d0, 0d0, kind=c_double_complex)
         end if
         err = abs(hresult(j*howmany + b + 1) - expected)
-        max_err = max(max_err, err)
+        if (max_err == max_err .and. .not. (err <= max_err)) max_err = err  ! keeps a NaN
       end do
     end do
 
@@ -206,7 +206,7 @@ contains
             expected = cmplx(0d0, 0d0, kind=c_double_complex)
           end if
           err = abs(hresult(b*LDX*NY + ky*LDX + kx + 1) - expected)
-          max_err = max(max_err, err)
+          if (max_err == max_err .and. .not. (err <= max_err)) max_err = err  ! keeps a NaN
         end do
       end do
     end do
@@ -262,7 +262,7 @@ contains
     do b = 0, howmany-1
       do j = 0, N-1
         err = abs(hresult(b*N + j + 1) - dble(N) * hx(b*N + j + 1))
-        max_err = max(max_err, err)
+        if (max_err == max_err .and. .not. (err <= max_err)) max_err = err  ! keeps a NaN
       end do
     end do
 
@@ -330,7 +330,7 @@ contains
     max_err = 0d0
     do j = 1, N*howmany
       err = abs(hout_many(j) - hout_ind(j))
-      max_err = max(max_err, err)
+      if (max_err == max_err .and. .not. (err <= max_err)) max_err = err  ! keeps a NaN
     end do
 
     call report(max_err, tol, nfail)

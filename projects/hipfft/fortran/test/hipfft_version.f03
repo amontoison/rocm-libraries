@@ -31,11 +31,13 @@
 ! c_loc. hipfftGetProperty is reached through the generic interface, which
 ! accepts a target integer(c_int) scalar and applies c_loc internally.
 !
-! Pass/fail: every output variable is poisoned with -12345 beforehand, so a
-! binding that never writes through is caught. The real assertion is the
-! cross-check that the single packed number returned by hipfftGetVersion
-! equals major*10000 + minor*100 + patch assembled from three independent
-! hipfftGetProperty queries. Any mismatch prints "FAILED! ..." and STOP 1.
+! Both calls report the version of the backend FFT library (rocFFT, or cuFFT),
+! not of hipFFT itself, and hipfftGetProperty is derived from hipfftGetVersion,
+! so this checks the binding rather than the library: every output is poisoned
+! with -12345 beforehand, so a binding that never writes through is caught, and
+! the packed hipfftGetVersion code must equal major*10000 + minor*100 + patch
+! from hipfftGetProperty, so a binding that passes the property selector or the
+! output argument wrongly is caught. Any mismatch prints "FAILED! ..." and STOP 1.
 program hipfft_version
   use iso_c_binding
   use hip
@@ -73,12 +75,12 @@ program hipfft_version
   end if
 
   if (version <= 0) then
-     write(*,*) "FAILED! implausible hipFFT version code: ", version
+     write(*,*) "FAILED! implausible backend version code: ", version
      STOP 1
   end if
 
   if (major < 1 .or. minor < 0 .or. patch < 0) then
-     write(*,*) "FAILED! implausible hipFFT version triple: ", major, minor, patch
+     write(*,*) "FAILED! implausible backend version triple: ", major, minor, patch
      STOP 1
   end if
 
@@ -88,7 +90,7 @@ program hipfft_version
      STOP 1
   end if
 
-  write(*,"(a,i0,a,i0,a,i0,a,i0,a)") "PASSED! hipFFT version: ", &
+  write(*,"(a,i0,a,i0,a,i0,a,i0,a)") "PASSED! backend FFT library version: ", &
     major, ".", minor, ".", patch, " (code ", version, ")"
 
 end program hipfft_version

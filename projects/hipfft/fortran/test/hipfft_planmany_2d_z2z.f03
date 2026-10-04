@@ -102,12 +102,12 @@ program hipfft_planmany_2d_z2z
               expected = (0.0d0, 0.0d0)
            end if
            error = abs(hx(pos + 1) - expected)
-           max_error = max(max_error, error)
+           if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
         end do
      end do
   end do
 
-  if (max_error > tol * Ntot) then
+  if (.not. (max_error <= tol * Ntot)) then
      write(*,*) "FAILED! max error = ", max_error
      STOP 1
   end if
