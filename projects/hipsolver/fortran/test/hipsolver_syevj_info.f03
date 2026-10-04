@@ -25,12 +25,11 @@
 
 !!!!!!!!!!!!!!
 ! hipsolver syevjInfo query test (Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Exercises the Jacobi-convergence getters hipsolverXsyevjGetResidual and
 ! hipsolverXsyevjGetSweeps (plus their hipsolverDnXsyevj* aliases), whose
-! output arguments are now plain Fortran scalars passed directly, not
-! c_loc(...) wrappers.
+! output arguments are plain Fortran scalars passed by reference.
 !
 ! The same 3x3 symmetric system is solved twice with hipsolverDsyevj, the two
 ! runs differing only in hipsolverXsyevjSetMaxSweeps. That makes the getters'
@@ -42,9 +41,8 @@
 ! that the Dn aliases report the identical values, and that run 2's
 ! eigenvalues really are 2-sqrt(2), 2, 2+sqrt(2).
 !
-! f2003 style: device buffers are type(c_ptr) allocated by byte count and host
-! data is moved with hipMemcpy + c_loc; devInfo is viewed with c_f_pointer so
-! it can be passed by address.
+! f2003 style: device buffers, devInfo included, are type(c_ptr) allocated by
+! byte count, and host data is moved with hipMemcpy + c_loc.
 !!!!!!!!!!!!!!
 !
 program hipsolver_syevj_info
@@ -69,7 +67,7 @@ program hipsolver_syevj_info
   type(c_ptr) :: handle = c_null_ptr
   type(c_ptr) :: params = c_null_ptr
   type(c_ptr) :: dA, dW, dInfo, dWork
-  integer(c_int), pointer :: dInfo_p(:)
+  integer(c_int), target :: hInfo
   integer(c_int) :: lwork
 
   ! Outputs of the getters under test, poisoned before every read
@@ -89,7 +87,6 @@ program hipsolver_syevj_info
   call hipCheck(hipMalloc(dA, size_A * 8))
   call hipCheck(hipMalloc(dW, size_W * 8))
   call hipCheck(hipMalloc(dInfo, 4_c_size_t))
-  call c_f_pointer(dInfo, dInfo_p, (/1/))
 
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
 
@@ -105,7 +102,7 @@ program hipsolver_syevj_info
   call hipsolverCheck(hipsolverXsyevjSetMaxSweeps(params, 1))
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverDsyevj(handle, HIPSOLVER_EIG_MODE_VECTOR, &
-       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, c_loc(dInfo_p(1)), params))
+       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, dInfo, params))
   call hipCheck(hipDeviceSynchronize())
 
   res1 = -1.0d0
@@ -116,9 +113,16 @@ program hipsolver_syevj_info
   ! ---- Run 2: the same solve, now allowed to converge -----------------------
   call hipsolverCheck(hipsolverXsyevjSetMaxSweeps(params, 100))
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverDsyevj(handle, HIPSOLVER_EIG_MODE_VECTOR, &
-       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, c_loc(dInfo_p(1)), params))
+       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, dInfo, params))
   call hipCheck(hipDeviceSynchronize())
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+     write(*,*) "FAILED! converged run info = ", hInfo, " (expected 0)"
+     STOP 1
+  end if
 
   res2 = -1.0d0
   sweeps2 = -1
@@ -144,7 +148,7 @@ program hipsolver_syevj_info
      STOP 1
   end if
 
-  if (res1 <= 1.0d-3) then
+  if (.not. (res1 > 1.0d-3)) then
      write(*,*) "FAILED! single-sweep run should be far from converged, residual = ", res1
      STOP 1
   end if
@@ -154,7 +158,7 @@ program hipsolver_syevj_info
      STOP 1
   end if
 
-  if (res2 >= res1) then
+  if (.not. (res2 < res1)) then
      write(*,*) "FAILED! more sweeps did not reduce the residual, ", res1, " -> ", res2
      STOP 1
   end if
@@ -165,7 +169,7 @@ program hipsolver_syevj_info
   end if
 
   do i = 1,N
-     if (abs(hW(i) - expected(i)) > error_max) then
+     if (.not. (abs(hW(i) - expected(i)) <= error_max)) then
         write(*,*) "FAILED! converged eigenvalue ", i, " is ", hW(i), " expected ", expected(i)
         STOP 1
      end if

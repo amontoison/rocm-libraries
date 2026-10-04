@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! hipsolverCgesvdj example (single-complex Jacobi SVD, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: compute the singular value decomposition A = U*S*V**H with the
 ! Jacobi method and confirm the factors reconstruct the original matrix. Using
@@ -115,7 +115,7 @@ program cgesvdj
   do j = 1,N
     do i = 1,M
       error = abs(recon(i,j) - hA0(i,j))
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Error bigger than max! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

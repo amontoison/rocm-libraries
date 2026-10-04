@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! cheevd example (complex Hermitian eigenvalues, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Checks sum(eigenvalues) == trace(A). f2003 style: device buffers are type(c_ptr).
 !!!!!!!!!!!!!!
@@ -35,6 +35,7 @@ program hipsolver_cheevd
   use hip
   use hipsolver
   implicit none
+  integer(c_int), target :: hInfo
   integer(c_int), parameter :: N = 4, lda = 4
   complex(c_float_complex), target :: hA(N,N) = reshape((/ &
       (10.,0.),(2.,0.),(3.,0.),(6.,0.), (2.,0.),(11.,0.),(1.,0.),(0.,0.), &
@@ -42,26 +43,39 @@ program hipsolver_cheevd
   real(c_float), target :: hD(N) = 0.0
   integer(c_size_t) :: szA = 16, szD = 4
   type(c_ptr) :: dA, dD, dWork, handle = c_null_ptr
-  integer(c_int), pointer :: dInfo(:)
+  type(c_ptr) :: dInfo
   integer(c_int) :: lwork
-  real(c_float) :: trace_A, error
+  real(c_float) :: trace_A, normA2, error
   real(c_float), parameter :: rtol = 1.0e-5
   write(*,"(a)",advance="no") "-- Running test 'hipsolver_cheevd' (Fortran 2003 interfaces) - "
   trace_A = real(hA(1,1)) + real(hA(2,2)) + real(hA(3,3)) + real(hA(4,4))
+  normA2 = sum(abs(hA)**2)
   call hipsolverCheck(hipsolverCreate(handle))
   call hipCheck(hipMalloc(dA, szA * 8))
   call hipCheck(hipMalloc(dD, szD * 4))
-  call hipCheck(hipMalloc(dInfo, 1))
+  call hipCheck(hipMalloc(dInfo, 4_c_size_t))
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), szA * 8, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverCheevd_bufferSize(handle, HIPSOLVER_EIG_MODE_NOVECTOR, &
                                                  HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dD, lwork))
   call hipCheck(hipMalloc(dWork, max(int(lwork,c_size_t) * 8, 1_c_size_t)))
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverCheevd(handle, HIPSOLVER_EIG_MODE_NOVECTOR, HIPSOLVER_FILL_MODE_UPPER, &
-                                      N, dA, lda, dD, dWork, lwork, c_loc(dInfo(1))))
+                                      N, dA, lda, dD, dWork, lwork, dInfo))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
   call hipCheck(hipMemcpy(c_loc(hD(1)), dD, szD * 4, hipMemcpyDeviceToHost))
   error = abs(sum(hD) - trace_A) / abs(trace_A)
-  if (error > rtol) then
+  if (.not. (error <= rtol)) then
      write(*,*) "FAILED! sum(eigenvalues) = ", sum(hD), " expected trace = ", trace_A
+     call exit(1)
+  end if
+  ! An orthogonal similarity also preserves ||A||_F**2 = sum(eigenvalues**2).
+  error = abs(sum(hD**2) - normA2) / normA2
+  if (.not. (error <= rtol)) then
+     write(*,*) "FAILED! sum(eigenvalues**2) = ", sum(hD**2), " expected ", normA2
      call exit(1)
   end if
   call hipCheck(hipFree(dA)); call hipCheck(hipFree(dD)); call hipCheck(hipFree(dInfo)); call hipCheck(hipFree(dWork))

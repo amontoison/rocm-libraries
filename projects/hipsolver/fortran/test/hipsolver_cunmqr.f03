@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverCunmqr example (single-complex multiply by Q from a QR
 ! factorization, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: factorize A with geqrf to obtain Q (as Householder vectors),
 ! then form Q*C with unmqr. Q is unitary, so it preserves the Frobenius norm:
@@ -59,6 +59,7 @@ program cunmqr
   complex(c_float_complex), target :: hC(3,2) = reshape((/ &
     (1.0,1.0), (2.0,0.0), (3.0,-1.0), (4.0,0.0), (5.0,2.0), (6.0,0.0)/), (/3, 2/))
   real(c_float) :: norm_in, norm_out
+  complex(c_float_complex) :: hC0(3,2)
 
   integer(c_size_t) :: size_A = size(hA)
   integer(c_size_t) :: size_C = size(hC)
@@ -74,6 +75,7 @@ program cunmqr
   write(*,"(a)",advance="no") "-- Running test 'hipsolverCunmqr' (Fortran 2003 interfaces) - "
 
   norm_in = sqrt(sum(abs(hC)**2))
+  hC0 = hC
 
   call hipsolverCheck(hipsolverCreate(handle))
 
@@ -99,8 +101,13 @@ program cunmqr
 
   norm_out = sqrt(sum(abs(hC)**2))
   error = abs(norm_out - norm_in) / max(norm_in, 1.0_c_float)
-  if(error .gt. error_max) then
+  if(.not. (error .le. error_max)) then
       write(*,*) "FAILED! Norm not preserved! ||C|| = ", norm_in, " ||Q*C|| = ", norm_out
+      call exit(1)
+  end if
+  ! Q is not the identity, so Q*C must differ from C.
+  if(.not. (sqrt(sum(abs(hC - hC0)**2)) .gt. error_max)) then
+      write(*,*) "FAILED! Q*C = C: the multiplication had no effect"
       call exit(1)
   end if
 

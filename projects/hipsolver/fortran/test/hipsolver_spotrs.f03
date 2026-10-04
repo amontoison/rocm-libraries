@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverSpotrs example (single-precision Cholesky solve, Fortran 2003
 ! interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: pick a known solution x, form b = A*x for a symmetric positive
 ! definite A, factorize with potrf, solve A*X = b with potrs, and confirm X
@@ -97,7 +97,7 @@ program spotrs
   ! Verify the recovered solution matches x
   do i = 1,N
     error = abs(hB(i,1) - hX(i,1)) / max(abs(hX(i,1)), 1.0_c_float)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " X(", i, ") = ", hB(i,1)
         call exit(1)
     end if

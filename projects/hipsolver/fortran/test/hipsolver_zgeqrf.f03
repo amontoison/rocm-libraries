@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverZgeqrf example (double-complex QR factorization, Fortran 2003
 ! interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: geqrf overwrites the upper triangle of A with R. Because
 ! A = Q*R with Q unitary, A**H * A = R**H * R, so we recover R from the output,
@@ -111,7 +111,7 @@ program zgeqrf
         rhs = rhs + conjg(R(l,i)) * R(l,j)
       end do
       error = abs(lhs - rhs)
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Error bigger than max! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

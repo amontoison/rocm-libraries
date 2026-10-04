@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverDsyevj example (double-precision Jacobi symmetric eigensolver,
 ! Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: with jobz=vector, A is overwritten with the eigenvectors (as
 ! columns) and W holds the eigenvalues. We confirm A0*v_k = lambda_k*v_k.
@@ -43,6 +43,7 @@ program dsyevj
   use hipsolver
 
   implicit none
+  integer(c_int), target :: hInfo
   integer :: i, k ! indices for iterating over results
 
   integer(c_int), parameter :: N = 3
@@ -86,8 +87,14 @@ program dsyevj
   call hipCheck(hipMalloc(dWork, int(lwork,c_size_t) * 8))
 
   ! Compute eigenvalues and eigenvectors (A overwritten with eigenvectors)
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverDsyevj(handle, HIPSOLVER_EIG_MODE_VECTOR, &
        HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dW, dWork, lwork, dInfo, params))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
 
   ! Copy results back to host
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, size_A * 8, hipMemcpyDeviceToHost))
@@ -97,9 +104,13 @@ program dsyevj
   do k = 1,N
     lhs = matmul(hA0, hA(:,k))
     rhs = hW(k) * hA(:,k)
+    error = abs(sqrt(sum(abs(hA(:,k))**2)) - 1)
+    if(.not. (error .le. error_max)) then
+        write(*,*) "FAILED! eigenvector ", k, " norm error = ", error; call exit(1)
+    end if
     do i = 1,N
         error = abs(lhs(i) - rhs(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " eigenpair ", k
             call exit(1)
         end if

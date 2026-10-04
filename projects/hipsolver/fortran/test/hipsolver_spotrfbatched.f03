@@ -24,14 +24,15 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!
-! hipsolver dpotrfBatched example (batched Cholesky factorization, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! hipsolver spotrfBatched example (batched Cholesky factorization, single, Fortran 2003)
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
-! Factorizes a batch of SPD matrices. The batched API takes A as an array of
-! device pointers that itself lives in DEVICE memory: each matrix is allocated on
-! the device, their device addresses are collected in a host array, and that
+! Factorizes a batch of SPD matrices. The batched API takes A as an array
+! of device pointers that itself lives in DEVICE memory: each matrix is allocated
+! on the device, their device addresses are collected in a host array, and that
 ! array is copied to a device buffer whose address (by value) is passed as A.
-! Checks info == 0 for every batch entry and the Cholesky diagonal.
+! Batch b holds b**2 * U**H*U, so its upper factor is b*U. Checks info == 0
+! (seeded with -1) and the upper triangle of every factor.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host data
 ! is moved with hipMemcpy + c_loc.
@@ -42,36 +43,40 @@ program spotrfbatched
   use hip
   use hipsolver
   implicit none
-  integer :: b
+  integer :: b, i, j
   integer(c_int), parameter :: N = 3, lda = 3, batch = 2
-  ! SPD A = diag(4, 9, 16) -> upper Cholesky diag = 2, 3, 4
-  real(c_float), target :: hA(N,N) = reshape((/ &
-      4.0, 0.0, 0.0, &
-      0.0, 9.0, 0.0, &
-      0.0, 0.0,16.0/), (/N,N/))
-  real(c_float), target :: hOut(N,N)
+  ! Upper Cholesky factor with a positive diagonal; A = U**T * U.
+  real(c_float), parameter :: hU(N,N) = reshape((/ &
+      2, 0, 0, &
+      1, 3, 0, &
+      1, 1, 4/), (/N,N/))
+  real(c_float), target :: hA(N,N,batch), hOut(N,N)
   integer(c_int), target :: hInfo(batch)
   type(c_ptr), target :: hostPtrs(batch)
-  type(c_ptr) :: dA1, dA2, dPtrArray, dWork, dInfo
+  type(c_ptr) :: dPtrArray, dWork, dInfo
   type(c_ptr) :: handle
   integer(c_int) :: lwork
-  integer(c_size_t) :: ptrbytes
+  integer(c_size_t) :: ptrbytes, matbytes
+  real(c_float) :: error
+  real(c_float), parameter :: rtol = 1.0e-5
   write(*,"(a)",advance="no") "-- Running test 'hipsolver_spotrfbatched' (Fortran 2003 interfaces) - "
 
+  matbytes = int(N*N,c_size_t) * 4
   call hipsolverCheck(hipsolverCreate(handle))
-  call hipCheck(hipMalloc(dA1, int(N*N,c_size_t) * 4))
-  call hipCheck(hipMalloc(dA2, int(N*N,c_size_t) * 4))
-  call hipCheck(hipMemcpy(dA1, c_loc(hA(1,1)), int(N*N,c_size_t) * 4, hipMemcpyHostToDevice))
-  call hipCheck(hipMemcpy(dA2, c_loc(hA(1,1)), int(N*N,c_size_t) * 4, hipMemcpyHostToDevice))
+  do b = 1, batch
+     hA(:,:,b) = b**2 * matmul(transpose(hU), hU)
+     call hipCheck(hipMalloc(hostPtrs(b), matbytes))
+     call hipCheck(hipMemcpy(hostPtrs(b), c_loc(hA(1,1,b)), matbytes, hipMemcpyHostToDevice))
+  end do
 
   ! Host array of device addresses, copied to a device-resident pointer array.
-  hostPtrs(1) = dA1
-  hostPtrs(2) = dA2
   ptrbytes = int(batch,c_size_t) * c_sizeof(c_null_ptr)
   call hipCheck(hipMalloc(dPtrArray, ptrbytes))
   call hipCheck(hipMemcpy(dPtrArray, c_loc(hostPtrs), ptrbytes, hipMemcpyHostToDevice))
 
+  hInfo = -1
   call hipCheck(hipMalloc(dInfo, int(batch,c_size_t) * 4))
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo(1)), int(batch,c_size_t) * 4, hipMemcpyHostToDevice))
 
   call hipsolverCheck(hipsolverSpotrfBatched_bufferSize(handle, HIPSOLVER_FILL_MODE_UPPER, &
        N, dPtrArray, lda, lwork, batch))
@@ -81,20 +86,30 @@ program spotrfbatched
   call hipCheck(hipDeviceSynchronize())
 
   call hipCheck(hipMemcpy(c_loc(hInfo(1)), dInfo, int(batch,c_size_t) * 4, hipMemcpyDeviceToHost))
-  call hipCheck(hipMemcpy(c_loc(hOut(1,1)), dA1, int(N*N,c_size_t) * 4, hipMemcpyDeviceToHost))
-
   do b = 1, batch
      if (hInfo(b) /= 0) then
         write(*,*) "FAILED! info(", b, ") = ", hInfo(b), " (expected 0)"; call exit(1)
      end if
   end do
-  if (abs(hOut(1,1)-2.0) > 1.0e-5 .or. abs(hOut(2,2)-3.0) > 1.0e-5 .or. &
-      abs(hOut(3,3)-4.0) > 1.0e-5) then
-     write(*,*) "FAILED! chol diag = ", hOut(1,1), hOut(2,2), hOut(3,3), " expected 2 3 4"; call exit(1)
-  end if
 
-  call hipCheck(hipFree(dA1)); call hipCheck(hipFree(dA2)); call hipCheck(hipFree(dPtrArray))
-  call hipCheck(hipFree(dWork)); call hipCheck(hipFree(dInfo))
+  do b = 1, batch
+     call hipCheck(hipMemcpy(c_loc(hOut(1,1)), hostPtrs(b), matbytes, hipMemcpyDeviceToHost))
+     do j = 1, N
+        do i = 1, j
+           error = abs(hOut(i,j) - b * hU(i,j)) / max(abs(b * hU(i,j)), 1.0_c_float)
+           if (.not. (error <= rtol)) then
+              write(*,*) "FAILED! batch ", b, " U(", i, ",", j, ") = ", hOut(i,j), &
+                         " expected ", b * hU(i,j)
+              call exit(1)
+           end if
+        end do
+     end do
+  end do
+
+  do b = 1, batch
+     call hipCheck(hipFree(hostPtrs(b)))
+  end do
+  call hipCheck(hipFree(dPtrArray)); call hipCheck(hipFree(dWork)); call hipCheck(hipFree(dInfo))
   call hipsolverCheck(hipsolverDestroy(handle)); call hipCheck(hipDeviceReset())
   write(*,*) "PASSED!"
 end program spotrfbatched

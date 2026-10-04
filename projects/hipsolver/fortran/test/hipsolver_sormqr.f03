@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverSormqr example (single-precision multiply by Q from a QR
 ! factorization, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: factorize A with geqrf to obtain Q (as Householder vectors),
 ! then form Q*C with ormqr. Q is orthogonal, so it preserves the Frobenius norm:
@@ -55,6 +55,7 @@ program sormqr
   real(c_float), target :: hA(3,3) = reshape((/1, 4, 7, 2, 5, 8, 3, 6, 10/), (/3, 3/))
   real(c_float), target :: hC(3,2) = reshape((/1, 2, 3, 4, 5, 6/), (/3, 2/))
   real(c_float) :: norm_in, norm_out
+  real(c_float) :: hC0(3,2)
 
   integer(c_size_t) :: size_A = size(hA)
   integer(c_size_t) :: size_C = size(hC)
@@ -70,6 +71,7 @@ program sormqr
   write(*,"(a)",advance="no") "-- Running test 'hipsolverSormqr' (Fortran 2003 interfaces) - "
 
   norm_in = sqrt(sum(hC*hC))
+  hC0 = hC
 
   call hipsolverCheck(hipsolverCreate(handle))
 
@@ -95,8 +97,13 @@ program sormqr
 
   norm_out = sqrt(sum(hC*hC))
   error = abs(norm_out - norm_in) / max(norm_in, 1.0_c_float)
-  if(error .gt. error_max) then
+  if(.not. (error .le. error_max)) then
       write(*,*) "FAILED! Norm not preserved! ||C|| = ", norm_in, " ||Q*C|| = ", norm_out
+      call exit(1)
+  end if
+  ! Q is not the identity, so Q*C must differ from C.
+  if(.not. (sqrt(sum(abs(hC - hC0)**2)) .gt. error_max)) then
+      write(*,*) "FAILED! Q*C = C: the multiplication had no effect"
       call exit(1)
   end if
 

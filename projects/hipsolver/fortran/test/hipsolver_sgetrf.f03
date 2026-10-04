@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! hipsolver sgetrf example (single-precision LU factorization, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
 ! data is moved with hipMemcpy + c_loc.
@@ -97,7 +97,7 @@ program hipsolver_sgetrf
   do j = 1,size(hA,2)
     do i = 1,size(hA,1)
         error = abs(hA(i,j) - hResult(i,j)) / max(abs(hResult(i,j)), 1.0)
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " hA(", i, ",", j, ") = ", hA(i,j)
             call exit(1)
         end if

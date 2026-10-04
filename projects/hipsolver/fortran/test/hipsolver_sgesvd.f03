@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! sgesvd example (singular value decomposition, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Computes the singular values of A (jobu = jobv = 'N') and checks the
 ! convention-independent invariant sum(sigma_i^2) == ||A||_F^2.
@@ -66,7 +66,7 @@ program hipsolver_sgesvd
      ssum = ssum + hS(i)**2
   end do
   error = abs(ssum - frob) / frob
-  if (error > rtol) then
+  if (.not. (error <= rtol)) then
      write(*,*) "FAILED! sum(sigma^2) = ", ssum, " expected ||A||_F^2 = ", frob
      call exit(1)
   end if

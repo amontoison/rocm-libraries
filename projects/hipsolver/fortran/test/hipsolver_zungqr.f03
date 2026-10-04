@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverZungqr example (double-complex generation of Q from a QR
 ! factorization, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: factorize A with geqrf, generate the unitary factor Q with
 ! ungqr, and confirm Q**H * Q = I. Unitarity is phase-convention independent,
@@ -101,7 +101,7 @@ program zungqr
       else
         error = abs(gram)
       end if
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Q not unitary! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

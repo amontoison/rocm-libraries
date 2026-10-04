@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! hipsolverDorgqr example (double-precision generation of Q from a QR
 ! factorization, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! Self-verifying: factorize A with geqrf, generate the orthogonal factor Q with
 ! orgqr, and confirm Q**T * Q = I. Orthogonality is sign-convention independent,
@@ -98,7 +98,7 @@ program dorgqr
       else
         error = abs(gram)
       end if
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Q not orthogonal! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

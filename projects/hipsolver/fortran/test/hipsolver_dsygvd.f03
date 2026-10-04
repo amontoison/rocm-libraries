@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! dsygvd example (generalized symmetric-definite eigensolver, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
 !
 ! sygvd solves A*x = lambda*B*x (itype=1). f2003 style: device buffers are
 ! type(c_ptr). Self-verifying: A0*v_k = lambda_k * B0*v_k.
@@ -36,6 +36,7 @@ program hipsolver_dsygvd
   use hip
   use hipsolver
   implicit none
+  integer(c_int), target :: hInfo
   integer :: i, k
 
   integer(c_int), parameter :: N = 3, lda = 3, ldb = 3
@@ -49,7 +50,7 @@ program hipsolver_dsygvd
   integer(c_size_t) :: sizeA = 9, sizeB = 9, sizeW = 3
 
   type(c_ptr) :: dA, dB, dW
-  integer(c_int), pointer :: dInfo(:)
+  type(c_ptr) :: dInfo
   type(c_ptr) :: dWork, handle = c_null_ptr
   integer(c_int) :: lwork
 
@@ -64,7 +65,7 @@ program hipsolver_dsygvd
   call hipCheck(hipMalloc(dA, sizeA * 8))
   call hipCheck(hipMalloc(dB, sizeB * 8))
   call hipCheck(hipMalloc(dW, sizeW * 8))
-  call hipCheck(hipMalloc(dInfo, 1))
+  call hipCheck(hipMalloc(dInfo, 4_c_size_t))
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), sizeA * 8, hipMemcpyHostToDevice))
   call hipCheck(hipMemcpy(dB, c_loc(hB(1,1)), sizeB * 8, hipMemcpyHostToDevice))
 
@@ -74,8 +75,14 @@ program hipsolver_dsygvd
        HIPSOLVER_EIG_MODE_VECTOR, HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dB, ldb, dW, lwork))
   call hipCheck(hipMalloc(dWork, max(int(lwork,c_size_t) * 8, 1_c_size_t)))
 
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call hipsolverCheck(hipsolverDsygvd(handle, HIPSOLVER_EIG_TYPE_1, HIPSOLVER_EIG_MODE_VECTOR, &
-       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dB, ldb, dW, dWork, lwork, c_loc(dInfo(1))))
+       HIPSOLVER_FILL_MODE_UPPER, N, dA, lda, dB, ldb, dW, dWork, lwork, dInfo))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
 
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 8, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hW(1)), dW, sizeW * 8, hipMemcpyDeviceToHost))
@@ -83,9 +90,13 @@ program hipsolver_dsygvd
   do k = 1,N
     lhs = matmul(hA0, hA(:,k))
     rhs = hW(k) * matmul(hB0, hA(:,k))
+    error = abs(abs(dot_product(hA(:,k), matmul(hB0, hA(:,k)))) - 1)
+    if(.not. (error .le. error_max)) then
+        write(*,*) "FAILED! eigenvector ", k, " B-norm error = ", error; call exit(1)
+    end if
     do i = 1,N
         error = abs(lhs(i) - rhs(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " eigenpair ", k; call exit(1)
         end if
     end do
