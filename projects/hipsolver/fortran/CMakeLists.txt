@@ -42,16 +42,20 @@ endif()
 # project() call and inherited here. Standalone the root never runs, so the same
 # test is repeated below against the variables a standalone caller can set --
 # without that repeat -DUSE_CUDA=ON would be ignored and the bindings would
-# default ON on the CUDA backend.
+# default ON on the CUDA backend. Keep the repeat identical to the root's: a
+# defined USE_CUDA decides, and only otherwise is HIP_PLATFORM consulted.
 #
 # In-tree this option() call is the SECOND, so it is a no-op: the root's runs
 # first, because its enable_language(Fortran) needs the answer before this
 # directory is added. Both compute the same default from the same variable.
 if(NOT DEFINED _hipsolver_cuda_backend)
-  if(USE_CUDA OR "$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+  set(_hipsolver_cuda_backend OFF)
+  if(DEFINED USE_CUDA)
+    if(USE_CUDA)
+      set(_hipsolver_cuda_backend ON)
+    endif()
+  elseif("$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
     set(_hipsolver_cuda_backend ON)
-  else()
-    set(_hipsolver_cuda_backend OFF)
   endif()
 endif()
 

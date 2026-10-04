@@ -63,11 +63,18 @@ endif()
 #
 # HIP_PLATFORM cannot be read here -- it is resolved after project() and
 # find_package(hip) -- so this repeats the explicit inputs that resolution starts
-# from. It deliberately does NOT cover the implicit nvidia fallback taken when
-# hip is not found (the hip < 6.0 path): unknowable this early, and such a build
-# will still pick amdflang.
+# from, in the same order: a defined USE_CUDA decides on its own (the deprecated
+# option overwrites $ENV{HIP_PLATFORM} below), and only otherwise is
+# HIP_PLATFORM consulted. It deliberately does NOT cover the implicit nvidia
+# fallback taken when hip is not found (the hip < 6.0 path): unknowable this
+# early, and such a build will still pick amdflang. fortran/CMakeLists.txt
+# repeats this test for the standalone build; keep the two copies identical.
 set(_hipsolver_cuda_backend OFF)
-if(USE_CUDA OR "$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
+if(DEFINED USE_CUDA)
+  if(USE_CUDA)
+    set(_hipsolver_cuda_backend ON)
+  endif()
+elseif("$ENV{HIP_PLATFORM}" STREQUAL "nvidia" OR "${HIP_PLATFORM}" STREQUAL "nvidia")
   set(_hipsolver_cuda_backend ON)
 endif()
 
