@@ -67,16 +67,10 @@ option(BUILD_FORTRAN_CLIENTS "Build the rocBLAS Fortran clients and binding test
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
 # every library in the monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top
-# turns the whole Fortran track off. Each library also honours a name of its own
-# for when one has to be singled out. ROCBLAS_BUILD_FORTRAN_BINDINGS decides this
-# directory outright; the clients one only moves the shared DEFAULT, since the
-# Fortran clients are GPU executables built under clients/' own gates, and
-# ../CMakeLists.txt forces them off again when the bindings were not built.
+# turns the whole Fortran track off. ROCBLAS_BUILD_FORTRAN_BINDINGS singles this
+# library out: it decides this directory outright.
 if(DEFINED ROCBLAS_BUILD_FORTRAN_BINDINGS)
   set(BUILD_FORTRAN_BINDINGS ${ROCBLAS_BUILD_FORTRAN_BINDINGS})
-endif()
-if(DEFINED ROCBLAS_BUILD_FORTRAN_CLIENTS)
-  set(BUILD_FORTRAN_CLIENTS ${ROCBLAS_BUILD_FORTRAN_CLIENTS})
 endif()
 
 # Which array-argument overloads the module exposes. One tri-state rather than a
