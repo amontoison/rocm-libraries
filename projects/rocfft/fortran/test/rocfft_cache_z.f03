@@ -49,7 +49,7 @@ program rocfft_cache_z
   type(c_ptr) :: plan_fwd = c_null_ptr
   type(c_ptr) :: plan_bwd = c_null_ptr
   type(c_ptr) :: cache = c_null_ptr
-  integer(c_size_t), target :: cache_bytes = 0
+  integer(c_size_t) :: cache_bytes = 0
   integer(c_size_t), allocatable, target, dimension(:) :: lengths
   integer(c_size_t), parameter :: one = 1
   integer :: i
@@ -86,9 +86,9 @@ program rocfft_cache_z
                                       c_null_ptr))
 
   ! Copy the cache into a buffer that rocFFT allocates. The buffer address is
-  ! written to the first argument, its size in bytes to the second, which is
-  ! why the length is passed as the address of a size_t variable.
-  call rocfftCheck(rocfft_cache_serialize(cache, c_loc(cache_bytes)))
+  ! written to the first argument, its size in bytes to the second, an
+  ! integer(c_size_t) passed by reference.
+  call rocfftCheck(rocfft_cache_serialize(cache, cache_bytes))
   if (.not. c_associated(cache) .or. cache_bytes == 0) then
      write(*,*) "FAILED! empty kernel cache"
      call rocfftCheck(rocfft_cleanup())

@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module rocfft
   use, intrinsic :: iso_c_binding
@@ -395,7 +396,7 @@ module rocfft
        bind(C, name="rocfft_execution_info_set_load_callback_data")
        import :: c_ptr, c_size_t, rocfft_status_success
        type(c_ptr), value :: myInfo
-       type(c_ptr) :: cb_data
+       type(c_ptr), value :: cb_data
        integer(c_size_t), value :: count
        integer(kind(rocfft_status_success)) :: execution_info_set_load_callback_data
     end function rocfft_execution_info_set_load_callback_data
@@ -423,7 +424,7 @@ module rocfft
        bind(C, name="rocfft_execution_info_set_store_callback_data")
        import :: c_ptr, c_size_t, rocfft_status_success
        type(c_ptr), value :: myInfo
-       type(c_ptr) :: cb_data
+       type(c_ptr), value :: cb_data
        integer(c_size_t), value :: count
        integer(kind(rocfft_status_success)) :: execution_info_set_store_callback_data
     end function rocfft_execution_info_set_store_callback_data
@@ -434,9 +435,9 @@ module rocfft
     function rocfft_cache_serialize(buffer, buffer_len_bytes) &
        result(cache_serialize) &
        bind(C, name="rocfft_cache_serialize")
-       import :: c_ptr, rocfft_status_success
+       import :: c_ptr, c_size_t, rocfft_status_success
        type(c_ptr) :: buffer
-       type(c_ptr), value :: buffer_len_bytes
+       integer(c_size_t) :: buffer_len_bytes
        integer(kind(rocfft_status_success)) :: cache_serialize
     end function rocfft_cache_serialize
 
