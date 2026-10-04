@@ -81,8 +81,6 @@ repos:
         exclude: &opted_out_but_scanned |
           (?x)
           projects/hipblaslt/.*|
-          # Vendored FRUIT unit-test harness, kept byte-identical to upstream.
-          projects/hiprand/fortran/test/fruit/.*|
           shared/tensile/.*
       - id: end-of-file-fixer
         exclude: *opted_out_but_scanned

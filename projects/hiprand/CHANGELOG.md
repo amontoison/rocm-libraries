@@ -26,6 +26,9 @@ Documentation for hipRAND is available at
   `library/src/fortran/hip/` and its `BUILD_FORTRAN_WRAPPER` option, deprecated in favour of
   hipfort in hipRAND 3.0.0 and never shipped enabled. Builds passing
   `-DBUILD_FORTRAN_WRAPPER=ON` should switch to `use hiprand`.
+* `find_package(hiprand)` no longer sets `hiprand_FORTRAN_FOUND`, `hiprand_FORTRAN_SRC_DIR` or
+  `hiprand_FORTRAN_SRC_DIRS`; use `find_package(hiprand-fortran)`, which sets
+  `hiprand_FORTRAN_FOUND`.
 
 ## Since last release ROCm 7.12
 
