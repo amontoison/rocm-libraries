@@ -245,35 +245,17 @@ if( BUILD_CLIENTS_RIDER )
   set( BUILD_CLIENTS_BENCH ${BUILD_CLIENTS_RIDER} )
 endif()
 
-# ctest walks the chain of CTestTestfile.cmake down from a build root, and CMake
-# writes that chain only for directories where testing was enabled, starting at
-# this one. fortran/ registers the binding tests under exactly these three
-# switches, but the only other enable_testing() at this level is the one inside
-# the BUILD_CLIENTS_TESTS branch below, so a samples-only or bench-only build
-# would compile those tests and then hand ctest an empty project -- "Total
-# Tests: 0", which reads as a broken binding rather than as a build root that was
-# never told to collect anything. Enabling testing twice is a no-op; leaving
-# those two configurations uncovered is not.
+# fortran/ registers its tests under any of these three switches; the other
+# enable_testing() calls here (internal tests, BUILD_CLIENTS_TESTS) miss the
+# samples-only and bench-only builds, which would leave ctest with no tests.
 if( BUILD_CLIENTS_SAMPLES
     OR BUILD_CLIENTS_TESTS
     OR BUILD_CLIENTS_BENCH )
   enable_testing()
 endif()
 
-# Fortran bindings. Self-contained: it declares bind(C) interfaces only, so it
-# compiles against neither the rocFFT headers nor librocfft, and it is safe to
-# add unconditionally. The directory does its own guarding and returns quietly
-# when BUILD_FORTRAN_BINDINGS is off or no Fortran compiler was found. It reports
-# back through ROCFFT_HAVE_FORTRAN_BINDINGS, which is FALSE in both those cases
-# and TRUE only when the rocfft_fortran target was really created.
-#
-# After library/ on purpose. The directory falls back to find_package( rocfft )
-# when roc::rocfft is absent, because otherwise it records no link interface and
-# every consumer hits undefined references to rocfft_setup despite linking
-# roc::rocfft_fortran exactly as documented. Hooked in BEFORE library/, that
-# fallback would silently resolve against whatever rocFFT is INSTALLED on the
-# build machine, and the in-tree build would ship bindings pointing at the wrong
-# librocfft with no diagnostic at all.
+# Fortran bindings; self-guarding, reports ROCFFT_HAVE_FORTRAN_BINDINGS. After
+# library/, or its find_package( rocfft ) fallback finds an INSTALLED rocFFT.
 add_subdirectory( fortran )
 
 if( BUILD_CLIENTS_SAMPLES
