@@ -86,7 +86,7 @@ program dgesv
   ! Check the solution
   do i = 1,3
     error = abs(hB(i,1) - hX_ref(i)) / max(abs(hX_ref(i)), 1.0_c_double)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " hB(", i, ",1) = ", hB(i,1)
         call exit(1)
     end if

@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! dsyevd example (double-precision symmetric eigensolver, Fortran 2003 interfaces)
-! see: https:!www.netlib.org/lapack/explore-html/d2/d8a/group__double_s_yeigen_ga694ddc6e5527b6223748e3462013d867.html
+! see: https://www.netlib.org/lapack/explore-html/d2/d8a/group__double_s_yeigen_ga694ddc6e5527b6223748e3462013d867.html
 !
 ! Self-verifying: with evect=original, A is overwritten with the eigenvectors
 ! (as columns) and D holds the eigenvalues. We confirm A0*v_k = lambda_k*v_k.
@@ -42,6 +42,7 @@ program dsyevd
   use rocsolver
 
   implicit none
+  integer(c_int), target :: hInfo
   integer :: i, k ! indices for iterating over results
 
   integer(c_int), parameter :: N = 3
@@ -85,7 +86,13 @@ program dsyevd
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
 
   ! Compute eigenvalues and eigenvectors (A overwritten with eigenvectors)
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call rocsolverCheck(rocsolver_dsyevd(handle, rocblas_evect_original, rocblas_fill_upper, N, dA, lda, dD, dE, dInfo))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
 
   ! Copy results back to host
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, size_A * 8, hipMemcpyDeviceToHost))
@@ -95,9 +102,13 @@ program dsyevd
   do k = 1,N
     lhs = matmul(hA0, hA(:,k))
     rhs = hD(k) * hA(:,k)
+    error = abs(sqrt(sum(abs(hA(:,k))**2)) - 1)
+    if(.not. (error .le. error_max)) then
+        write(*,*) "FAILED! eigenvector ", k, " norm error = ", error; call exit(1)
+    end if
     do i = 1,N
         error = abs(lhs(i) - rhs(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " eigenpair ", k
             call exit(1)
         end if

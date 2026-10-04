@@ -25,12 +25,11 @@
 
 !!!!!!!!!!!!!!
 ! dlatrd example (rocSOLVER)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/auxiliary.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/auxiliary.html
 !
 ! Reduces the first k columns of a symmetric matrix A to symmetric tridiagonal
-! form (uplo = lower). The device buffers are passed as type(c_ptr), which
-! resolves to the raw bind(c) interface. tau is now a type(c_ptr) there (it used
-! to be a scalar by reference), so a device tau pointer can be supplied at all.
+! form (uplo = lower). The device buffers, tau included, are passed as
+! type(c_ptr).
 !!!!!!!!!!!!!!
 !
 program dlatrd
@@ -76,8 +75,7 @@ program dlatrd
   ! Copy the input matrix from host to device
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
 
-  ! Reduce the first k columns to tridiagonal form. Device buffers are passed as
-  ! type(c_ptr) (resolves to the raw bind(c) interface).
+  ! Reduce the first k columns to tridiagonal form.
   call rocsolverCheck(rocsolver_dlatrd(handle, rocblas_fill_lower, n, k, dA, lda, dE, dtau, dW, ldw))
 
   call hipCheck(hipDeviceSynchronize())
@@ -88,7 +86,7 @@ program dlatrd
   ! convention rocSOLVER uses for the reflector.
   expected = sqrt(2.0d0**2 + 3.0d0**2 + 6.0d0**2)   ! = 7
   error = abs(abs(hE(1)) - expected) / expected
-  if (error > rtol) then
+  if (.not. (error <= rtol)) then
      write(*,*) "FAILED! |E(1)| = ", abs(hE(1)), " expected ", expected
      call exit(1)
   end if

@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! cgebrd example (single-complex bidiagonal reduction, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! gebrd reduces A to (real) bidiagonal form; D holds the diagonal and E the
 ! superdiagonal. We check D and E against reference values and confirm the
@@ -99,14 +99,14 @@ program cgebrd
   ! Verify the bidiagonal entries against the reference
   do i = 1,3
     error = abs(hD(i) - refD(i))
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " D(", i, ") = ", hD(i)
         call exit(1)
     end if
   end do
   do i = 1,2
     error = abs(hE(i) - refE(i))
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " E(", i, ") = ", hE(i)
         call exit(1)
     end if
@@ -114,7 +114,7 @@ program cgebrd
 
   ! Cross-check the norm-preserving invariant
   error = abs(sum(hD*hD) + sum(hE*hE) - normA2)
-  if(error .gt. 1.0e-2) then
+  if(.not. (error .le. 1.0e-2)) then
       write(*,*) "FAILED! Norm not preserved! Error = ", error
       call exit(1)
   end if

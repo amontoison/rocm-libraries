@@ -25,12 +25,10 @@
 
 !!!!!!!!!!!!!!
 ! dsytrd example (rocSOLVER)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! Reduces a real symmetric matrix A to symmetric tridiagonal form
-! (A = Q T Q**T). The device buffers are passed as type(c_ptr), which resolves
-! to the raw bind(c) interface. tau is now a type(c_ptr) there (it used to be a
-! scalar by reference), so a device tau pointer can be supplied at all.
+! (A = Q T Q**T). The device buffers, tau included, are passed as type(c_ptr).
 !!!!!!!!!!!!!!
 !
 program dsytrd
@@ -50,6 +48,7 @@ program dsytrd
        3.0d0,  1.0d0, 12.0d0,  2.0d0, &
        6.0d0,  0.0d0,  2.0d0, 13.0d0], [n,n])
   real(c_double), target :: hD(n) = 0.0d0
+  real(c_double), target :: hE(n-1) = 0.0d0
 
   integer(c_size_t) :: size_A   = n*n
   integer(c_size_t) :: size_D   = n
@@ -59,12 +58,13 @@ program dsytrd
   type(c_ptr) :: dA, dD, dE, dtau
   type(c_ptr) :: handle ! rocblas_handle
 
-  real(c_double) :: trace_A, error
+  real(c_double) :: trace_A, normA2, error
   real(c_double), parameter :: rtol = 1.0d-9
 
   write(*,"(a)",advance="no") "-- Running test 'rocsolver_dsytrd' (Fortran 2003 interfaces) - "
 
   trace_A = hA(1,1) + hA(2,2) + hA(3,3) + hA(4,4)   ! = 46
+  normA2 = sum(hA**2)
 
   call hipCheck(hipMalloc(dA,   size_A   * 8))
   call hipCheck(hipMalloc(dD,   size_D   * 8))
@@ -75,17 +75,24 @@ program dsytrd
 
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
 
-  ! Device buffers passed as type(c_ptr) (resolves to the raw bind(c) interface).
   call rocsolverCheck(rocsolver_dsytrd(handle, rocblas_fill_lower, n, dA, lda, dD, dE, dtau))
 
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hD(1)), dD, size_D * 8, hipMemcpyDeviceToHost))
+  call hipCheck(hipMemcpy(c_loc(hE(1)), dE, size_E * 8, hipMemcpyDeviceToHost))
 
   ! The reduction is an orthogonal similarity, so trace(T) = trace(A), i.e.
   ! sum(D) = trace(A). This is convention-independent.
   error = abs(sum(hD) - trace_A) / abs(trace_A)
-  if (error > rtol) then
+  if (.not. (error <= rtol)) then
      write(*,*) "FAILED! sum(D) = ", sum(hD), " expected trace(A) = ", trace_A
+     call exit(1)
+  end if
+
+  ! It also preserves the Frobenius norm: ||T||_F**2 = sum(D**2) + 2*sum(E**2).
+  error = abs(sum(hD**2) + 2 * sum(hE**2) - normA2) / normA2
+  if (.not. (error <= rtol)) then
+     write(*,*) "FAILED! ||T||_F**2 = ", sum(hD**2) + 2 * sum(hE**2), " expected ", normA2
      call exit(1)
   end if
 

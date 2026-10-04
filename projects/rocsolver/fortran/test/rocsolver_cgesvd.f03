@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! cgesvd example (single-precision complex singular value decomposition, Fortran 2003 interfaces)
-! see: https:!www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing_ga84fdf22a62b12ff364621e4713ce02f2.html
+! see: https://www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing_ga84fdf22a62b12ff364621e4713ce02f2.html
 !
 ! Self-verifying: compute A = U * S * V (rocSOLVER returns V as V**H), then
 ! confirm the reconstruction matches the original A.
@@ -118,7 +118,7 @@ program cgesvd
   do j = 1,N
     do i = 1,M
         error = abs(recon(i,j) - hA0(i,j)) / max(abs(hA0(i,j)), 1.0)
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " at (", i, ",", j, ")"
             call exit(1)
         end if

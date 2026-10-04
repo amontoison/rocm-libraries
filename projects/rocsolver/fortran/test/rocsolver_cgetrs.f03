@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! cgetrs example (single-precision complex LU solve, Fortran 2003 interfaces)
-! see: https:!www.netlib.org/lapack/explore-html/d6/d49/group__double_g_ecomputational_gafa35ce1d7865b80563bbed6317050ad7.html
+! see: https://www.netlib.org/lapack/explore-html/d6/d49/group__double_g_ecomputational_gafa35ce1d7865b80563bbed6317050ad7.html
 !
 ! Self-verifying: pick a known solution x, form b = A*x, factorize A with
 ! getrf, solve A*X = b with getrs, and confirm X recovers x.
@@ -99,7 +99,7 @@ program cgetrs
   ! Verify the recovered solution matches x
   do i = 1,N
     error = abs(hB(i,1) - hX(i,1)) / max(abs(hX(i,1)), 1.0)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " X(", i, ") = ", hB(i,1)
         call exit(1)
     end if

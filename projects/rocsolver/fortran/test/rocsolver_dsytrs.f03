@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! dsytrs example (solve A*X = B for a symmetric matrix, double, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/
 !
 ! Self-verifying: factorize a symmetric A with sytrf (Bunch-Kaufman), then solve
 ! A*x = b with sytrs for a right-hand side built from a known solution, and check
@@ -75,7 +75,7 @@ program dsytrs
      write(*,*) "FAILED! info = ", hInfo(1), " (expected 0)"; call exit(1)
   end if
   do i = 1, N
-     if (abs(hB(i) - hX(i)) > error_max) then
+     if (.not. (abs(hB(i) - hX(i)) <= error_max)) then
         write(*,*) "FAILED! x(", i, ") = ", hB(i), " expected ", hX(i); call exit(1)
      end if
   end do

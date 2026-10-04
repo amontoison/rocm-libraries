@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zgels example (double-complex least-squares solve, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! Self-verifying: pick a known solution x, form b = A*x for a square
 ! nonsingular A, solve the least-squares problem with gels, and confirm the
@@ -98,7 +98,7 @@ program zgels
   ! Verify the recovered solution matches x
   do i = 1,N
     error = abs(hB(i,1) - hX(i,1)) / max(abs(hX(i,1)), 1.0_c_double)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " X(", i, ") = ", hB(i,1)
         call exit(1)
     end if

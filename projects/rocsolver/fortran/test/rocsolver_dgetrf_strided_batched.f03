@@ -26,13 +26,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! rocsolver_dgetrf_strided_batched example / unit test
 !
-! Computes the LU factorization of a batch of matrices on the GPU.
-!
-! This test guards the fix for the batched LU "info" argument (myInfo):
-! in rocSOLVER the batched routines write an array of `batch_count` integers
-! to a *device* pointer, so the Fortran binding must declare `myInfo` as
-! type(c_ptr). Previously it was `integer(c_int)`, which can only represent a
-! single scalar passed by reference and cannot point at a device array.
+! Computes the LU factorization of a batch of matrices on the GPU and checks,
+! for every batch entry, info, the pivots against a hand-computed result, and
+! that P*A = L*U. info is an array of batch_count integers in device memory,
+! passed as type(c_ptr).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 program dgetrf_strided_batched
@@ -51,8 +48,12 @@ program dgetrf_strided_batched
 
   ! Two invertible 3x3 matrices stored back-to-back (column-major).
   real(c_double), target :: hA(lda, N*batch_count)
+  real(c_double) :: hA0(lda, N*batch_count), PA(M,N), L(M,N), U(N,N), tmp(N)
   integer(c_int), target :: hInfo(batch_count)
   integer(c_int), target :: hIpiv(sz_piv*batch_count)
+  ! Partial pivoting, worked by hand: |-51| leads column 1 of the first matrix,
+  ! then row 3 leads column 2; the second matrix is diagonal.
+  integer(c_int), parameter :: hIpiv_ref(sz_piv*batch_count) = (/ 2, 3, 3, 1, 2, 3 /)
 
   integer(c_size_t) :: size_A    = lda*N*batch_count
   integer(c_size_t) :: size_Ipiv = sz_piv*batch_count
@@ -63,7 +64,9 @@ program dgetrf_strided_batched
   type(c_ptr) :: dIpiv  ! GPU buffer for the pivot indices
   type(c_ptr) :: dInfo  ! GPU buffer for the info array
 
-  integer :: b
+  integer :: b, i, j, c0
+  real(c_double) :: error
+  real(c_double), parameter :: rtol = 1.0d-12
 
   write(*,"(a)",advance="no") &
     "-- Running test 'rocsolver_dgetrf_strided_batched' (Fortran 2003 interfaces) - "
@@ -75,6 +78,9 @@ program dgetrf_strided_batched
                                  0.d0,   3.d0,   0.d0, &
                                  0.d0,   0.d0,   5.d0/), (/lda, N/))
 
+  hA0 = hA
+  hInfo = -1
+
   ! Create rocBLAS handle
   call rocblasCheck(rocblas_create_handle(handle))
 
@@ -85,20 +91,55 @@ program dgetrf_strided_batched
 
   ! Copy the input matrices to the device
   call hipCheck(hipMemcpy(dA, c_loc(hA(1,1)), size_A * 8, hipMemcpyHostToDevice))
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo(1)), size_Info * 4, hipMemcpyHostToDevice))
 
   ! Compute the batched LU factorization on the device.
-  ! `dInfo` is a device pointer to an array of `batch_count` ints, which is
-  ! exactly what the myInfo -> c_ptr binding fix enables.
   call rocsolverCheck(rocsolver_dgetrf_strided_batched(handle, M, N, dA, lda, strideA, &
                                                  dIpiv, strideP, dInfo, batch_count))
 
-  ! Copy the info array back to the host
+  ! Copy the results back to the host
   call hipCheck(hipMemcpy(c_loc(hInfo(1)), dInfo, size_Info * 4, hipMemcpyDeviceToHost))
+  call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, size_A * 8, hipMemcpyDeviceToHost))
+  call hipCheck(hipMemcpy(c_loc(hIpiv(1)), dIpiv, size_Ipiv * 4, hipMemcpyDeviceToHost))
 
   ! For invertible inputs rocSOLVER sets info(b) == 0 for every batch entry.
   do b = 1, batch_count
     if (hInfo(b) /= 0) then
       write(*,*) "FAILED! info(", b, ") = ", hInfo(b), " (expected 0)"
+      call exit(1)
+    end if
+  end do
+
+  do i = 1, sz_piv*batch_count
+    if (hIpiv(i) /= hIpiv_ref(i)) then
+      write(*,*) "FAILED! ipiv(", i, ") = ", hIpiv(i), " expected ", hIpiv_ref(i)
+      call exit(1)
+    end if
+  end do
+
+  ! Reconstruct each matrix: apply the row interchanges to A, compare with L*U.
+  do b = 1, batch_count
+    c0 = (b-1)*N
+    PA = hA0(1:M, c0+1:c0+N)
+    do i = 1, sz_piv
+      j = hIpiv((b-1)*sz_piv + i)
+      tmp = PA(i,:); PA(i,:) = PA(j,:); PA(j,:) = tmp
+    end do
+    L = 0.0d0; U = 0.0d0
+    do j = 1, N
+      do i = 1, M
+        if (i > j) then
+          L(i,j) = hA(i, c0+j)
+        else
+          U(i,j) = hA(i, c0+j)
+          if (i == j) L(i,j) = 1.0d0
+        end if
+      end do
+    end do
+    ! Frobenius norms rather than maxval, which can skip a NaN.
+    error = sqrt(sum((PA - matmul(L, U))**2)) / sqrt(sum(hA0(1:M, c0+1:c0+N)**2))
+    if (.not. (error <= rtol)) then
+      write(*,*) "FAILED! batch ", b, ": ||P*A - L*U||_F / ||A||_F = ", error
       call exit(1)
     end if
   end do

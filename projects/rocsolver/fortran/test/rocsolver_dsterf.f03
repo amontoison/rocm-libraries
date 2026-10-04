@@ -70,6 +70,7 @@ program dsterf
   ! Copy memory from host to device
   call hipCheck(hipMemcpy(dD, c_loc(hD(1)), size_D * 8, hipMemcpyHostToDevice))
   call hipCheck(hipMemcpy(dE, c_loc(hE(1)), size_E * 8, hipMemcpyHostToDevice))
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), size_Info * 4, hipMemcpyHostToDevice))
 
   ! Compute eigenvalues
   call rocsolverCheck(rocsolver_dsterf(handle, n, dD, dE, dInfo))
@@ -79,13 +80,13 @@ program dsterf
   call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, size_Info * 4, hipMemcpyDeviceToHost))
 
   ! Check and output results
-  if(hInfo .gt. 0) then
-    write(*,*) "FAILED! ", n, " elements of E did not converge to 0."
+  if(hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"
     call exit(1)
   else
     do i = 1,n
       error = abs(hD(i) - hResult(i)) / abs(hResult(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " hD(", i, ") = ", hD(i)
             call exit(1)
         end if

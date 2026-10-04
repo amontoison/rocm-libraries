@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! zunmqr example (double-complex multiplication by Q from a QR factorization,
 ! Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! Self-verifying: factorize A with geqrf to obtain Q (as Householder vectors),
 ! then apply Q and Q**H successively to a matrix C. Since Q**H * Q = I, the
@@ -92,6 +92,17 @@ program zunmqr
   call rocsolverCheck(rocsolver_zgeqrf(handle, M, K, dA, lda, dIpiv))
   call rocsolverCheck(rocsolver_zunmqr(handle, rocblas_side_left, rocblas_operation_none, &
        M, N, K, dA, lda, dIpiv, dC, ldc))
+  ! Q is unitary and not the identity: Q*C keeps the norm of C but changes C.
+  call hipCheck(hipMemcpy(c_loc(hC(1,1)), dC, szc * 16, hipMemcpyDeviceToHost))
+  error = abs(sqrt(sum(abs(hC)**2)) - sqrt(sum(abs(hC0)**2))) / sqrt(sum(abs(hC0)**2))
+  if(.not. (error .le. error_max)) then
+      write(*,*) "FAILED! ||Q*C||_F /= ||C||_F, relative error = ", error
+      call exit(1)
+  end if
+  if(.not. (sqrt(sum(abs(hC - hC0)**2)) .gt. error_max)) then
+      write(*,*) "FAILED! Q*C = C: the multiplication had no effect"
+      call exit(1)
+  end if
   call rocsolverCheck(rocsolver_zunmqr(handle, rocblas_side_left, rocblas_operation_conjugate_transpose, &
        M, N, K, dA, lda, dIpiv, dC, ldc))
 
@@ -102,7 +113,7 @@ program zunmqr
   do j = 1,N
     do i = 1,M
       error = abs(hC(i,j) - hC0(i,j))
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Round trip mismatch! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

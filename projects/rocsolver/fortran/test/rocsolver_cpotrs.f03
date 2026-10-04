@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! cpotrs example (single-precision complex Cholesky solve, Fortran 2003 interfaces)
-! see: https:!www.netlib.org/lapack/explore-html/d1/d7a/group__double_p_ocomputational.html
+! see: https://www.netlib.org/lapack/explore-html/d1/d7a/group__double_p_ocomputational.html
 !
 ! Self-verifying: pick a known solution x, form b = A*x, factorize A with
 ! potrf, solve A*X = b with potrs, and confirm X recovers x.
@@ -95,7 +95,7 @@ program cpotrs
   ! Verify the recovered solution matches x
   do i = 1,N
     error = abs(hB(i,1) - hX(i,1)) / max(abs(hX(i,1)), 1.0)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! Error bigger than max! Error = ", error, " X(", i, ") = ", hB(i,1)
         call exit(1)
     end if

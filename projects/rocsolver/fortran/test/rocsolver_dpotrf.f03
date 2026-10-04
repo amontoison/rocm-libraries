@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! dpotrf example (double-precision Cholesky factorization, Fortran 2003 interfaces)
-! see: https:!www.netlib.org/lapack/explore-html/d1/d7a/group__double_p_ocomputational_ga2f55f604a6003d03b5cd4a0adcfb9e07.html
+! see: https://www.netlib.org/lapack/explore-html/d1/d7a/group__double_p_ocomputational_ga2f55f604a6003d03b5cd4a0adcfb9e07.html
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
 ! data is moved with hipMemcpy + c_loc. rocSOLVER writes `info` to device
@@ -86,7 +86,7 @@ program dpotrf
   do j = 1,size(hA,2)
     do i = 1,size(hA,1)
         error = abs(hA(i,j) - hResult(i,j)) / max(abs(hResult(i,j)), 1.0_c_double)
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " hA(", i, ",", j, ") = ", hA(i,j)
             call exit(1)
         end if

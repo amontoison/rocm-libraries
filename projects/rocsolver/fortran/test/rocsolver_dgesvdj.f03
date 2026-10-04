@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! dgesvdj example (double-precision Jacobi SVD, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! Self-verifying: compute the singular value decomposition A = U*S*V**T with the
 ! Jacobi method and confirm the factors reconstruct the original matrix. Using
@@ -110,7 +110,7 @@ program dgesvdj
   do j = 1,N
     do i = 1,M
       error = abs(recon(i,j) - hA0(i,j))
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! Error bigger than max! Error = ", error, " (", i, ",", j, ")"
           call exit(1)
       end if

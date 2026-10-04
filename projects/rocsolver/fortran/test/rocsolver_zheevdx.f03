@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zheevdx example (complex partial Hermitian eigensolver, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! heevdx computes a selected subset of eigenvalues/eigenvectors. erange=index with
 ! il=1, iu=N requests the full spectrum. f2003 style: device buffers are
@@ -73,8 +73,16 @@ program zheevdx
 
   call rocblasCheck(rocblas_create_handle(handle))
 
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
+  hNev = -1
+  call hipCheck(hipMemcpy(dNev, c_loc(hNev), 4_c_size_t, hipMemcpyHostToDevice))
   call rocsolverCheck(rocsolver_zheevdx(handle, rocblas_evect_original, rocblas_erange_index, &
        rocblas_fill_upper, N, dA, lda, 0.0d0, 0.0d0, 1, N, dNev, dW, dZ, ldz, dInfo))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
 
   call hipCheck(hipMemcpy(c_loc(hNev), dNev, 4_c_size_t, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hW(1)), dW, sizeW * 8, hipMemcpyDeviceToHost))
@@ -87,9 +95,13 @@ program zheevdx
   do k = 1,N
     lhs = matmul(hA0, hZ(:,k))
     rhs = hW(k) * hZ(:,k)
+    error = abs(sqrt(sum(abs(hZ(:,k))**2)) - 1)
+    if(.not. (error .le. error_max)) then
+        write(*,*) "FAILED! eigenvector ", k, " norm error = ", error; call exit(1)
+    end if
     do i = 1,N
         error = abs(lhs(i) - rhs(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " eigenpair ", k; call exit(1)
         end if
     end do

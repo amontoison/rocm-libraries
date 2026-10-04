@@ -25,12 +25,11 @@
 
 !!!!!!!!!!!!!!
 ! dlarft example (rocSOLVER)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/auxiliary.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/auxiliary.html
 !
 ! Forms the triangular factor T of a block Householder reflector
 ! H = I - V T V**T from the reflectors V and their scalar factors tau. The
-! device buffers are passed as type(c_ptr), which resolves to the raw bind(c)
-! interface. tau is now a type(c_ptr) there (it used to be a scalar).
+! device buffers, tau included, are passed as type(c_ptr).
 !!!!!!!!!!!!!!
 !
 program dlarft
@@ -50,6 +49,7 @@ program dlarft
       0.0d0,  0.0d0,  1.0d0,  0.5d0], [order,k])
   real(c_double), target :: htau(k) = [1.5d0, 1.2d0, 1.8d0]
   real(c_double), target :: hT(k,k) = 0.0d0
+  real(c_double) :: hTref(k,k) = 0.0d0
 
   integer(c_size_t) :: size_V   = order*k
   integer(c_size_t) :: size_tau = k
@@ -58,7 +58,7 @@ program dlarft
   type(c_ptr) :: dV, dtau, dT
   type(c_ptr) :: handle ! rocblas_handle
 
-  integer :: i
+  integer :: i, j
   real(c_double) :: error
   real(c_double), parameter :: rtol = 1.0d-12
 
@@ -73,20 +73,29 @@ program dlarft
   call hipCheck(hipMemcpy(dV,   c_loc(hV(1,1)),  size_V   * 8, hipMemcpyHostToDevice))
   call hipCheck(hipMemcpy(dtau, c_loc(htau(1)),  size_tau * 8, hipMemcpyHostToDevice))
 
-  ! Device buffers passed as type(c_ptr) (resolves to the raw bind(c) interface).
   call rocsolverCheck(rocsolver_dlarft(handle, rocblas_forward_direction, rocblas_column_wise, &
                                        order, k, dV, ldv, dtau, dT, ldt))
 
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hT(1,1)), dT, size_T * 8, hipMemcpyDeviceToHost))
 
-  ! For the forward, column-wise variant T is upper triangular with T(i,i)=tau(i).
+  ! Forward, column-wise reference (LAPACK dlarft): T(i,i) = tau(i) and
+  ! T(1:i-1,i) = -tau(i) * T(1:i-1,1:i-1) * V(:,1:i-1)**T * V(:,i).
   do i = 1, k
-     error = abs(hT(i,i) - htau(i))
-     if (error > rtol) then
-        write(*,*) "FAILED! T(", i, ",", i, ") = ", hT(i,i), " expected tau(", i, ") = ", htau(i)
-        call exit(1)
+     hTref(i,i) = htau(i)
+     if (i > 1) then
+        hTref(1:i-1,i) = -htau(i) * matmul(hTref(1:i-1,1:i-1), &
+                                          matmul(transpose(hV(:,1:i-1)), hV(:,i)))
      end if
+  end do
+  do j = 1, k
+     do i = 1, j
+        error = abs(hT(i,j) - hTref(i,j)) / max(abs(hTref(i,j)), 1.0d0)
+        if (.not. (error <= rtol)) then
+           write(*,*) "FAILED! T(", i, ",", j, ") = ", hT(i,j), " expected ", hTref(i,j)
+           call exit(1)
+        end if
+     end do
   end do
 
   call hipCheck(hipFree(dV))

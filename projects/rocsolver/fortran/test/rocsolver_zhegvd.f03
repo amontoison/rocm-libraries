@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!/
 ! zhegvd example (complex generalized Hermitian-definite eigensolver, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
+! see: https://rocm.docs.amd.com/projects/rocSOLVER/en/latest/reference/lapack.html
 !
 ! hegvd solves A*x = lambda*B*x (itype=eform_ax). f2003 style: device buffers are
 ! type(c_ptr). Self-verifying: A0*v_k = lambda_k * B0*v_k.
@@ -76,8 +76,14 @@ program zhegvd
 
   call rocblasCheck(rocblas_create_handle(handle))
 
+  hInfo = -1
+  call hipCheck(hipMemcpy(dInfo, c_loc(hInfo), 4_c_size_t, hipMemcpyHostToDevice))
   call rocsolverCheck(rocsolver_zhegvd(handle, rocblas_eform_ax, rocblas_evect_original, &
        rocblas_fill_upper, N, dA, lda, dB, ldb, dD, dE, dInfo))
+  call hipCheck(hipMemcpy(c_loc(hInfo), dInfo, 4_c_size_t, hipMemcpyDeviceToHost))
+  if (hInfo /= 0) then
+    write(*,*) "FAILED! info = ", hInfo, " (expected 0)"; call exit(1)
+  end if
 
   call hipCheck(hipMemcpy(c_loc(hA(1,1)), dA, sizeA * 16, hipMemcpyDeviceToHost))
   call hipCheck(hipMemcpy(c_loc(hD(1)), dD, sizeD * 8, hipMemcpyDeviceToHost))
@@ -85,9 +91,13 @@ program zhegvd
   do k = 1,N
     lhs = matmul(hA0, hA(:,k))
     rhs = hD(k) * matmul(hB0, hA(:,k))
+    error = abs(abs(dot_product(hA(:,k), matmul(hB0, hA(:,k)))) - 1)
+    if(.not. (error .le. error_max)) then
+        write(*,*) "FAILED! eigenvector ", k, " B-norm error = ", error; call exit(1)
+    end if
     do i = 1,N
         error = abs(lhs(i) - rhs(i))
-        if(error .gt. error_max) then
+        if(.not. (error .le. error_max)) then
             write(*,*) "FAILED! Error bigger than max! Error = ", error, " eigenpair ", k; call exit(1)
         end if
     end do
