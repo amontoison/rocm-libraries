@@ -101,7 +101,7 @@ foreach( exe IN LISTS hipblas-example-executables)
 
   target_compile_options( ${exe} PRIVATE -DHIPBLAS_BFLOAT16_CLASS )
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-    target_compile_options( ${exe} PRIVATE -mf16c )
+    target_compile_options( ${exe} PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:-mf16c> )
   endif()
 
   target_compile_definitions( ${exe} PRIVATE HIPBLAS_NO_DEPRECATED_WARNINGS )
