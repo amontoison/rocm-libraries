@@ -63,11 +63,11 @@ program rocrand_xorwow_normal_double_test
     ! Verification: sample mean and stddev should match requested parameters
     sample_mean = sum(hx) / real(N, c_double)
     sample_std = sqrt(sum((hx - mean)**2) / real(N, c_double))
-    if (abs(sample_mean - mean) > delta) then
+    if (.not. (abs(sample_mean - mean) <= delta)) then
         write(*,*) "FAILED! mean out of tolerance: ", sample_mean
         call exit(1)
     end if
-    if (abs(sample_std - stddev) > delta) then
+    if (.not. (abs(sample_std - stddev) <= delta)) then
         write(*,*) "FAILED! stddev out of tolerance: ", sample_std
         call exit(1)
     end if

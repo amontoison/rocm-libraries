@@ -66,11 +66,11 @@ program rocrand_philox_log_normal_test
     end if
     sample_mean = sum(log(hx)) / real(N, kind(sample_mean))
     sample_std = sqrt(sum((log(hx) - sample_mean)**2) / real(N, kind(sample_mean)))
-    if (abs(sample_mean - mean) > delta) then
+    if (.not. (abs(sample_mean - mean) <= delta)) then
         write(*,*) "FAILED! mean of log(x) out of tolerance: ", sample_mean
         call exit(1)
     end if
-    if (abs(sample_std - stddev) > delta) then
+    if (.not. (abs(sample_std - stddev) <= delta)) then
         write(*,*) "FAILED! stddev of log(x) out of tolerance: ", sample_std
         call exit(1)
     end if

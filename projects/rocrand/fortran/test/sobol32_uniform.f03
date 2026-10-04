@@ -58,8 +58,14 @@ program rocrand_sobol32_uniform_test
     call hipCheck(hipDeviceSynchronize())
     call hipCheck(hipMemcpy(c_loc(hx(1)), dx, Nbytes, hipMemcpyDeviceToHost))
 
+    ! rocRAND's uniform output lies in (0, 1]; written so that a NaN fails.
+    if (.not. all(hx > 0.0 .and. hx <= 1.0)) then
+        write(*,*) "FAILED! sample outside (0, 1]: ", minval(hx), maxval(hx)
+        call exit(1)
+    end if
+
     sample_mean = sum(hx) / real(N, kind(sample_mean))
-    if (abs(sample_mean - expected_mean) > delta) then
+    if (.not. (abs(sample_mean - expected_mean) <= delta)) then
         write(*,*) "FAILED! mean out of tolerance: ", sample_mean
         call exit(1)
     end if

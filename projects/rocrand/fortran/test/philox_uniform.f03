@@ -59,9 +59,15 @@ program rocrand_philox_uniform_test
     ! Transfer data back to host memory
     call hipCheck(hipMemcpy(c_loc(hx(1)), dx, Nbytes, hipMemcpyDeviceToHost))
 
+    ! rocRAND's uniform output lies in (0, 1]; written so that a NaN fails.
+    if (.not. all(hx > 0.0 .and. hx <= 1.0)) then
+        write(*,*) "FAILED! sample outside (0, 1]: ", minval(hx), maxval(hx)
+        call exit(1)
+    end if
+
     ! Verification: sample mean of (0,1] output should be near 0.5
     sample_mean = sum(hx) / real(N)
-    if (abs(sample_mean - expected_mean) > delta) then
+    if (.not. (abs(sample_mean - expected_mean) <= delta)) then
         write(*,*) "FAILED! mean out of tolerance: ", sample_mean
         call exit(1)
     end if

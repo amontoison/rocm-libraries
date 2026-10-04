@@ -1,22 +1,27 @@
-!! Copyright (c) 2017-2023 Advanced Micro Devices, Inc. All rights reserved.
-!!
-!! Permission is hereby granted, free of charge, to any person obtaining a copy
-!! of this software and associated documentation files (the "Software"), to deal
-!! in the Software without restriction, including without limitation the rights
-!! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-!! copies of the Software, and to permit persons to whom the Software is
-!! furnished to do so, subject to the following conditions:
-!!
-!! The above copyright notice and this permission notice shall be included in
-!! all copies or substantial portions of the Software.
-!!
-!! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-!! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-!! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-!! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-!! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-!! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-!! THE SOFTWARE.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Copyright (C) 2017-2026 Advanced Micro Devices, Inc. All rights reserved.
+!
+! SPDX-License-Identifier: MIT
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in
+! all copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+! THE SOFTWARE.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! Ported from the hand-written Fortran wrapper to the generated bindings:
 !! `hipfor` became `hip` and `rocrand_m` became `rocrand`. The one change
@@ -96,6 +101,8 @@ contains
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_generate_uniform(gen, d_x, output_size))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
+        ! Uniform output lies in (0, 1]; this also fails on NaN.
+        call assert_equals(.true., all(h_x > 0 .and. h_x <= 1), 'sample outside (0, 1]')
         call assert_equals((sum(h_x) / output_size), mean, delta)
         call assert_equals(hipSuccess, hipFree(d_x))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_destroy_generator(gen))
@@ -115,6 +122,8 @@ contains
         output_size))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
+        ! Uniform output lies in (0, 1]; this also fails on NaN.
+        call assert_equals(.true., all(h_x > 0 .and. h_x <= 1), 'sample outside (0, 1]')
         call assert_equals((sum(h_x) / output_size), mean, delta)
         call assert_equals(hipSuccess, hipFree(d_x))
         call assert_equals(ROCRAND_STATUS_SUCCESS, rocrand_destroy_generator(gen))
@@ -135,6 +144,8 @@ contains
         output_size, mean, stddev))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
+        ! FRUIT's range assertions below pass on NaN.
+        call assert_equals(.true., all(h_x == h_x), 'sample contains NaN')
         call assert_equals((sum(h_x) / output_size), mean, delta)
         call assert_equals(sqrt(sum((h_x - mean) ** 2) / output_size), stddev, delta)
         call assert_equals(hipSuccess, hipFree(d_x))
@@ -156,6 +167,8 @@ contains
         output_size, mean, stddev))
         call assert_equals(hipSuccess, hipMemcpy(c_loc(h_x), d_x, output_size * sizeof(h_x(1)), &
         hipMemcpyDeviceToHost))
+        ! FRUIT's range assertions below pass on NaN.
+        call assert_equals(.true., all(h_x == h_x), 'sample contains NaN')
         call assert_equals((sum(h_x) / output_size), mean, delta)
         call assert_equals(sqrt(sum((h_x - mean) ** 2) / output_size), stddev, delta)
         call assert_equals(hipSuccess, hipFree(d_x))

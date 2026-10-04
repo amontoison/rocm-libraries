@@ -32,12 +32,12 @@
 ! to write through would be caught. It then checks that the returned code is a
 ! plausible encoded version (ROCRAND_VERSION = major*100000 + minor*100 +
 ! patch, see rocrand_version.h) and that a second query returns the same value.
-! The exact version number is deliberately NOT hard-coded so the test survives
-! ROCm upgrades.
+! In-tree, where the module and the library come from the same headers, CMake
+! sets ROCRAND_FORTRAN_EXACT_VERSION and the code must also equal the module's
+! ROCRAND_VERSION constant; standalone a mismatch is only reported.
 program rocrand_version_test
 
     use iso_c_binding
-    use hip
     use rocrand
 
     implicit none
@@ -46,6 +46,7 @@ program rocrand_version_test
 
     integer(c_int) :: version, version2
     integer(c_int) :: major, minor, patch
+    integer :: exact_status
 
     write(*,"(a)",advance="no") "-- Running test 'rocRAND version' &
                                 &(Fortran 2003 interfaces) - "
@@ -88,6 +89,17 @@ program rocrand_version_test
     if (version2 /= version) then
        write(*,*) "FAILED! rocrand_get_version is not stable: ", version, " then ", version2
        STOP 1
+    end if
+
+    if (version /= ROCRAND_VERSION) then
+       call get_environment_variable("ROCRAND_FORTRAN_EXACT_VERSION", status=exact_status)
+       if (exact_status == 0) then
+          write(*,*) "FAILED! rocrand_get_version returned ", version, &
+                     " but the module's ROCRAND_VERSION is ", ROCRAND_VERSION
+          STOP 1
+       end if
+       write(*,*) "note: the library reports ", version, &
+                  ", the module was generated for ", ROCRAND_VERSION
     end if
 
     write(*,"(a,i0,a,i0,a,i0,a,i0,a)") " PASSED! rocRAND version: ", &
