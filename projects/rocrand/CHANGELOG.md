@@ -29,6 +29,7 @@ Documentation for rocRAND is available at
 * `find_package(rocrand)` no longer sets `rocrand_FORTRAN_FOUND`, `rocrand_FORTRAN_SRC_DIR` or
   `rocrand_FORTRAN_SRC_DIRS`; use `find_package(rocrand-fortran)`, which sets
   `rocrand_FORTRAN_FOUND`.
+
 ### Optimized
 
 * Added `__restrict__` qualifiers to the device API benchmark, enabling better compiler optimization.

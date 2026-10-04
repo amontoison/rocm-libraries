@@ -81,11 +81,8 @@ repos:
         exclude: &opted_out_but_scanned |
           (?x)
           projects/hipblaslt/.*|
-          # Vendored FRUIT unit-test harness, third party and carrying its own
-          # LICENSE.txt. trailing-whitespace and end-of-file-fixer each rewrite
-          # it, which turns the next re-vendoring into a diff against upstream
-          # FRUIT rather than a copy of it. On this anchor rather than in the
-          # top level exclude, so that bandit still reads it.
+          # Vendored FRUIT unit-test harness (third party, own LICENSE.txt):
+          # kept byte-identical to upstream so that re-vendoring is a plain copy.
           projects/rocrand/fortran/test/fruit/.*|
           shared/tensile/.*
       - id: end-of-file-fixer
