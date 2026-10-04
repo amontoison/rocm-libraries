@@ -326,20 +326,18 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
 endif()
 
 if(BUILD_FORTRAN_CLIENTS)
-  # Enough standalone, but NOT in-tree: CMake writes the chain of
+  # Enough standalone, but NOT in-tree on its own: CMake writes the chain of
   # CTestTestfile.cmake that ctest walks only when testing was enabled at the TOP
-  # level, so `ctest` from the top reports "Total Tests: 0". Hence the warning.
+  # level. rocSOLVER's root calls enable_testing() only under BUILD_TESTING (the
+  # variable include(CTest) sets as well), so without it `ctest` from the top
+  # reports "Total Tests: 0". Hence the note, in exactly that case.
   enable_testing()
-  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
-      message(STATUS
-        "rocSOLVER: the Fortran binding tests are registered, but ctest discovers "
-        "tests only from a build root where testing was enabled at the top "
-        "level. If `ctest` there reports no tests, add include(CTest) or "
-        "enable_testing() to the top-level CMakeLists, or run ctest from "
-        "${CMAKE_CURRENT_BINARY_DIR}/test.")
-    endif()
+  if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT BUILD_TESTING)
+    message(STATUS
+      "rocSOLVER: the Fortran binding tests are registered, but BUILD_TESTING is "
+      "OFF, so testing is not enabled at the top level and `ctest` from the "
+      "build root will not see them. Configure with -DBUILD_TESTING=ON, or run "
+      "ctest from ${CMAKE_CURRENT_BINARY_DIR}/test.")
   endif()
   add_subdirectory(test)
 endif()
