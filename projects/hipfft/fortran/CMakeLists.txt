@@ -65,7 +65,7 @@ unset(_hipfft_fortran_default)
 
 # The binding tests. Asking for them when the bindings were not built is a skip
 # rather than an error, and ON is safe because the in-tree gate further down is a
-# floor this cannot rise above.
+# ceiling this cannot rise above.
 option(BUILD_FORTRAN_CLIENTS "Build the hipFFT and hipFFTW Fortran clients and binding tests" ON)
 
 # Both options are ONE cache entry shared by every library in the monorepo, so
@@ -73,7 +73,7 @@ option(BUILD_FORTRAN_CLIENTS "Build the hipFFT and hipFFTW Fortran clients and b
 # one flag; each library also honours a name of its own, which overrides it.
 #
 # That override is the last word for the BINDINGS only. For the CLIENTS the gate
-# further down is a floor an in-tree build cannot rise above, however
+# further down is a ceiling an in-tree build cannot rise above, however
 # HIPFFT_BUILD_FORTRAN_CLIENTS is set; the per-library name still picks the two
 # test sets apart, and still decides on its own standalone.
 #
@@ -438,13 +438,13 @@ endif()
 if(_hipfft_tests OR _hipfftw_tests)
   # Enough standalone, but NOT in-tree: CMake writes the chain of
   # CTestTestfile.cmake that ctest walks only when testing was enabled at the TOP
-  # level, and hipFFT's own enable_testing() sits inside its BUILD_CLIENTS_*
-  # guard, so a bindings-only build does not get it and `ctest` from the top
+  # level, and hipFFT's own enable_testing() runs only under BUILD_CLIENTS_TESTS
+  # (which BUILD_CLIENTS implies), so a build that reached here through the
+  # bench or samples switch alone does not get it and `ctest` from the top
   # reports "Total Tests: 0". Hence the warning.
   enable_testing()
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    get_property(_top_testing GLOBAL PROPERTY CTEST_TARGETS_ADDED)
-    if(NOT _top_testing)
+    if(NOT (BUILD_CLIENTS OR BUILD_CLIENTS_TESTS))
       message(STATUS
         "hipFFT: the Fortran binding tests are registered, but ctest discovers "
         "tests only from a build root where testing was enabled at the top "
@@ -525,8 +525,8 @@ set(HIPFFTW_FORTRAN_INCLUDEDIR "${HIPFFT_FORTRAN_INCLUDEDIR}")
 # found independently, each with its own compiler check and hip*_FORTRAN_FOUND
 # flag, and a consumer of the FFTW API must not be made to import a hipfft
 # binding it never asked for. Both land in lib/cmake/hipfft -- hipFFTW has no
-# config-package directory of its own -- which is also what lets
-# hipfft-config.cmake pick either up with a bare include(<name> OPTIONAL).
+# config-package directory of its own -- beside hipfft-config.cmake, so one
+# CMAKE_PREFIX_PATH entry finds all three.
 if(_hipfft_bindings)
   install(TARGETS hipfft_fortran
           EXPORT hipfft-fortran-targets
@@ -566,7 +566,7 @@ if(_hipfft_bindings)
   # its targets file.
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/hipfft-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the hipFFT C package, in
-# lib/cmake/hipfft, so that hipfft-config.cmake can include it as a sibling.
+# lib/cmake/hipfft, so that one CMAKE_PREFIX_PATH entry finds both.
 # This file only exists so that find_package(hipfft-fortran) resolves to the
 # same place.
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipfft/hipfft-fortran-config.cmake\")

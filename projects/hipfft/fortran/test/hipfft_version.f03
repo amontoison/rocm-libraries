@@ -48,7 +48,7 @@ program hipfft_version
   integer(c_int), target :: version, major, minor, patch
 
   write(*,"(a)",advance="no") &
-    "-- Running test 'hipFFT version query' (Fortran 2003 interfaces) - "
+    "-- Running test 'hipFFT version query' - "
 
   version = poison
   major   = poison

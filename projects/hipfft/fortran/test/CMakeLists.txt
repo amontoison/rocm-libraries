@@ -77,8 +77,9 @@ else()
     target_compile_options(hipfft_fortran_test_${name} PRIVATE
       $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
     add_test(NAME hipfft_fortran_${name} COMMAND hipfft_fortran_test_${name})
-    # These fail without a GPU, which is not the binding being broken, so the
-    # label lets a GPU-less machine run the suite with ctest -LE gpu.
+    # These fail without a GPU, which is not the binding being broken. The label
+    # marks them as needing a GPU, so a GPU-less machine can skip them with
+    # ctest -LE gpu.
     set_tests_properties(hipfft_fortran_${name} PROPERTIES LABELS "gpu")
   endfunction()
 

@@ -4,8 +4,7 @@
 #   target_link_libraries(my_app PRIVATE hip::hipfft_fortran)
 #
 # This file installs into lib/cmake/hipfft, beside hipfft-config.cmake, so that
-# hipfft-config.cmake can pick it up as a sibling with a bare
-# include(hipfft-fortran-config.cmake OPTIONAL). CMake's own search for
+# one CMAKE_PREFIX_PATH entry finds both. CMake's own search for
 # find_package(hipfft-fortran) globs lib/cmake/hipfft-fortran*, which that
 # directory does not match, so a one-line forwarder is installed there and
 # includes this file.
@@ -30,9 +29,8 @@ set(_hipfft_libdir "@PACKAGE_HIPFFT_FORTRAN_LIBDIR@")
 set(_hipfft_incdir "@PACKAGE_HIPFFT_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a hipFFT Fortran binding available here?" through
-# hipfft_FORTRAN_FOUND, set whether this package is reached directly or through
-# an OPTIONAL include from hipfft-config.cmake. It stays FALSE on every early
-# return below.
+# hipfft_FORTRAN_FOUND, which find_package(hipfft-fortran) sets. It stays FALSE
+# on every early return below.
 set(hipfft_FORTRAN_FOUND FALSE)
 
 # string(CONCAT), not a multi-argument set(): that builds a LIST, and CMake then

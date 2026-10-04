@@ -5,8 +5,7 @@
 #
 # This file installs into lib/cmake/hipfft, beside hipfft-config.cmake, because
 # hipFFTW ships inside the hipFFT package and has no config directory of its own;
-# hipfft-config.cmake can then pick it up as a sibling with a bare
-# include(hipfftw-fortran-config.cmake OPTIONAL). CMake's own search for
+# one CMAKE_PREFIX_PATH entry then finds both. CMake's own search for
 # find_package(hipfftw-fortran) globs lib/cmake/hipfftw-fortran*, which that
 # directory does not match, so a one-line forwarder is installed there and
 # includes this file.
@@ -34,9 +33,8 @@ set(_hipfftw_libdir "@PACKAGE_HIPFFTW_FORTRAN_LIBDIR@")
 set(_hipfftw_incdir "@PACKAGE_HIPFFTW_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a hipFFTW Fortran binding available here?" through
-# hipfftw_FORTRAN_FOUND, set whether this package is reached directly or through
-# an include from hipfft-config.cmake. It stays FALSE on every early return
-# below, and is spelled hipfftw_ so that it stays distinct from the flag
+# hipfftw_FORTRAN_FOUND, which find_package(hipfftw-fortran) sets. It stays FALSE
+# on every early return below, and is spelled hipfftw_ so that it stays distinct from the flag
 # hipFFT's own binding sets: the two are built and installed independently.
 set(hipfftw_FORTRAN_FOUND FALSE)
 
