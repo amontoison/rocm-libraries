@@ -56,10 +56,14 @@ endif()
 # project. On the ROCm side HIPSOLVER_INTERNAL_LAPACK_BUILD compiles OpenBLAS
 # in-tree with this very compiler, so the two agree; the CUDA backend does not
 # build it (cuSOLVER has geev), so the clients link the host's LAPACK, which on
-# every Linux image is a gfortran build. The Fortran runtime on those link lines
-# comes from this compiler through hipsolver_fortran_client, so choosing amdflang
-# leaves liblapack.a's own objects (xerbla, sgesvd, sormbr) without one and
-# hipsolver-test and hipsolver-bench fail on undefined _gfortran_*.
+# every Linux image is a gfortran build. When the bindings are built, the Fortran
+# runtime on those link lines comes from this compiler through
+# hipsolver_fortran_client, so amdflang would leave liblapack.a's own objects
+# (xerbla, sgesvd, sormbr) without one and hipsolver-test and hipsolver-bench
+# would fail on undefined _gfortran_*. The bindings default OFF on the CUDA
+# backend, so that target is normally absent there; this guard is for a CUDA
+# build that asks for them by name, and keeps the clients' own
+# enable_language(Fortran) on gfortran either way.
 #
 # HIP_PLATFORM cannot be read here -- it is resolved after project() and
 # find_package(hip) -- so this repeats the explicit inputs that resolution starts

@@ -7,8 +7,8 @@
 # It is one self-contained Fortran module, `hipsolver`: the bind(C) interfaces,
 # the enum constants and the hipsolverCheck status helper. Every handle and every
 # opaque info object is a bare type(c_ptr), so there is no wrapper type to
-# declare, and the Fortran-visible surface is the C one plus whichever array
-# overloads the tri-state below selects.
+# declare, and the Fortran-visible surface is the C one: the generator emits no
+# array overloads for hipSOLVER, so the tri-state below has no effect here.
 #
 # The directory builds with no dependency on the hipSOLVER C target, because a
 # Fortran binding compiles against nothing. libhipsolver is needed only to LINK a
@@ -26,7 +26,9 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(hipsolver-fortran LANGUAGES NONE)
 endif()
 
-# GUARDED, so a site with no Fortran compiler still builds the C library.
+# GUARDED, so that standalone a site with no Fortran compiler gets a skip rather
+# than an error. (In-tree the root's enable_language(Fortran) runs first, under
+# the same option, so there a missing compiler fails before this point.)
 # "${UNIX}" rather than ON because ROCm ships no Fortran compiler on Windows at
 # all (TheRock adds flang only in the non-WIN32 branch of
 # compiler/pre_hook_amd-llvm.cmake), so the probe falls through to a stray
@@ -100,7 +102,8 @@ endif()
 #
 # Either upper tier reaches only the subset of routines the generator emits
 # overloads for; every other routine exposes the same plain type(c_ptr)
-# interface at all three tiers.
+# interface at all three tiers. For hipSOLVER that subset is empty: the option
+# is accepted for uniformity with the other bindings but has no effect.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -131,12 +134,12 @@ if(_hipsolver_cuda_backend)
     "there. Building it is supported; vouching for it is not.")
 endif()
 
-# The monorepo root probes for a Fortran compiler ONCE and publishes
-# ROCM_HAVE_FORTRAN. The name is deliberately neither rocm-libraries' nor
-# rocm-systems': hipSOLVER is regularly built inside a rocm-systems tree, and a
-# repo-specific name would read the wrong variable. ROCM_LIBS_HAVE_FORTRAN is a
-# legacy spelling, honoured until the rocm-libraries root adopts the new one.
-# The local probe is the standalone path, where there is no root to ask.
+# An enclosing superbuild may probe for a Fortran compiler ONCE and publish
+# ROCM_HAVE_FORTRAN (ROCM_LIBS_HAVE_FORTRAN is a legacy spelling); the shared,
+# repo-neutral name keeps this branch uniform across the bindings. The
+# rocm-libraries superbuild does not build hipSOLVER yet (its root stops with a
+# FATAL_ERROR if asked to), so today neither variable is set here and the local
+# probe below is the path that runs.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
@@ -242,18 +245,18 @@ set(HIPSOLVER_FORTRAN_COMPILER_DIR "${_fc_name}" CACHE STRING
 set(_moddir "${CMAKE_CURRENT_BINARY_DIR}/include")
 set_target_properties(hipsolver_fortran PROPERTIES
   Fortran_MODULE_DIRECTORY "${_moddir}"
-  # The array overloads sit behind preprocessor guards.
+  # Kept for uniform handling across the bindings, and harmless: hipsolver.F90
+  # carries no preprocessor guards (and no array overloads) today.
   Fortran_PREPROCESS ON
   # The .F90 default, but stating it lets CMake emit the flag the compiler in
   # use expects rather than relying on the extension.
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# The tri-state as a macro; the option value and the macro name are the same
-# word, and none defines neither. The generated source settles the mutual
-# exclusion itself -- both guarded regions test USE_ASSUMED_RANK first and fall
-# back to USE_ASSUMED_SHAPE -- so defining both is not an error. Checked with
-# amdflang -cpp -DUSE_ASSUMED_SHAPE=1 -DUSE_ASSUMED_RANK=1 -fsyntax-only.
+# The tri-state as a macro, defined for uniformity with the other bindings; the
+# option value and the macro name are the same word, and none defines neither.
+# hipsolver.F90 tests neither macro -- the generator emits no array overloads for
+# hipSOLVER -- so FORTRAN_ARRAY_INTERFACES has no effect on this module.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
   target_compile_definitions(hipsolver_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
@@ -402,7 +405,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/hipsolver-fortran-config.cmake"
 # config reached that way would run before roc::hipsolver exists.
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/hipsolver-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the hipSOLVER C package, in
-# lib/cmake/hipsolver, so that hipsolver-config.cmake can include it as a sibling.
+# lib/cmake/hipsolver, so one CMAKE_PREFIX_PATH entry finds both.
 # This file only exists so that find_package(hipsolver-fortran) resolves to the
 # same place.
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../hipsolver/hipsolver-fortran-config.cmake\")

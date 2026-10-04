@@ -12,9 +12,10 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
     * hipsolverSgetrfBatched_bufferSize, hipsolverDgetrfBatched_bufferSize, hipsolverCgetrfBatched_bufferSize, and hipsolverZgetrfBatched_bufferSize
     * hipsolverSgetrfBatched, hipsolverDgetrfBatched, hipsolverCgetrfBatched, and hipsolverZgetrfBatched
 * Generated Fortran bindings, as a single `hipsolver` module: `use hipsolver`, link
-  `roc::hipsolver_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on
-  Windows and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`,
-  `assumed-shape`, `assumed-rank`). Found with `find_package(hipsolver-fortran)`; the archive and the
+  `roc::hipsolver_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (defaults to `${UNIX}`: ON on Linux,
+  OFF on Windows; OFF on the CUDA backend) and `BUILD_FORTRAN_CLIENTS`. `FORTRAN_ARRAY_INTERFACES` is
+  accepted for uniformity with the other bindings but has no effect: the hipSOLVER module carries no
+  array overloads. Found with `find_package(hipsolver-fortran)`; the archive and the
   `.mod` files install per compiler, under `<libdir>/fortran/<compiler>` and
   `<includedir>/fortran/<compiler>`.
 
@@ -24,7 +25,11 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   `use hipsolver` is unchanged, but the separate `hipsolver_enums` module is gone: its constants are
   part of `hipsolver`, so code that said `use hipsolver_enums` should now say `use hipsolver`. A static
   archive and a `.mod` are installed in place of the shared library and the `.f90` source to compile
-  yourself; link `roc::hipsolver_fortran`.
+  yourself; link `roc::hipsolver_fortran`. Output arguments the old module declared
+  `type(c_ptr), value` -- the `lwork` of every `_bufferSize` routine, and the `residual` and
+  `executed_sweeps` of the gesvdj/syevj getters -- are now typed and passed by reference, as are the
+  outputs of the routines new to the module (`nev`, the deterministic `mode`, the Rf getters): callers
+  must drop the `c_loc()` and pass the variable itself.
 
 ### Removed
 

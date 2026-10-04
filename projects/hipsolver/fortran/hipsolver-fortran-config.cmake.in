@@ -23,9 +23,10 @@ set(_hipsolver_libdir "@PACKAGE_HIPSOLVER_FORTRAN_LIBDIR@")
 set(_hipsolver_incdir "@PACKAGE_HIPSOLVER_FORTRAN_INCLUDEDIR@")
 
 # A consumer asks "is a hipSOLVER Fortran binding available here?" through
-# hipsolver_FORTRAN_FOUND, set whether this package is reached directly or
-# alongside the co-installed hipsolver-config.cmake. It stays FALSE on every
-# early return below.
+# hipsolver_FORTRAN_FOUND, set by this package whether it is reached through
+# lib/cmake/hipsolver or the hipsolver-fortran forwarder; it is installed beside
+# the C hipsolver-config.cmake so one CMAKE_PREFIX_PATH entry finds both. It
+# stays FALSE on every early return below.
 set(hipsolver_FORTRAN_FOUND FALSE)
 
 if(NOT CMAKE_Fortran_COMPILER_LOADED)

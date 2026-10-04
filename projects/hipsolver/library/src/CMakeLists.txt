@@ -262,8 +262,9 @@ endif()
 
 # The rule that shipped hipsolver_module.f90 into include/hipsolver, and the
 # backward-compatibility symlinks to it, are gone with the source. The generated
-# binding installs its source as share/hipsolver/fortran/hipsolver.F90 and its
-# compiled artifacts under include/fortran/<compiler>; see ../../fortran.
+# binding installs its source as share/hipsolver/fortran/hipsolver.F90, its .mod
+# under include/fortran/<compiler> and its archive under <libdir>/fortran/<compiler>;
+# see ../../fortran.
 
 if(BUILD_FILE_REORG_BACKWARD_COMPATIBILITY)
   rocm_install(
