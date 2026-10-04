@@ -26,10 +26,9 @@
 ! Demonstrates the hipFFT library version queries hipfftGetVersion and
 ! hipfftGetProperty.
 !
-! hipfftGetVersion takes its output argument as a plain Fortran scalar
-! (integer(c_int) :: version), so the variable is passed DIRECTLY, not via
-! c_loc. hipfftGetProperty is reached through the generic interface, which
-! accepts a target integer(c_int) scalar and applies c_loc internally.
+! Both take their output argument as a plain Fortran scalar by reference
+! (integer(c_int) :: version, integer(c_int) :: myValue), so the variables are
+! passed DIRECTLY, not via c_loc.
 !
 ! Both calls report the version of the backend FFT library (rocFFT, or cuFFT),
 ! not of hipFFT itself, and hipfftGetProperty is derived from hipfftGetVersion,
@@ -47,7 +46,7 @@ program hipfft_version
 
   integer(c_int), parameter :: poison = -12345
 
-  integer(c_int), target :: version, major, minor, patch
+  integer(c_int) :: version, major, minor, patch
 
   write(*,"(a)",advance="no") &
     "-- Running test 'hipFFT version query' - "

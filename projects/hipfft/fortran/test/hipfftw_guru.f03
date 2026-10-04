@@ -38,7 +38,7 @@ program hipfftw_guru_test
   complex(c_double_complex), allocatable, target, dimension(:) :: hx, hresult
   type(c_ptr) :: dx = c_null_ptr, dy = c_null_ptr
   type(c_ptr) :: plan = c_null_ptr
-  type(fftw_iodim), target :: dims(1), howmany_dims(1)
+  type(fftw_iodim) :: dims(1), howmany_dims(1)
   integer :: b, j, k
   double precision :: error, max_error
   complex(c_double_complex) :: w, expected
@@ -62,10 +62,9 @@ program hipfftw_guru_test
 
   dims(1) = fftw_iodim(N, 1, 1)         ! n=N, is=1, os=1
   howmany_dims(1) = fftw_iodim(HOWMANY, N, N)  ! n=HOWMANY, is=N, os=N
-  ! The dims/howmany_dims dummies are declared scalar type(fftw_iodim); pass the
-  ! first element of each array so the callee receives the base address of
-  ! the contiguous struct array — looks like an element but acts as a pointer.
-  plan = fftw_plan_guru_dft(1, dims(1), 1, howmany_dims(1), &
+  ! dims and howmany_dims are arrays of rank and howmany_rank fftw_iodim; the
+  ! dummies are assumed-size type(fftw_iodim) :: dims(*), so pass the arrays.
+  plan = fftw_plan_guru_dft(1, dims, 1, howmany_dims, &
       dx, dy, FFTW_FORWARD, FFTW_ESTIMATE)
   call fftw_execute_dft(plan, dx, dy)
   call fftw_destroy_plan(plan)

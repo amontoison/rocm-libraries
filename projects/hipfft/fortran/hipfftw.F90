@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module hipfftw
   use, intrinsic :: iso_c_binding
@@ -655,9 +656,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru_dft")
        import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim) :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim) :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: sign
@@ -691,9 +692,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru_dft_r2c")
        import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim) :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim) :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -725,9 +726,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru_dft_c2r")
        import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim) :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim) :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -759,9 +760,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru64_dft")
        import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim64) :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim64) :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: sign
@@ -795,9 +796,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru64_dft_r2c")
        import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim64) :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim64) :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -829,9 +830,9 @@ module hipfftw
        bind(C, name="fftw_plan_guru64_dft_c2r")
        import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(fftw_iodim64) :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(fftw_iodim64) :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags

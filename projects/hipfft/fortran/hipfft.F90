@@ -22,6 +22,7 @@
 ! THE SOFTWARE.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! GENERATED FILE -- do not edit by hand; regenerate with the rocm-fortran generator.
 
 module hipfft
   use, intrinsic :: iso_c_binding
@@ -355,6 +356,18 @@ module hipfft
        integer(c_int) :: version
        integer(kind(HIPFFT_SUCCESS)) :: GetVersion
     end function hipfftGetVersion
+
+    !---------------------------------------------
+    ! hipfftGetProperty
+    !---------------------------------------------
+    function hipfftGetProperty(myType, myValue) &
+       result(GetProperty) &
+       bind(C, name="hipfftGetProperty")
+       import :: HIPFFT_MAJOR_VERSION, c_int, HIPFFT_SUCCESS
+       integer(kind(HIPFFT_MAJOR_VERSION)), value :: myType
+       integer(c_int) :: myValue
+       integer(kind(HIPFFT_SUCCESS)) :: GetProperty
+    end function hipfftGetProperty
 
   end interface
 
@@ -695,27 +708,6 @@ module hipfft
       hipfftExecZ2D_rank_1,&
       hipfftExecZ2D_rank_2,&
       hipfftExecZ2D_rank_3
-#endif
-#endif
-  end interface
-
-  interface hipfftGetProperty
-    function hipfftGetProperty_(myType,myValue) bind(c, name="hipfftGetProperty")
-      use iso_c_binding
-      import
-      implicit none
-      integer(kind(HIPFFT_SUCCESS)) :: hipfftGetProperty_
-      integer(kind(HIPFFT_MAJOR_VERSION)),value :: myType
-      type(c_ptr),value :: myValue
-    end function
-
-#ifdef USE_ASSUMED_RANK
-    module procedure hipfftGetProperty_assumed_rank
-#else
-#ifdef USE_ASSUMED_SHAPE
-    module procedure &
-      hipfftGetProperty_rank_0,&
-      hipfftGetProperty_rank_1
 #endif
 #endif
   end interface
@@ -1497,39 +1489,6 @@ module hipfft
       real(c_double),target,dimension(:,:,:) :: odata
       !
       hipfftExecZ2D_rank_3 = hipfftExecZ2D_(plan,c_loc(idata),c_loc(odata))
-    end function
-
-#endif
-#ifdef USE_ASSUMED_RANK
-    function hipfftGetProperty_assumed_rank(myType,myValue)
-      use iso_c_binding
-      implicit none
-      integer(kind(HIPFFT_SUCCESS)) :: hipfftGetProperty_assumed_rank
-      integer(kind(HIPFFT_MAJOR_VERSION)) :: myType
-      integer(c_int),target,contiguous,dimension(..) :: myValue
-      !
-      hipfftGetProperty_assumed_rank = hipfftGetProperty_(myType,c_loc(myValue))
-    end function
-
-#else
-    function hipfftGetProperty_rank_0(myType,myValue)
-      use iso_c_binding
-      implicit none
-      integer(kind(HIPFFT_SUCCESS)) :: hipfftGetProperty_rank_0
-      integer(kind(HIPFFT_MAJOR_VERSION)) :: myType
-      integer(c_int),target :: myValue
-      !
-      hipfftGetProperty_rank_0 = hipfftGetProperty_(myType,c_loc(myValue))
-    end function
-
-    function hipfftGetProperty_rank_1(myType,myValue)
-      use iso_c_binding
-      implicit none
-      integer(kind(HIPFFT_SUCCESS)) :: hipfftGetProperty_rank_1
-      integer(kind(HIPFFT_MAJOR_VERSION)) :: myType
-      integer(c_int),target,dimension(:) :: myValue
-      !
-      hipfftGetProperty_rank_1 = hipfftGetProperty_(myType,c_loc(myValue))
     end function
 
 #endif
