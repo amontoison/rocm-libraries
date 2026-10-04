@@ -203,7 +203,7 @@ function hipblasGetBatchAlphaStrideFortran(handle, alpha_stride) &
     implicit none
     integer(kind(HIPBLAS_STATUS_SUCCESS)) :: hipblasGetBatchAlphaStrideFortran
     type(c_ptr), value :: handle
-    type(c_ptr), value :: alpha_stride
+    integer(c_int64_t) :: alpha_stride
             hipblasGetBatchAlphaStrideFortran = &
         hipblasGetBatchAlphaStride(handle, alpha_stride)
 end function hipblasGetBatchAlphaStrideFortran
@@ -227,7 +227,7 @@ function hipblasGetBatchBetaStrideFortran(handle, beta_stride) &
     implicit none
     integer(kind(HIPBLAS_STATUS_SUCCESS)) :: hipblasGetBatchBetaStrideFortran
     type(c_ptr), value :: handle
-    type(c_ptr), value :: beta_stride
+    integer(c_int64_t) :: beta_stride
             hipblasGetBatchBetaStrideFortran = &
         hipblasGetBatchBetaStride(handle, beta_stride)
 end function hipblasGetBatchBetaStrideFortran

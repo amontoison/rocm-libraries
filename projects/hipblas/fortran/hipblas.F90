@@ -181,9 +181,9 @@ module hipblas
     function hipblasGetProperty(myType, myValue) &
        result(GetProperty) &
        bind(C, name="hipblasGetProperty")
-       import :: HIPBLAS_MAJOR_VERSION, c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: HIPBLAS_MAJOR_VERSION, c_int, HIPBLAS_STATUS_SUCCESS
        integer(kind(HIPBLAS_MAJOR_VERSION)), value :: myType
-       type(c_ptr), value :: myValue
+       integer(c_int) :: myValue
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetProperty
     end function hipblasGetProperty
 
@@ -314,9 +314,9 @@ module hipblas
     function hipblasGetBatchAlphaStride(handle, alpha_stride) &
        result(GetBatchAlphaStride) &
        bind(C, name="hipblasGetBatchAlphaStride")
-       import :: c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPBLAS_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: alpha_stride
+       integer(c_int64_t) :: alpha_stride
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetBatchAlphaStride
     end function hipblasGetBatchAlphaStride
 
@@ -338,9 +338,9 @@ module hipblas
     function hipblasGetBatchBetaStride(handle, beta_stride) &
        result(GetBatchBetaStride) &
        bind(C, name="hipblasGetBatchBetaStride")
-       import :: c_ptr, HIPBLAS_STATUS_SUCCESS
+       import :: c_ptr, c_int64_t, HIPBLAS_STATUS_SUCCESS
        type(c_ptr), value :: handle
-       type(c_ptr), value :: beta_stride
+       integer(c_int64_t) :: beta_stride
        integer(kind(HIPBLAS_STATUS_SUCCESS)) :: GetBatchBetaStride
     end function hipblasGetBatchBetaStride
 
