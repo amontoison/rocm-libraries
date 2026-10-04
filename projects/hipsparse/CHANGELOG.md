@@ -11,9 +11,10 @@ Documentation for hipSPARSE is available at
 * Added batched support to `hipsparseSDDMM` for CSR format.
 * Generated Fortran bindings, as a single `hipsparse` module: `use hipsparse`, link
   `roc::hipsparse_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows
-  and on the CUDA backend, where only `FORTRAN_ARRAY_INTERFACES=none` links),
-  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`,
-  `assumed-rank`). Found with `find_package(hipsparse-fortran)`; the archive and `.mod` files
+  and on the CUDA backend, where the default `assumed-shape` tier does not link (use `none`
+  there)), `BUILD_FORTRAN_CLIENTS` (the binding tests in `fortran/test`; the Fortran samples
+  follow `HIPSPARSE_ENABLE_FORTRAN`) and `FORTRAN_ARRAY_INTERFACES` (`assumed-shape` by default;
+  `none` or `assumed-rank`). Found with `find_package(hipsparse-fortran)`; the archive and `.mod` files
   install per compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
   Scalars the C API takes by pointer (`alpha`, `beta`, `nnzTotalDevHostPtr` and the rest) are
   `type(c_ptr), value`, so pass `c_loc(x)`; one interface covers both pointer modes.

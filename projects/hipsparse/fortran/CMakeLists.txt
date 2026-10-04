@@ -65,10 +65,11 @@ option(BUILD_FORTRAN_BINDINGS "Build the hipSPARSE Fortran bindings"
        "${_hipsparse_fortran_default}")
 unset(_hipsparse_fortran_default)
 
-# One switch for the binding tests and a library's Fortran clients. ON by
-# default, but guarded like the bindings: asking for them when the bindings were
-# not built is a skip, not an error.
-option(BUILD_FORTRAN_CLIENTS "Build the hipSPARSE Fortran clients and binding tests" ON)
+# In hipSPARSE this switch gates only the binding tests in fortran/test; the
+# Fortran samples follow HIPSPARSE_ENABLE_FORTRAN instead. ON by default, but
+# guarded like the bindings: asking for the tests when the bindings were not
+# built is a skip, not an error.
+option(BUILD_FORTRAN_CLIENTS "Build the hipSPARSE Fortran binding tests" ON)
 
 # BUILD_FORTRAN_BINDINGS and BUILD_FORTRAN_CLIENTS are ONE cache entry shared by
 # every library in the monorepo, so -DBUILD_FORTRAN_BINDINGS=OFF from the top

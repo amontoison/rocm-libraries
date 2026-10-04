@@ -41,10 +41,10 @@ if(NOT CMAKE_Fortran_COMPILER_LOADED)
   return()
 endif()
 
-# Compare on the compiler EXECUTABLE name, which is what the install layout is
-# keyed on: CMake's ID says "LLVMFlang" where the user and the directory both
-# say "amdflang", and a bare basename would reject a consumer reaching gfortran
-# through mpif90 or gfortran-13.
+# Map CMAKE_Fortran_COMPILER_ID to the compiler name the install layout is
+# keyed on: the ID says "LLVMFlang" where the user and the directory both say
+# "amdflang". Mapping the ID rather than the executable's basename also accepts
+# a consumer reaching gfortran through mpif90 or gfortran-13.
 #
 # This MUST mirror the mapping in projects/hipsparse/fortran/CMakeLists.txt: it
 # recomputes, for the compiler the CONSUMER is using, the same directory name
