@@ -84,33 +84,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(HIPSPARSE_ENABLE_FORTRAN)
-    # enable_language(Fortran) resolves CMAKE_Fortran_COMPILER once and freezes
-    # it for the whole tree, so the preference for ROCm's own amdflang has to be
-    # expressed BEFORE it. Left to itself, CMake takes the first Fortran
-    # compiler on the search path -- the system gfortran on a ROCm CI image --
-    # and fortran/ is reached far too late to have a say: its own call finds the
-    # compiler already chosen and does nothing. Both go through the one macro so
-    # that the two cannot drift apart.
+    # enable_language(Fortran) freezes the compiler for the whole tree, so the
+    # amdflang preference has to come first.
     include("${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake")
     rocm_fortran_prefer_amdflang()
 
-    # PROBE before enabling. enable_language(Fortran) is fatal when no compiler
-    # is found, so calling it unconditionally makes -DHIPSPARSE_ENABLE_CLIENT=ON
-    # die at configure time on a machine that has no Fortran compiler -- the C
-    # library and the C++ clients would build perfectly well there, and the only
-    # thing missing is a Fortran track nobody asked for by name. check_language()
-    # answers the same question without failing, so the Fortran clients can be
-    # dropped instead. AFTER rocm_fortran_prefer_amdflang(), which has to get
-    # the first word: check_language() is a no-op once CMAKE_Fortran_COMPILER is
-    # defined, so whatever the macro leaves behind is what the probe reports.
-    #
-    # The save/set/restore around the probe is the same one fortran/CMakeLists.txt
-    # uses, and for the same reason: check_language() answers by writing the CACHE
-    # entry CMAKE_Fortran_COMPILER, and rocm-cmake's ROCMChecks arms a
-    # variable_watch on exactly that name, which cannot tell a compiler probe
-    # apart from a project writing a toolchain variable behind the toolchain
-    # file's back. Unsilenced it is a stray banner by default and a hard failure
-    # under -DROCM_ERROR_TOOLCHAIN_VAR=ON, which CI turns on.
+    # Probe rather than fail: a site without Fortran still builds the C clients.
+    # ROCMChecks watches CMAKE_Fortran_COMPILER; silence it across the probe.
     set(_hipsparse_warn_toolchain_var "${ROCM_WARN_TOOLCHAIN_VAR}")
     set(_hipsparse_error_toolchain_var "${ROCM_ERROR_TOOLCHAIN_VAR}")
     set(ROCM_WARN_TOOLCHAIN_VAR OFF)
@@ -155,29 +135,17 @@ endif()
 if(HIPSPARSE_ENABLE_HOST)
     add_subdirectory(library)
 endif()
-# Fortran bindings for hipSPARSE, generated from the public headers and
-# committed under fortran/. Self-contained: a Fortran binding declares bind(C)
-# interfaces only, so it compiles against neither the hipSPARSE headers nor
-# libhipsparse, and this is safe to add unconditionally. The directory does its
-# own guarding and returns quietly when BUILD_FORTRAN_BINDINGS is off or no
-# Fortran compiler was found. It reports back through
-# HIPSPARSE_HAVE_FORTRAN_BINDINGS, FALSE in both those cases and TRUE only when
-# the target was really created.
-#
-# Outside the HIPSPARSE_ENABLE_HOST guard above on purpose. That guard controls
-# whether libhipsparse is built in this tree; the bindings do not need it built,
-# only linked, and libhipsparse resolves from the prefix path when the in-tree
-# target is absent. Inheriting the guard would silently drop the bindings from a
-# build that can perfectly well produce and install them.
+# ctest walks only directories below a root that enabled testing; fortran/
+# registers its binding tests under this same condition.
+if(HIPSPARSE_ENABLE_CLIENT OR HIPSPARSE_BUILD_TESTING OR BUILD_TESTING)
+    enable_testing()
+endif()
+
+# Fortran bindings; self-guarded. Outside HIPSPARSE_ENABLE_HOST: they need
+# libhipsparse linked, not built here.
 add_subdirectory(fortran)
 
-# The Fortran samples used to compile the hand-written module themselves; they
-# now link roc::hipsparse_fortran, so they cannot be built when the bindings
-# were not. Turning the option off here rather than failing keeps
-# -DHIPSPARSE_ENABLE_CLIENT=ON working wherever the bindings were deliberately
-# declined: an explicit -DBUILD_FORTRAN_BINDINGS=OFF, or the CUDA-backend
-# default (see fortran/CMakeLists.txt). The no-compiler case never reaches here
-# -- the probe above has already turned HIPSPARSE_ENABLE_FORTRAN off.
+# The Fortran samples link roc::hipsparse_fortran.
 if(HIPSPARSE_ENABLE_FORTRAN AND NOT HIPSPARSE_HAVE_FORTRAN_BINDINGS)
     message(STATUS
         "hipSPARSE: the Fortran bindings were not built, skipping the Fortran "
@@ -194,9 +162,6 @@ endif()
 # --- Client targets ---
 
 if(HIPSPARSE_ENABLE_CLIENT OR HIPSPARSE_BUILD_TESTING OR BUILD_TESTING)
-    # Required at project root so ${CMAKE_BINARY_DIR}/CTestTestfile.cmake exists.
-    # Otherwise ctest run from the build root finds no tests (they only lived under clients/).
-    enable_testing()
     include(rocm_client_prerequisites)
     add_subdirectory(clients)
 endif()
