@@ -30,6 +30,19 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   `executed_sweeps` of the gesvdj/syevj getters -- are now typed and passed by reference, as are the
   outputs of the routines new to the module (`nev`, the deterministic `mode`, the Rf getters): callers
   must drop the `c_loc()` and pass the variable itself.
+* The handle and info outputs of `hipsolverCreate`, `hipsolverGetStream`, `hipsolverCreateGesvdjInfo` and
+  `hipsolverCreateSyevjInfo` are now `type(c_ptr)` passed by reference instead of `type(c_ptr), value`.
+  The old spelling `hipsolverCreate(c_loc(handle))` still compiles but leaves `handle` null: pass the
+  variable itself, as in `hipsolverCreate(handle)`.
+* The `jobu` and `jobv` arguments of `hipsolver{S,D,C,Z}gesvd` and `hipsolver{S,D,C,Z}gesvd_bufferSize`
+  are now `character(c_char)` instead of `integer(c_signed_char)`, and the `lwork` argument of
+  `hipsolver{SS,DD,CC,ZZ}gels` and `hipsolver{SS,DD,CC,ZZ}gesv` is now `integer(c_size_t)` instead of
+  `integer(c_int)`, matching the C API.
+* On the CUDA backend the Fortran bindings are off by default, so the Fortran-API variants of
+  `hipsolver-test` are no longer built there unless `BUILD_FORTRAN_BINDINGS` is set.
+* The default Fortran compiler is now ROCm's `amdflang` when the Fortran bindings are built against the
+  in-tree OpenBLAS. It stays `gfortran` on the CUDA backend and with `HIPSOLVER_INTERNAL_LAPACK_BUILD=OFF`,
+  where the clients link the host LAPACK.
 
 ### Removed
 
@@ -42,6 +55,10 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
 
 ### Optimized
 ### Resolved issues
+
+* The Fortran `hipsolverXsyevjGetResidual` and `hipsolverXsyevjGetSweeps` were bound to the wrong C symbol,
+  `hipsolverXsyevjSetTolerance`; they now call `hipsolverXsyevjGetResidual` and `hipsolverXsyevjGetSweeps`.
+
 ### Known issues
 ### Upcoming changes
 
