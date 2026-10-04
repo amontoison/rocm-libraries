@@ -57,25 +57,15 @@ project(hipRAND CXX)
 
 # Build options
 
-# BUILD_WITH_LIB must be defined above option(BUILD_FORTRAN_BINDINGS) below,
-# because that option's default reads it, and option() only honours its default
-# when it CREATES the cache entry.
+# Above option(BUILD_FORTRAN_BINDINGS), whose default reads it.
 set(BUILD_WITH_LIB "ROCM" CACHE STRING "Select backend library to build with (ROCM or CUDA)")
 set_property(CACHE BUILD_WITH_LIB PROPERTY STRINGS "ROCM" "CUDA")
 
 option(BUILD_ADDRESS_SANITIZER "Build with address sanitizer enabled" OFF)
 option(BUILD_BENCHMARK "Build benchmarks" OFF)
 option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
-# Declared here as well as in fortran/, so that print_configuration_summary()
-# below, which runs before add_subdirectory(fortran), has a value to report.
-# This is the declaration that wins, since it creates the cache entry first;
-# fortran/ carries the same default so a standalone configure there agrees.
-#
-# "${UNIX}" because ROCm ships no Fortran compiler on Windows; OFF on the CUDA
-# backend because hiprand.F90 is generated from the ROCm code path and is not
-# tested against a cuRAND-backed libhiprand. The full reasoning, and the warning
-# that fires when the bindings are asked for there anyway, are in
-# fortran/CMakeLists.txt.
+# Also declared here so that the configuration summary, printed before
+# add_subdirectory(fortran), has a value; same default as in fortran/.
 if(BUILD_WITH_LIB STREQUAL "CUDA")
   set(_hiprand_fortran_default OFF)
 else()
@@ -223,9 +213,7 @@ print_configuration_summary()
 # This adds library targets: hiprand
 add_subdirectory(library)
 
-# Fortran bindings, generated from the headers above and committed next to them.
-# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is
-# OFF or no Fortran compiler is available, so a C-only site is unaffected.
+# Fortran bindings; self-guarding.
 add_subdirectory(fortran)
 
 # Tests
