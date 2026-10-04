@@ -9,7 +9,7 @@ Documentation for rocSPARSE is available at
 * Added support for the `gfx1250-strict` architecture.
 * Generated Fortran bindings, as a single `rocsparse` module: `use rocsparse`, link
   `roc::rocsparse_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows),
-  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`,
+  `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`assumed-shape` by default; `none` or
   `assumed-rank`). Found with `find_package(rocsparse-fortran)`; the archive and `.mod` files
   install per compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
   Nothing Fortran is built under `BUILD_ROCSPARSE_ILP64`, which widens `rocsparse_int` to
@@ -29,9 +29,10 @@ Documentation for rocSPARSE is available at
     and `csr_row_ptr_C` before `csr_col_ind_C`, as the C routines declare them. The hand-written
     interfaces had each pair reversed, and both members are `type(c_ptr)`, so an existing call
     still compiles and now passes the row pointer where the column indices are read.
-  * Every `*_buffer_size` routine (69 of them) takes `buffer_size` as an `integer(c_size_t)` by
-    reference, not a `type(c_ptr)` by value: drop the `c_loc()` and pass the variable itself. The
-    four `rocsparse_Xgebsr2gebsc_buffer_size` routines name it `p_buffer_size`.
+  * The 69 `*_buffer_size` routines the hand-written binding exposed take `buffer_size` as an
+    `integer(c_size_t)` by reference, not a `type(c_ptr)` by value: drop the `c_loc()` and pass the
+    variable itself. The four `rocsparse_Xgebsr2gebsc_buffer_size` routines name it
+    `p_buffer_size`.
   * `rocsparse_zcsrsv_solve`: `alpha` is a `type(c_ptr)` by value, agreeing with the `s`, `d` and
     `c` forms, where it was a `complex(c_double_complex)` by reference.
   * `rocsparse_zdoti`: the result argument is `myResult`, a `type(c_ptr)` by value, agreeing with
