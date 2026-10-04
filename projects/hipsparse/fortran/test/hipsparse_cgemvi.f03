@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Cgemvi example (dense matrix * sparse vector, single complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Computes y = alpha * A * x + beta * y, where A is a dense m-by-n matrix and x
 ! is a sparse vector (nnz values xVal at indices xInd). The result is checked
@@ -81,7 +81,7 @@ program hipsparse_cgemvi
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(m,c_size_t) * 8, hipMemcpyDeviceToHost))
 
   do i = 1, m
-     if (abs(hY(i) - hRef(i)) > 1.0e-4) then
+     if (.not. (abs(hY(i) - hRef(i)) <= 1.0e-4)) then
         write(*,*) "FAILED! y(", i, ") = ", hY(i), " expected ", hRef(i); call exit(1)
      end if
   end do

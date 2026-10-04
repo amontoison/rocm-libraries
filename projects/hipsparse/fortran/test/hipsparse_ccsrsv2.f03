@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Ccsrsv2 example (sparse triangular solve v2, single complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Solves the lower-triangular system L*x = alpha*f for x using the legacy
 ! csrsv2 API (bufferSize -> analysis -> solve, with a mat descriptor and a
@@ -95,7 +95,7 @@ program hipsparse_ccsrsv2
   call hipCheck(hipMemcpy(c_loc(hX(1)), dX, int(m,c_size_t) * 8, hipMemcpyDeviceToHost))
 
   do i = 1, m
-     if (abs(hX(i) - hExp(i)) > 1.0e-4) then
+     if (.not. (abs(hX(i) - hExp(i)) <= 1.0e-4)) then
         write(*,*) "FAILED! x(", i, ") = ", hX(i), " expected ", hExp(i); call exit(1)
      end if
   end do

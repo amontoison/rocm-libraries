@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse SDDMM example (c, sampled dense-dense matmul, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! SDDMM computes C = alpha * (A * B) .* spy(C) + beta * C: the dense product
 ! A*B is evaluated only at the nonzero positions of the sparse (CSR) C. Generic
@@ -114,7 +114,7 @@ program hipsparse_csddmm
 
   do i = 1, nnz
     error = abs(h_csr_val(i) - h_expected(i)) / max(abs(h_expected(i)), 1.0)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! val(", i, ") = ", h_csr_val(i), " expected ", h_expected(i); call exit(1)
     end if
   end do

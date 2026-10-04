@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Zgemvi example (dense matrix * sparse vector, double complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Computes y = alpha * A * x + beta * y, where A is a dense m-by-n matrix and x
 ! is a sparse vector (nnz values xVal at indices xInd). The result is checked
@@ -81,7 +81,7 @@ program hipsparse_zgemvi
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(m,c_size_t) * 16, hipMemcpyDeviceToHost))
 
   do i = 1, m
-     if (abs(hY(i) - hRef(i)) > 1.0d-10) then
+     if (.not. (abs(hY(i) - hRef(i)) <= 1.0d-10)) then
         write(*,*) "FAILED! y(", i, ") = ", hY(i), " expected ", hRef(i); call exit(1)
      end if
   end do

@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! zcsr2csc example (double-complex CSR -> CSC conversion / sparse transpose,
 ! Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Converting A from CSR to CSC is equivalent to producing the CSR of A**T
 ! (structural transpose; values are permuted, not conjugated). We check the
@@ -109,7 +109,7 @@ program zcsr2csc
         call exit(1)
     end if
     error = abs(h_csc_val(i) - h_exp_val(i))
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! csc_val(", i, ") = ", h_csc_val(i), " expected ", h_exp_val(i)
         call exit(1)
     end if

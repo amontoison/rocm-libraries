@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Zcsrilu02 example (incomplete LU, single complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Computes the ILU(0) factorization of a complex tridiagonal matrix in place
 ! using the legacy csrilu02 API (bufferSize -> analysis -> compute, with a mat
@@ -90,7 +90,7 @@ program hipsparse_zcsrilu02
   call hipCheck(hipMemcpy(c_loc(hOut(1)), dVal, int(nnz,c_size_t) * 16, hipMemcpyDeviceToHost))
 
   do i = 1, nnz
-     if (abs(hOut(i) - hExp(i)) > 1.0d-11) then
+     if (.not. (abs(hOut(i) - hExp(i)) <= 1.0d-11)) then
         write(*,*) "FAILED! val(", i, ") = ", hOut(i), " expected ", hExp(i); call exit(1)
      end if
   end do

@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse SpMV example (double, y = alpha*A*x + beta*y, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Generic API: build a CSR descriptor for A and dense-vector descriptors for x
 ! and y, query the workspace with SpMV_bufferSize, then run SpMV. Result is
@@ -91,7 +91,7 @@ program hipsparse_dspmv
 
   do i = 1, M
     error = abs(h_y(i) - h_expected(i)) / max(abs(h_expected(i)), 1.0_c_double)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! y(", i, ") = ", h_y(i), " expected ", h_expected(i); call exit(1)
     end if
   end do

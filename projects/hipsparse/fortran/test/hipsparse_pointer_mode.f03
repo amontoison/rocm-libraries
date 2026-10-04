@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!!
 ! hipsparseGetPointerMode / hipsparseSetPointerMode round trip
 ! (Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! hipsparseSetPointerMode takes the mode by value, while hipsparseGetPointerMode
 ! receives it as a plain scalar output argument (not a type(c_ptr)), so the
@@ -38,8 +38,7 @@
 ! sentinel, so a getter that silently writes nothing is detected instead of
 ! being hidden by a value left over from the preceding step.
 !
-! No device memory is involved, so the f2003 and f2008 variants only differ in
-! the banner text.
+! No device memory is involved.
 !!!!!!!!!!!!!!
 !
 program hipsparse_pointer_mode

@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Zgthr example (gather y[xInd] -> xVal, double complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Gathers the entries of a dense vector y at the sparse index set xInd into the
 ! packed vector xVal, then checks the gathered values.
@@ -59,7 +59,7 @@ program hipsparse_zgthr
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hXval(1)), dXval, int(nnz,c_size_t) * 16, hipMemcpyDeviceToHost))
   do i = 1, nnz
-     if (abs(hXval(i) - hExp(i)) > 1.0d-12) then
+     if (.not. (abs(hXval(i) - hExp(i)) <= 1.0d-12)) then
         write(*,*) "FAILED! xVal(", i, ") = ", hXval(i), " expected ", hExp(i); call exit(1)
      end if
   end do

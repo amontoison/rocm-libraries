@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipSPARSE library version / git revision query (Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Exercises the pure "ask the library about itself" entry points:
 !   hipsparseCreate -> hipsparseGetVersion -> hipsparseGetGitRevision -> hipsparseDestroy
@@ -39,8 +39,7 @@
 ! (1 <= major < 100, 0 <= minor < 1000, 0 <= patch < 100), and the git revision
 ! string is non-empty. Fails (STOP 1) otherwise.
 !
-! This test touches no device memory, so the f2003 and f2008 variants are
-! identical apart from the banner.
+! This test touches no device memory.
 !!!!!!!!!!!!!!
 !
 program hipsparse_version

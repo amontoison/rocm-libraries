@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Sgthr example (gather y[xInd] -> xVal, single, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Gathers the entries of a dense vector y at the sparse index set xInd into the
 ! packed vector xVal, then checks the gathered values.
@@ -58,7 +58,7 @@ program hipsparse_sgthr
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hXval(1)), dXval, int(nnz,c_size_t) * 4, hipMemcpyDeviceToHost))
   do i = 1, nnz
-     if (abs(hXval(i) - hExp(i)) > 1.0e-6) then
+     if (.not. (abs(hXval(i) - hExp(i)) <= 1.0e-6)) then
         write(*,*) "FAILED! xVal(", i, ") = ", hXval(i), " expected ", hExp(i); call exit(1)
      end if
   end do

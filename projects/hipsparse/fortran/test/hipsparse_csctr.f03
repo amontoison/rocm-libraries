@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse Csctr example (scatter xVal -> y[xInd], single complex, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Scatters the packed vector xVal into the dense vector y at the sparse index
 ! set xInd, then checks the resulting dense vector.
@@ -61,7 +61,7 @@ program hipsparse_csctr
   call hipCheck(hipDeviceSynchronize())
   call hipCheck(hipMemcpy(c_loc(hY(1)), dY, int(n,c_size_t) * 8, hipMemcpyDeviceToHost))
   do i = 1, n
-     if (abs(hY(i) - hExp(i)) > 1.0e-6) then
+     if (.not. (abs(hY(i) - hExp(i)) <= 1.0e-6)) then
         write(*,*) "FAILED! y(", i, ") = ", hY(i), " expected ", hExp(i); call exit(1)
      end if
   end do

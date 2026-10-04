@@ -25,7 +25,7 @@
 
 !!!!!!!!!!!!!!
 ! hipsparse SpMM example (single complex, C = alpha*A*B + beta*C, Fortran 2003)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Generic API: build a CSR descriptor for the sparse A and dense-matrix
 ! descriptors for B and C, query the workspace with SpMM_bufferSize, then run
@@ -104,7 +104,7 @@ program hipsparse_cspmm
   do j = 1, Ncol
     do i = 1, M
       error = abs(h_C(i,j) - h_expected(i,j)) / max(abs(h_expected(i,j)), 1.0_c_float)
-      if(error .gt. error_max) then
+      if(.not. (error .le. error_max)) then
           write(*,*) "FAILED! C(", i, j, ") = ", h_C(i,j), " expected ", h_expected(i,j); call exit(1)
       end if
     end do

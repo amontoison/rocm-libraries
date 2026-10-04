@@ -26,7 +26,7 @@
 !!!!!!!!!!!!!/
 ! dcsrgemm example (double-precision sparse-matrix sparse-matrix multiply,
 ! C = A*B, Fortran 2003 interfaces)
-! see: https:!rocm.docs.amd.com/projects/hipSPARSE/en/latest/
+! see: https://rocm.docs.amd.com/projects/hipSPARSE/en/latest/
 !
 ! Two-phase flow with the classic hipSPARSE API: XcsrgemmNnz fills row_ptr_C and
 ! the total nnz, then Xcsrgemm computes the values. Here B = A, so C = A*A,
@@ -129,7 +129,7 @@ program dcsrgemm
         call exit(1)
     end if
     error = abs(h_val_C(i) - h_exp_val(i)) / max(abs(h_exp_val(i)), 1.0_c_double)
-    if(error .gt. error_max) then
+    if(.not. (error .le. error_max)) then
         write(*,*) "FAILED! val_C(", i, ") = ", h_val_C(i), " expected ", h_exp_val(i)
         call exit(1)
     end if
