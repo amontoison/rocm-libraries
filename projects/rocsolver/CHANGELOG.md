@@ -14,8 +14,9 @@ Full documentation for rocSOLVER is available at the [rocSOLVER documentation](h
 * Support added for the gfx1250-strict architecture.
 
 * Generated Fortran bindings, as a single `rocsolver` module: `use rocsolver`, link `roc::rocsolver_fortran`.
-  Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on Windows), `BUILD_FORTRAN_CLIENTS`
-  and `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, `assumed-rank`). Found with
+  Controlled by `BUILD_FORTRAN_BINDINGS` (defaults to `${UNIX}`: ON on Linux, OFF on Windows) and
+  `BUILD_FORTRAN_CLIENTS`. `FORTRAN_ARRAY_INTERFACES` is accepted for uniformity with the other bindings
+  but has no effect: the rocSOLVER module carries no array overloads. Found with
   `find_package(rocsolver-fortran)`; the archive and the `.mod` files install per compiler, under
   `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
 

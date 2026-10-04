@@ -43,8 +43,8 @@
 ! plus its NUL terminator; the string itself must be non-empty and look like a
 ! dotted version number. Any violation prints "FAILED! ..." and stops with 1.
 !
-! No handle, no rocsolver_setup and no device memory are needed for this query,
-! so the f2003 and f2008 variants are identical apart from the banner.
+! No handle and no device memory are needed for this query: it is a plain host
+! call into librocsolver.
 !!!!!!!!!!!!!!
 program rocsolver_version
   use iso_c_binding

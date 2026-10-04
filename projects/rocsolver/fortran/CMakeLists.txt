@@ -63,7 +63,8 @@ endif()
 #
 # Either upper tier reaches only the subset of routines the generator emits
 # overloads for; every other routine exposes the same plain type(c_ptr)
-# interface at all three tiers.
+# interface at all three tiers. For rocSOLVER that subset is empty: the option
+# is accepted for uniformity with the other bindings but has no effect.
 set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
     "Array-argument overloads to expose: none, assumed-shape, or assumed-rank")
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
@@ -81,12 +82,12 @@ if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
 
-# The monorepo root probes for a Fortran compiler ONCE and publishes
-# ROCM_HAVE_FORTRAN. The name is deliberately neither rocm-libraries' nor
-# rocm-systems': rocSOLVER is regularly built inside a rocm-systems tree, and a
-# repo-specific name would read the wrong variable. ROCM_LIBS_HAVE_FORTRAN is a
-# legacy spelling, honoured until the rocm-libraries root adopts the new one.
-# The local probe is the standalone path, where there is no root to ask.
+# An enclosing superbuild may probe for a Fortran compiler ONCE and publish
+# ROCM_HAVE_FORTRAN (ROCM_LIBS_HAVE_FORTRAN is a legacy spelling); the shared,
+# repo-neutral name keeps this branch uniform across the bindings. The
+# rocm-libraries superbuild does not build rocSOLVER yet (its root stops with a
+# FATAL_ERROR if asked to), so today neither variable is set here and the local
+# probe below is the path that always runs.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
@@ -185,7 +186,8 @@ include(GNUInstallDirs)
 
 # The rocBLAS binding, the one non-optional dependency: the module says
 # `use rocblas`, so rocblas.mod must exist before rocsolver.F90 can be compiled.
-# In-tree the target is already defined (projects/rocblas is configured first).
+# The target normally comes from find_package below; the TARGET test only skips
+# the search when an enclosing project has already defined it.
 # PATH_SUFFIXES lib/cmake/rocblas is where the real config lives, beside the C
 # package; the forwarder in lib/cmake/rocblas-fortran covers the plain spelling.
 # Resolved BEFORE the target is created, and a skip rather than a hard error: a
@@ -243,18 +245,18 @@ set(ROCSOLVER_FORTRAN_COMPILER_DIR "${_fc_name}" CACHE STRING
 set(_moddir "${CMAKE_CURRENT_BINARY_DIR}/include")
 set_target_properties(rocsolver_fortran PROPERTIES
   Fortran_MODULE_DIRECTORY "${_moddir}"
-  # The array overloads sit behind preprocessor guards.
+  # Kept for uniform handling across the bindings, and harmless: rocsolver.F90
+  # carries no preprocessor guards (and no array overloads) today.
   Fortran_PREPROCESS ON
   # The .F90 default, but stating it lets CMake emit the flag the compiler in
   # use expects rather than relying on the extension.
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON)
 
-# The tri-state as a macro; the option value and the macro name are the same
-# word, and none defines neither. The generated source settles the mutual
-# exclusion itself -- both guarded regions test USE_ASSUMED_RANK first and fall
-# back to USE_ASSUMED_SHAPE -- so defining both is not an error. Checked with
-# amdflang: rocsolver.F90 passes -fsyntax-only with neither, either and both.
+# The tri-state as a macro, defined for uniformity with the other bindings; the
+# option value and the macro name are the same word, and none defines neither.
+# rocsolver.F90 tests neither macro -- the generator emits no array overloads for
+# rocSOLVER -- so FORTRAN_ARRAY_INTERFACES has no effect on this module.
 if(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-shape")
   target_compile_definitions(rocsolver_fortran PRIVATE USE_ASSUMED_SHAPE=1)
 elseif(FORTRAN_ARRAY_INTERFACES STREQUAL "assumed-rank")
@@ -404,7 +406,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rocsolver-fortran-config.cmake"
 # config reached that way would run before roc::rocsolver exists.
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/forward/rocsolver-fortran-config.cmake"
 "# Generated forwarder. The real config lives beside the rocSOLVER C package, in
-# lib/cmake/rocsolver, so that rocsolver-config.cmake can include it as a sibling.
+# lib/cmake/rocsolver, so one CMAKE_PREFIX_PATH entry finds both.
 # This file only exists so that find_package(rocsolver-fortran) resolves to the
 # same place.
 include(\"\${CMAKE_CURRENT_LIST_DIR}/../rocsolver/rocsolver-fortran-config.cmake\")

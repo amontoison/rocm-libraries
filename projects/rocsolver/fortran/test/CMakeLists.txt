@@ -13,9 +13,9 @@ endif()
 
 # The tests allocate and copy device memory, so each says `use hip`. That makes
 # the HIP Fortran binding a COMPILE-time dependency: its .mod must exist, where
-# librocsolver is only a link-time one. In-tree hip::hip_fortran comes from
-# projects/hip/fortran; standalone it has to be found in an installed ROCm, built
-# with this same compiler.
+# librocsolver is only a link-time one. hip::hip_fortran comes from
+# find_package(hip-fortran) -- an installed ROCm whose HIP binding was built with
+# this same compiler -- unless an enclosing project already defined the target.
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
