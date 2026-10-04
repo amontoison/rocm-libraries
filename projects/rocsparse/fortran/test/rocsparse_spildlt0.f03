@@ -55,6 +55,10 @@ program spildlt0
   integer(kind(rocsparse_datatype_f64_r)), target :: cdt = rocsparse_datatype_f64_r
   integer(kind(rocsparse_singularity_none)), target :: sing
   integer(c_size_t) :: bufSize
+  ! p_error is passed by reference, so it needs a variable C can write an
+  ! error descriptor into; a literal c_null_ptr would hand C a read-only constant.
+  type(c_ptr), target :: err = c_null_ptr
+
   write(*,"(a)",advance="no") "-- Running test 'rocsparse_spildlt0' (Fortran 2003 interfaces) - "
 
   call hipCheck(hipMalloc(d_row_ptr, int(m+1,c_size_t) * 4))
@@ -68,38 +72,38 @@ program spildlt0
   call rocsparseCheck(rocsparse_create_csr_descr(matA, int(m,c_int64_t), int(m,c_int64_t), int(nnz,c_int64_t), &
        d_row_ptr, d_col_ind, d_val, &
        rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_datatype_f64_r))
-  call rocsparseCheck(rocsparse_spildlt0_descr_create(handle, descr, c_null_ptr))
+  call rocsparseCheck(rocsparse_spildlt0_descr_create(handle, descr, err))
 
   call rocsparseCheck(rocsparse_spildlt0_set_input(handle, descr, rocsparse_spildlt0_input_alg, &
-       c_loc(alg), int(c_sizeof(alg),c_size_t), c_null_ptr))
+       c_loc(alg), int(c_sizeof(alg),c_size_t), err))
   call rocsparseCheck(rocsparse_spildlt0_set_input(handle, descr, rocsparse_spildlt0_input_compute_datatype, &
-       c_loc(cdt), int(c_sizeof(cdt),c_size_t), c_null_ptr))
+       c_loc(cdt), int(c_sizeof(cdt),c_size_t), err))
   call rocsparseCheck(rocsparse_spildlt0_set_input(handle, descr, rocsparse_spildlt0_input_analysis_policy, &
-       c_loc(apol), int(c_sizeof(apol),c_size_t), c_null_ptr))
+       c_loc(apol), int(c_sizeof(apol),c_size_t), err))
 
   call rocsparseCheck(rocsparse_spildlt0_buffer_size(handle, descr, matA, matA, &
-       rocsparse_spildlt0_stage_analysis, bufSize, c_null_ptr))
+       rocsparse_spildlt0_stage_analysis, bufSize, err))
   call hipCheck(hipMalloc(dBuf, max(bufSize, 1_c_size_t)))
   call rocsparseCheck(rocsparse_spildlt0(handle, descr, matA, matA, &
-       rocsparse_spildlt0_stage_analysis, bufSize, dBuf, c_null_ptr))
+       rocsparse_spildlt0_stage_analysis, bufSize, dBuf, err))
   call hipCheck(hipFree(dBuf))
 
   call rocsparseCheck(rocsparse_spildlt0_buffer_size(handle, descr, matA, matA, &
-       rocsparse_spildlt0_stage_compute, bufSize, c_null_ptr))
+       rocsparse_spildlt0_stage_compute, bufSize, err))
   call hipCheck(hipMalloc(dBuf, max(bufSize, 1_c_size_t)))
   call rocsparseCheck(rocsparse_spildlt0(handle, descr, matA, matA, &
-       rocsparse_spildlt0_stage_compute, bufSize, dBuf, c_null_ptr))
+       rocsparse_spildlt0_stage_compute, bufSize, dBuf, err))
   call hipCheck(hipDeviceSynchronize())
 
   call rocsparseCheck(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_host))
   call rocsparseCheck(rocsparse_spildlt0_get_output(handle, descr, rocsparse_spildlt0_output_singularity, &
-       c_loc(sing), int(c_sizeof(sing),c_size_t), c_null_ptr))
+       c_loc(sing), int(c_sizeof(sing),c_size_t), err))
 
   if (sing /= rocsparse_singularity_none) then
      write(*,*) "FAILED! singularity = ", sing, " (expected none=0)"; call exit(1)
   end if
 
-  call rocsparseCheck(rocsparse_spildlt0_descr_destroy(handle, descr, c_null_ptr))
+  call rocsparseCheck(rocsparse_spildlt0_descr_destroy(handle, descr, err))
   call rocsparseCheck(rocsparse_destroy_spmat_descr(matA))
   call rocsparseCheck(rocsparse_destroy_handle(handle))
   call hipCheck(hipFree(d_row_ptr)); call hipCheck(hipFree(d_col_ind)); call hipCheck(hipFree(d_val))
