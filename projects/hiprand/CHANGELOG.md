@@ -11,9 +11,9 @@ Documentation for hipRAND is available at
 * Generated Fortran bindings, as a single `hiprand` module: `use hiprand`, link
   `hip::hiprand_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (`ON` on Linux with the ROCm
   backend, `OFF` on Windows and on the CUDA backend), `BUILD_FORTRAN_CLIENTS` and
-  `FORTRAN_ARRAY_INTERFACES` (`none`, `assumed-shape`, `assumed-rank`). Found with
-  `find_package(hiprand-fortran)`; the archive and `.mod` files install per compiler under
-  `<libdir>/fortran/<compiler>`.
+  `FORTRAN_ARRAY_INTERFACES` (`assumed-shape` by default; `none` or `assumed-rank`). Found with
+  `find_package(hiprand-fortran)`; the archive and the `.mod` files install per compiler, under
+  `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
 
 ### Changed
 

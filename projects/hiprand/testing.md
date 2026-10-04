@@ -20,7 +20,7 @@ The sequence a developer follows from writing code to getting it merged:
 
 1. Build with tests enabled: `CXX=hipcc cmake -B build -DBUILD_TEST=ON -DGPU_TARGETS=<gpu_arch>` then `make -j` (or configure with `-GNinja`). The backend defaults to rocRAND (`-DBUILD_WITH_LIB=ROCM`); rocRAND is located via `ROCRAND_FETCH_METHOD` (`PACKAGE` / `MONOREPO` / `DOWNLOAD`). On Windows use `python rmake.py -c -a <gpu_arch>`.
 2. Run the tests locally against a GPU: `cd build && ctest --output-on-failure`. For focused work, run a single binary directly, e.g. `./test/test_hiprand_api` or `./test/test_hiprand_kernel`.
-3. For Fortran or Python changes, enable/build the relevant binding (`-DBUILD_FORTRAN_CLIENTS=ON`) and run its suite (see below).
+3. For Fortran or Python changes, build the relevant binding and run its suite (see below). The Fortran tests need `-DBUILD_TEST=ON`; `BUILD_FORTRAN_CLIENTS` is already ON by default.
 4. Run `clang-format` on changed files (config in `.clang-format`; a git hook is available via `./.githooks/install`).
 5. Open a PR. Required CI checks — **TheRock CI** and **Math CI** — must pass across the build matrix, and another hipRAND team member must review and approve.
 
@@ -30,7 +30,7 @@ The sequence a developer follows from writing code to getting it merged:
 ## Unit Testing Strategy
 **Purpose:** validate that hipRAND correctly wraps and dispatches to its backend across engine types, distributions, and interfaces. Most tests still dispatch to the device because generation is device work; isolation is achieved by testing one engine/distribution/interface at a time.
 
-* **Frameworks:** GoogleTest (C/C++), plain CTest programs (Fortran), and Python `unittest`.
+* **Frameworks:** GoogleTest (C/C++), plain CTest programs and a FRUIT suite (Fortran), and Python `unittest`.
 * **Location:**
   * `test/test_hiprand_api.cpp` — host C API across engines (XORWOW, MRG32K3A, MTGP32, MT19937, PHILOX, SOBOL32/64, scrambled Sobol) and distributions (uniform, normal, log-normal, Poisson), plus a small host-only path (`hiprand_host`, PHILOX only).
   * `test/test_hiprand_cpp_wrapper.cpp` — the `hiprand.hpp` C++ interface, using typed suites over engine types (`hiprand_cpp_wrapper`, `_32`, `_64`, `_prng`, `_qrng`, `_offset`).
@@ -41,7 +41,7 @@ The sequence a developer follows from writing code to getting it merged:
   * `python/hiprand/tests/hiprand_test.py` — Python binding tests (`unittest`): version, constructor validation, PRNG/QRNG parameter getters/setters, and generation.
   * Shared helpers in `test/test_common.hpp` (`HIP_CHECK`, `HIPRAND_CHECK`, `hipMallocHelper`).
 * **Naming convention:** `test_hiprand_<area>.cpp` producing a matching binary (e.g. `test_hiprand_api`, `test_hiprand_kernel`); the Fortran tests register as `hiprand_fortran_<generator>_<distribution>`, and the FRUIT driver as `hiprand_fortran_fruit`. Tests use `TYPED_TEST_SUITE` over engine types and `INSTANTIATE_TEST_SUITE_P(... ValuesIn(hiprand_rng_types))` for enum/ordering variation. There is **no `.cpp.in` sharding** (the suite is small enough not to need it).
-* **How to run:** `ctest --output-on-failure`, or run a binary directly. Fortran: in-tree the binding tests follow the library's own test switch, so build with `BUILD_TEST=ON` (`BUILD_FORTRAN_CLIENTS` is already ON by default) and run `ctest`; the runtime tests carry the `gpu` label, so `ctest -LE gpu` is meaningful on a machine without a GPU. Python: run `python -m unittest` against `python/hiprand/tests/`.
+* **How to run:** `ctest --output-on-failure`, or run a binary directly. Fortran: in-tree the binding tests follow the library's own test switch, so build with `BUILD_TEST=ON` (`BUILD_FORTRAN_CLIENTS` is already ON by default) and run `ctest`; the Fortran tests carry the `gpu` label, marking them as needing a GPU, so a machine without one can skip them with `ctest -LE gpu`. Python: run `python -m unittest` against `python/hiprand/tests/`.
 * **Reproducibility / seeding:** tests use fixed seeds via `hiprandSetPseudoRandomGeneratorSeed()` for determinism (and `hiprandGenerateSeeds()` where random seeding is exercised); offsets via `hiprandSetGeneratorOffset()` for engines that support them. `HIPRAND_USE_HMM=1` switches test allocations to managed memory.
 * **Not covered by unit tests:** backend engine correctness/statistics themselves (owned by rocRAND/cuRAND), throughput/performance, and the NVIDIA/cuRAND path (not routinely exercised in this repo's CI).
 

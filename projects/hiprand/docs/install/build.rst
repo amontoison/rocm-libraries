@@ -116,9 +116,9 @@ The default build configuration is ``Release``.
 
 Here are the CMake options:
 
-* ``BUILD_FORTRAN_BINDINGS``: Controls whether to build the hipRAND Fortran bindings. Defaults to ``ON``,
-  but is skipped when no Fortran compiler is available. Use ``HIPRAND_BUILD_FORTRAN_BINDINGS`` to override
-  this for hipRAND alone.
+* ``BUILD_FORTRAN_BINDINGS``: Controls whether to build the hipRAND Fortran bindings. Defaults to ``ON``
+  on Linux, ``OFF`` on Windows and with the CUDA backend, but is skipped when no Fortran compiler is
+  available. Use ``HIPRAND_BUILD_FORTRAN_BINDINGS`` to override this for hipRAND alone.
 * ``BUILD_FORTRAN_CLIENTS``: Controls whether to build the hipRAND Fortran clients and binding
   tests. Defaults to ``ON``, but is skipped when the bindings were not built. In an in-tree build
   the tests are GPU test executables and additionally require ``BUILD_TEST``, so they are not built
