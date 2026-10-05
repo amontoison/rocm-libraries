@@ -301,6 +301,14 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   set(_hipfftw_tests OFF)
 endif()
 
+# The uninstrumented Fortran executables cannot link an ASan libhipfft.
+if((_hipfft_tests OR _hipfftw_tests) AND BUILD_ADDRESS_SANITIZER)
+  message(STATUS
+    "hipFFT: address sanitizer is enabled, skipping the Fortran binding tests.")
+  set(_hipfft_tests OFF)
+  set(_hipfftw_tests OFF)
+endif()
+
 if(_hipfft_tests OR _hipfftw_tests)
   # In-tree the root enables testing on the same condition.
   enable_testing()

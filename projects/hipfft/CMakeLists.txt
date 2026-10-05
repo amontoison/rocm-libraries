@@ -99,7 +99,8 @@ set(DEFAULT_GPUS
 )
 
 if(BUILD_ADDRESS_SANITIZER)
-  add_compile_options(-fsanitize=address)
+  # Kept off Fortran; fortran/ skips its tests under ASan, so links no Fortran.
+  add_compile_options($<$<COMPILE_LANGUAGE:C,CXX,HIP>:-fsanitize=address>)
   add_link_options(-fsanitize=address)
   add_link_options(-shared-libasan)
   SET(DEFAULT_GPUS
