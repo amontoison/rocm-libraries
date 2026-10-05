@@ -28,7 +28,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# The tests `use hip`, so hip.mod (rocm-systems, same compiler) is required.
+# Every test but the version one `use hip` (hip.mod: rocm-systems, same compiler).
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -36,8 +36,8 @@ set(_have_hip_binding TRUE)
 if(NOT TARGET hip::hip_fortran)
   set(_have_hip_binding FALSE)
   message(STATUS
-    "hipRAND: no hip::hip_fortran target, skipping the Fortran binding tests "
-    "(they `use hip`). Point CMAKE_PREFIX_PATH at a ROCm whose HIP Fortran "
+    "hipRAND: no hip::hip_fortran target, skipping all but the version test "
+    "(the others `use hip`). Point CMAKE_PREFIX_PATH at a ROCm whose HIP Fortran "
     "bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
@@ -76,7 +76,7 @@ function(hiprand_fortran_add_test name)
     LINKER_LANGUAGE Fortran
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules/${name}")
   target_link_libraries(hiprand_fortran_test_${name} PRIVATE
-    hiprand_fortran hip::hip_fortran hip::hiprand)
+    hiprand_fortran hip::hiprand)
   # EXIT is a GNU extension.
   target_compile_options(hiprand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
@@ -87,7 +87,6 @@ endfunction()
 
 # Log-normal and Poisson do not vary with the generator: philox only.
 set(HIPRAND_FORTRAN_TESTS
-    hiprand_version
     mrg32k3a_normal
     mrg32k3a_normal_double
     mrg32k3a_uniform
@@ -112,23 +111,25 @@ set(HIPRAND_FORTRAN_TESTS
     xorwow_uniform
     xorwow_uniform_double)
 
+hiprand_fortran_add_test(hiprand_version)
+# The version query touches no device.
+set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES LABELS "")
+# In-tree the module must carry this tree's version (hiprandGetVersion
+# reports rocRAND's on ROCm, so the runtime value cannot serve).
+get_target_property(_hiprand_aliased hip::hiprand ALIASED_TARGET)
+if(_hiprand_aliased STREQUAL "hiprand"
+   AND hiprand_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+  math(EXPR _hiprand_code
+       "${CMAKE_MATCH_1} * 100000 + ${CMAKE_MATCH_2} * 100 + ${CMAKE_MATCH_3}")
+  set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES
+                       ENVIRONMENT "HIPRAND_FORTRAN_EXPECTED_VERSION=${_hiprand_code}")
+endif()
+
 if(_have_hip_binding)
   foreach(_t IN LISTS HIPRAND_FORTRAN_TESTS)
     hiprand_fortran_add_test(${_t})
+    target_link_libraries(hiprand_fortran_test_${_t} PRIVATE hip::hip_fortran)
   endforeach()
-
-  # The version query touches no device.
-  set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES LABELS "")
-  # In-tree the module must carry this tree's version (hiprandGetVersion
-  # reports rocRAND's on ROCm, so the runtime value cannot serve).
-  get_target_property(_hiprand_aliased hip::hiprand ALIASED_TARGET)
-  if(_hiprand_aliased STREQUAL "hiprand"
-     AND hiprand_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
-    math(EXPR _hiprand_code
-         "${CMAKE_MATCH_1} * 100000 + ${CMAKE_MATCH_2} * 100 + ${CMAKE_MATCH_3}")
-    set_tests_properties(hiprand_fortran_hiprand_version PROPERTIES
-                         ENVIRONMENT "HIPRAND_FORTRAN_EXPECTED_VERSION=${_hiprand_code}")
-  endif()
 
   # One CTest test: FRUIT reports its own per-case results; it also reaches the
   # entry points the programs above do not (Generate, GenerateSeeds, ...).
@@ -138,4 +139,5 @@ if(_have_hip_binding)
       fruit_helpers.f90
       test_hiprand.f90
       fruit_test_driver_hiprand.f90)
+  target_link_libraries(hiprand_fortran_test_fruit PRIVATE hip::hip_fortran)
 endif()
