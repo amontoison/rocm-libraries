@@ -44,6 +44,11 @@ list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 include(build-options) # library and client
 include(toolchain-options)
 
+# Seen by clients/, where the Fortran clients are built.
+if(DEFINED ROCBLAS_BUILD_FORTRAN_CLIENTS)
+  set(BUILD_FORTRAN_CLIENTS ${ROCBLAS_BUILD_FORTRAN_CLIENTS})
+endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
