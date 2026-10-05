@@ -89,8 +89,8 @@ else()
     endforeach()
     foreach(_rocm_fc_root "${ROCM_PATH}" "$ENV{ROCM_PATH}" "/opt/rocm")
       if(_rocm_fc_root)
-        list(APPEND _rocm_fc_hints "${_rocm_fc_root}/lib/llvm/bin"
-                                   "${_rocm_fc_root}/bin")
+        list(APPEND _rocm_fc_hints "${_rocm_fc_root}/bin"
+                                   "${_rocm_fc_root}/lib/llvm/bin")
       endif()
     endforeach()
     if(_rocm_fc_hints)
