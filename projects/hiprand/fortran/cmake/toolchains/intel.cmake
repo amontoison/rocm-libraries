@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
 #
+# SPDX-License-Identifier: MIT
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -21,7 +23,8 @@
 # SOFTWARE.
 
 # Intel oneAPI toolchain (ifx, the LLVM-based compiler).
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel.cmake
+# Usage, from projects/hiprand/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel.cmake
 
 set(CMAKE_Fortran_COMPILER ifx CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       icx CACHE FILEPATH "C compiler")

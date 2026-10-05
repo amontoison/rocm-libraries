@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2026 Advanced Micro Devices, Inc. All rights reserved.
 #
+# SPDX-License-Identifier: MIT
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -21,7 +23,8 @@
 # SOFTWARE.
 
 # AMD ROCm toolchain (amdflang). The recommended default: amdflang is the LLVM-based Fortran compiler shipped with ROCm.
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/amdflang.cmake
+# Usage, from projects/hiprand/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/amdflang.cmake
 
 set(CMAKE_Fortran_COMPILER amdflang CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       amdclang CACHE FILEPATH "C compiler")
