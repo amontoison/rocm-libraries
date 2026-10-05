@@ -65,7 +65,10 @@ if(_hipsolver_fortran_on AND NOT _hipsolver_host_lapack)
   include(${CMAKE_CURRENT_SOURCE_DIR}/fortran/cmake/ROCmFortranCompiler.cmake)
   rocm_fortran_prefer_amdflang()
 endif()
-if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
+# Only for the clients, which require Fortran: a preset compiler would make fortran/
+# skip its probe and fail on a host without one instead of skipping the bindings.
+if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC}
+   AND (BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS))
   set(CMAKE_Fortran_COMPILER  "gfortran")
 endif()
 unset(_hipsolver_host_lapack)
@@ -134,10 +137,6 @@ option(HIPSOLVER_ENABLE_EIGENSOLVERS_64 "Enable the 64-bit eigensolver API (syev
 
 if(NOT BUILD_SHARED_LIBS)
   add_compile_definitions(HIPSOLVER_STATIC_LIB)
-endif()
-
-if(BUILD_FORTRAN_BINDINGS)
-  enable_language(Fortran)
 endif()
 
 add_library(hipsolver-common INTERFACE)
