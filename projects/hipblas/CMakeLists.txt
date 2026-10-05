@@ -122,19 +122,7 @@ if(NOT SKIP_LIBRARY)
   add_subdirectory(library)
 endif()
 
-# Fortran bindings for hipBLAS, generated from the public headers and committed
-# under fortran/. Self-contained: a Fortran binding declares bind(C) interfaces
-# only, so it compiles against neither the hipBLAS headers nor libhipblas, and
-# this is safe to add unconditionally. The directory does its own guarding and
-# returns quietly when BUILD_FORTRAN_BINDINGS is off or no Fortran compiler was
-# found. It reports back through HIPBLAS_HAVE_FORTRAN_BINDINGS, FALSE in both
-# those cases and TRUE only when the target was really created.
-#
-# Outside the SKIP_LIBRARY guard above on purpose. That guard controls whether
-# libhipblas is built in this tree; the bindings do not need it built, only
-# linked, and libhipblas resolves from the prefix path when the in-tree target
-# is absent. Inheriting the guard would make -DSKIP_LIBRARY=ON silently drop
-# bindings that the build could perfectly well produce and install.
+# Outside the SKIP_LIBRARY guard: the bindings link libhipblas, they do not build it.
 add_subdirectory(fortran)
 
 include( clients/cmake/build-options.cmake )
@@ -148,10 +136,7 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
   endif()
   message(STATUS "OS: ${CLIENTS_OS} ${CLIENTS_OS_VERSION}")
 
-  # Not on BUILD_FORTRAN_CLIENTS alone: clients/ skips its Fortran when the
-  # bindings were not built, and only gfortran-built objects need libgfortran
-  # (amdflang's runtime ships with ROCm). Fortran is enabled in fortran/, so
-  # its compiler ID comes back as HIPBLAS_FORTRAN_COMPILER_ID, empty if unbuilt.
+  # libgfortran only for gfortran-built clients; amdflang's runtime ships with ROCm.
   if(BUILD_FORTRAN_CLIENTS AND HIPBLAS_FORTRAN_COMPILER_ID STREQUAL "GNU")
     set(GFORTRAN_RPM "libgfortran4")
     set(GFORTRAN_DEB "libgfortran4")

@@ -23,34 +23,10 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! TEMPORARY. Delete this file when ROCm/rocm-systems#11923 lands and ROCm ships a
-! HIP Fortran binding. The replacement is one CMake change in
-! clients/CMakeLists.txt: drop this source, find_package(hip-fortran) and link
-! hip::hip_fortran instead. The `use hip` lines in the client shims do NOT
-! change. They simply start resolving to the real module, which declares these
-! same enumerators with these same values.
-!
-! Why it exists. The hand-written hipblas_module.f90 that this series removes
-! defined two modules, hipblas and hipblas_enums, and hipblas_enums re-exported
-! HIP's hipDataType enumerators. The generated hipblas module does not: a
-! hipDataType belongs to HIP, not to hipBLAS, and the generated interfaces type
-! those arguments as plain integer(c_int). That is the right call, but it leaves
-! the client shims in clients/include/hipblas_fortran_blas{,_64}.f90, which
-! declare their datatype arguments as integer(kind(HIP_R_16F)), with no source
-! for the name. 57 scopes across those two files are affected.
-!
-! Build-only, and deliberately so. This module is compiled into
-! hipblas_fortran_client and is NOT installed, NOT exported and NOT packaged, so
-! no second hip.mod can ever appear in an installed prefix and collide with the
-! real HIP binding. The only place the two could coexist is inside this build,
-! where the include order is ours to control.
-!
-! Scope. HIP's sixteen hipDataType enumerators of the contiguous block 0..15, of
-! which the hipBLAS clients use two: HIP_R_16F in the shims and HIP_R_32F in the
-! gemm_ex sample. Values are copied verbatim from the HIP binding, so the swap
-! above is observably a no-op.
-! Deliberately NOT the whole hipDataType enumeration: a partial stub that is
-! obviously a stub is easier to delete than a plausible copy of HIP's.
+! TEMPORARY: delete when ROCm/rocm-systems#11923 ships a HIP Fortran binding.
+! HIP's hipDataType enumerators 0..15 (values from the HIP binding) for the
+! clients' `use hip`. Compiled into hipblas_fortran_client only; never
+! installed, so no second hip.mod reaches a prefix.
 
 module hip
   implicit none

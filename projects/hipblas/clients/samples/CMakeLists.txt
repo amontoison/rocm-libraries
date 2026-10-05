@@ -35,11 +35,7 @@ if( CMAKE_CXX_COMPILER MATCHES ".*/hipcc$" OR CMAKE_CXX_COMPILER MATCHES ".*/amd
   add_executable( hipblas-example-hgemm example_hgemm.cpp ${hipblas_samples_common} )
 endif( )
 
-# BUILD_FORTRAN_CLIENTS as well as the platform. hipblas_fortran_client is built
-# by ../CMakeLists.txt only under that switch, and ../CMakeLists.txt now turns
-# it off by itself when the generated bindings were not built at all, so on
-# NOT WIN32 alone these two lines name a target that does not exist and the
-# generate step fails with nothing to say why.
+# hipblas_fortran_client exists only under BUILD_FORTRAN_CLIENTS.
 if(BUILD_FORTRAN_CLIENTS AND NOT WIN32)
   add_executable( hipblas-example-sscal-fortran example_sscal_fortran.F90 )
   add_executable( hipblas-example-gemmEx-fortran example_gemm_ex_fortran.F90 )

@@ -149,25 +149,8 @@ if( NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." )
 endif()
 
-# The hipblas module is no longer built here from the hand-written
-# ../library/src/hipblas_module.f90: it is generated from the C headers and
-# built by ../fortran, which exports the roc::hipblas_fortran target the shims
-# below link against. Building it twice would also collide, since both targets
-# carry the same name.
-#
-# So the Fortran clients can be built only where that directory produced the
-# target, and BUILD_FORTRAN_CLIENTS merely keeping its ON default is not a
-# request for them: -DBUILD_FORTRAN_BINDINGS=OFF and a site with no Fortran
-# compiler both leave it absent, and neither is a mistake worth stopping the
-# whole configure over. Skip, and say so.
-#
-# This has to run before project() below, not after it: with the target missing
-# because there is no Fortran compiler, ${fortran_language} would ask project()
-# to enable Fortran and the configure would die there, before anything here
-# could explain why. Shadowing BUILD_FORTRAN_CLIENTS as a plain variable is
-# deliberate -- the cache entry is one switch shared by every library in the
-# monorepo -- and it is what every use below, including those in samples/,
-# gtest/ and benchmarks/, reads.
+# hipblas_fortran comes from ../fortran. Checked before project(), which would
+# otherwise try to enable Fortran on a host with no Fortran compiler.
 if ( BUILD_FORTRAN_CLIENTS AND NOT TARGET hipblas_fortran )
   message(STATUS
     "hipBLAS: the Fortran bindings were not built, so the Fortran clients are "
@@ -207,32 +190,11 @@ if( BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES )
       # Set Fortran module output directory
       set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include/hipblas)
 
-      # hipblas_hip_stub is TEMPORARY: remove it when ROCm/rocm-systems#11923
-      # lands. The link to roc::hipblas_fortran stays.
-      #
-      # The shims declare their datatype arguments as integer(kind(HIP_R_16F)),
-      # a hipDataType enumerator that the removed hipblas_enums module used to
-      # re-export. The generated hipblas module does not re-export it: a
-      # hipDataType is HIP's, not hipBLAS's, so 57 scopes across
-      # hipblas_fortran_blas{,_64}.f90 now say `use hip` and need a module to
-      # resolve it against. ROCm does not ship a HIP Fortran binding yet, so one
-      # is compiled here from a stub defining HIP's sixteen hipDataType
-      # enumerators 0..15, of which the clients use two: HIP_R_16F in the shims
-      # and HIP_R_32F in the gemm_ex sample.
-      #
-      # Build-only on purpose: added as a SOURCE of this archive, never
-      # installed, exported or packaged, so no second hip.mod can reach an
-      # installed prefix and collide with the real binding.
-      #
-      # To remove: delete the stub from the source list below and from
-      # ../fortran, then find_package(hip-fortran) and add hip::hip_fortran to
-      # the target_link_libraries() call. The `use hip` lines do not change.
+      # TEMPORARY until ROCm/rocm-systems#11923: the stub supplies module hip's
+      # hipDataType enumerators for the shims. Build-only, never installed. To
+      # remove, drop it here and link hip::hip_fortran; the `use hip` lines stay.
       set(hipblas_hip_stub ${CMAKE_CURRENT_SOURCE_DIR}/../fortran/hip_datatypes_stub.F90)
 
-      # Linking rather than absorbing $<TARGET_OBJECTS:hipblas_fortran>: the
-      # binding is a real library now, with its own .mod directory and link
-      # interface, and hipblas_fortran_client only needs to compile against it and
-      # carry it forward.
       if( BUILD_WITH_SOLVER )
         add_library(hipblas_fortran_client STATIC ${hipblas_f90_source_clients_solver} ${hipblas_hip_stub})
       else()

@@ -195,8 +195,3 @@ else( )
     NAMESPACE roc::
   )
 endif( )
-
-# The Fortran binding is generated from the headers and lives in ../../fortran,
-# which installs its own archive and .mod set. Nothing to install here any more:
-# the hand-written hipblas_module.f90 that used to be shipped as a source file
-# has been superseded and removed.
