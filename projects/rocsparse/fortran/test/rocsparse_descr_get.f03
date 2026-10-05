@@ -46,9 +46,8 @@
 ! rocsparse_dcheck_matrix_csr_buffer_size); both must report
 ! rocsparse_data_status_success.
 !
-! All of the "get" routines now return their scalar outputs through real
-! Fortran scalars, so the variables are passed directly and never wrapped in
-! c_loc.
+! The "get" routines return their outputs through Fortran scalars, passed
+! directly rather than through c_loc.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
 ! data is moved with hipMemcpy + c_loc.

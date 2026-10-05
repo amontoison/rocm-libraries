@@ -44,7 +44,7 @@ program rocsparse_ddoti_test
     integer(c_int) :: M, nnz
 
     type(c_ptr) :: handle
-  
+
     write(*,"(a)",advance="no") "-- Running test 'ddoti' (Fortran 2003 interfaces) - "
 
 !   Input data

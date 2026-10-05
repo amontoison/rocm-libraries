@@ -67,28 +67,8 @@ if(NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 endif()
 
-if ( NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC} )
-  set( CMAKE_Fortran_COMPILER "gfortran" )
-endif()
-
-# The Fortran binding is no longer built here from hand-written sources: it is
-# generated from the C headers and built by ../fortran, which exports the
-# roc::rocsparse_fortran target the samples link against. Building it twice
-# would also collide, since both targets carry the same name.
-#
-# So the Fortran clients can be built only where that directory produced the
-# target, and BUILD_FORTRAN_CLIENTS merely keeping its ON default is not a
-# request for them: -DBUILD_FORTRAN_BINDINGS=OFF, a site with no Fortran
-# compiler, and -DBUILD_ROCSPARSE_ILP64=ON all leave it absent, and none of the
-# three is a mistake worth stopping the whole configure over. Skip, and say so.
-#
-# This has to run before project() below, not after it: with the target missing
-# because there is no Fortran compiler, ${fortran_language} would ask project()
-# to enable Fortran and the configure would die there, before anything here
-# could explain why. Shadowing BUILD_FORTRAN_CLIENTS as a plain variable is
-# deliberate -- the cache entry is one switch shared by every library in the
-# monorepo -- and it is what every use below, including the one in samples/,
-# reads.
+# Before project(): without the target, enabling Fortran there would fail.
+# BUILD_FORTRAN_CLIENTS is shadowed, not written back to the shared cache entry.
 if ( BUILD_FORTRAN_CLIENTS AND NOT TARGET rocsparse_fortran )
   message(STATUS
     "rocSPARSE: the Fortran bindings were not built, so the Fortran clients are "

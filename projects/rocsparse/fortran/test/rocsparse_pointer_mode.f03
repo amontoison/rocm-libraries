@@ -23,7 +23,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Exercises rocsparse_get_pointer_mode, whose 'pointer_mode' argument is now a
+! Exercises rocsparse_get_pointer_mode, whose 'pointer_mode' argument is a
 ! plain output scalar (passed directly, not through c_loc).
 !
 ! The test performs three round trips on a freshly created handle:

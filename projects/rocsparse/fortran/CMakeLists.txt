@@ -66,7 +66,8 @@ if(BUILD_ROCSPARSE_ILP64)
   return()
 endif()
 
-# The monorepo root probes once; ROCM_LIBS_HAVE_FORTRAN is the legacy spelling.
+# ROCM_LIBS_HAVE_FORTRAN is the root's current name; drop it once the root
+# publishes ROCM_HAVE_FORTRAN.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)

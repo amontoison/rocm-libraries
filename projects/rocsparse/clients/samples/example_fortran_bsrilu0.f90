@@ -130,10 +130,7 @@ program example_fortran_bsrilu0
 
     integer(c_int) :: version
 
-!   rocsparse_get_git_rev takes a char*, so the binding takes a type(c_ptr) and
-!   the destination is an interoperable character array rather than a Fortran
-!   string. rocsparse_get_git_rev writes the NUL-terminated revision string;
-!   the buffer matches the 64 bytes the C clients use.
+!   NUL-terminated C string; 64 bytes, as in the C clients.
     character(kind=c_char), target :: rev_buf(64)
     character(len=12) :: rev
 
@@ -181,9 +178,7 @@ program example_fortran_bsrilu0
 
 !   Get rocSPARSE version
     call ROCSPARSE_CHECK(rocsparse_get_version(handle, version))
-!   Zero-fill first: the C side writes only as many bytes as the revision needs,
-!   and the transfer below copies a fixed 12, so any byte it does not write must
-!   already hold a NUL rather than whatever was on the stack.
+!   Pre-fill so the 12-byte copy below stops at a NUL.
     rev_buf = c_null_char
     call ROCSPARSE_CHECK(rocsparse_get_git_rev(handle, c_loc(rev_buf)))
     rev = transfer(rev_buf(1:len(rev)), rev)
