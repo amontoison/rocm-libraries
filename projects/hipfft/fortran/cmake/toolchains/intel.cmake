@@ -23,7 +23,8 @@
 # ############################################################################
 
 # Intel oneAPI toolchain (ifx, the LLVM-based compiler).
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel.cmake
+# Usage, from projects/hipfft/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel.cmake
 
 set(CMAKE_Fortran_COMPILER ifx CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       icx CACHE FILEPATH "C compiler")

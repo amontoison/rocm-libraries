@@ -9,7 +9,7 @@ Documentation for hipFFT is available at
 
 * Generated Fortran bindings, as two independent modules: `use hipfft` and link
   `hip::hipfft_fortran` for the hipFFT API, or `use hipfftw` and link `hip::hipfftw_fortran` for the
-  FFTW compatibility API. A program on the FFTW surface never touches the hipFFT binding.
+  FFTW compatibility API.
   Controlled by `BUILD_FORTRAN_BINDINGS` (on by default on Linux, off on Windows and on the CUDA
   backend), `BUILD_FORTRAN_CLIENTS` and `FORTRAN_ARRAY_INTERFACES` (`assumed-shape` by
   default; `none` or `assumed-rank`); the `HIPFFT_*` and `HIPFFTW_*` spellings of the first two

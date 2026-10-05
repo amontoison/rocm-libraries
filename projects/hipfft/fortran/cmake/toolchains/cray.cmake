@@ -22,8 +22,9 @@
 # THE SOFTWARE.
 # ############################################################################
 
-# Cray toolchain. ftn and cc are the Cray compiler wrappers, which select the underlying compiler from the loaded PrgEnv module.
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/cray.cmake
+# Cray toolchain (ftn and cc wrappers; the loaded PrgEnv module picks the compiler).
+# Usage, from projects/hipfft/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/cray.cmake
 
 set(CMAKE_Fortran_COMPILER ftn CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       cc CACHE FILEPATH "C compiler")

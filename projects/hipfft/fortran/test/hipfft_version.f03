@@ -23,20 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Demonstrates the hipFFT library version queries hipfftGetVersion and
-! hipfftGetProperty.
-!
-! Both take their output argument as a plain Fortran scalar by reference
-! (integer(c_int) :: version, integer(c_int) :: myValue), so the variables are
-! passed DIRECTLY, not via c_loc.
-!
-! Both calls report the version of the backend FFT library (rocFFT, or cuFFT),
-! not of hipFFT itself, and hipfftGetProperty is derived from hipfftGetVersion,
-! so this checks the binding rather than the library: every output is poisoned
-! with -12345 beforehand, so a binding that never writes through is caught, and
-! the packed hipfftGetVersion code must equal major*10000 + minor*100 + patch
-! from hipfftGetProperty, so a binding that passes the property selector or the
-! output argument wrongly is caught. Any mismatch prints "FAILED! ..." and STOP 1.
+! Both calls report the backend's version (rocFFT or cuFFT), so this checks the
+! binding: outputs are poisoned, and the packed code must match the triple.
 program hipfft_version
   use iso_c_binding
   use hip

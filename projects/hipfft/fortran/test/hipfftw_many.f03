@@ -23,18 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! =============================================================================
-! GPU hipfftw test for the *_many interfaces
-! =============================================================================
-!
-! This program validates hipFFTW's fftw_plan_many_dft, fftw_plan_many_dft_r2c,
-! and fftw_plan_many_dft_c2r wrappers using GPU device memory.
-!
-! KEY CONVENTION: These are the generated bindings to the FFTW C API, which
-! takes dimensions in C order (last index fastest, row-major) and does NOT
-! reverse them. For a Fortran array z(NX, NY) with NX fastest, pass the
-! reversed dimension list n = [NY, NX] (and likewise for the embed arrays).
-! =============================================================================
+! fftw_plan_many_dft{,_r2c,_c2r} on device memory. The C API takes dimensions
+! in C order: for a Fortran z(NX, NY), pass n = [NY, NX] (likewise the embeds).
 program hipfftw_many_test
   use iso_c_binding
   use hip
@@ -81,13 +71,8 @@ contains
     end if
   end subroutine
 
-  ! ===========================================================================
-  ! 1D C2C, interleaved batches (batch-major layout)
-  ! N=8, howmany=3, istride=howmany=3, idist=1
-  ! Data layout: in(j*3+b+1) = signal(j) for transform b, element j
-  ! Signal: x[j] = exp(2*pi*i*j/N) + 2*exp(2*pi*i*3*j/N)
-  ! Expected DFT: X[1]=N, X[3]=2N, rest 0
-  ! ===========================================================================
+  ! 1D C2C, interleaved batches (istride = howmany, idist = 1).
+  ! x[j] = exp(2*pi*i*j/N) + 2*exp(2*pi*i*3*j/N): X[1] = N, X[3] = 2N, rest 0.
   subroutine test_1d_c2c_interleaved(nfail)
     integer, intent(inout) :: nfail
     integer(c_int), parameter :: N = 8, howmany = 3
@@ -144,17 +129,8 @@ contains
     deallocate(hx, hresult)
   end subroutine
 
-  ! ===========================================================================
-  ! 2D C2C with padded embed (embed != n)
-  ! NX=4 (fast in Fortran), NY=6 (slow), LDX=8 (padded), howmany=2
-  ! Fortran array: z(LDX, NY, howmany), transform z(1:NX, 1:NY, :)
-  !
-  ! Generated bindings call the FFTW C API directly (no dimension reversal),
-  ! so pass dimensions in C order: n=[NY,NX], inembed=[NY,LDX].
-  !
-  ! Signal: z(ix,iy) = exp(2*pi*i*(ix-1)/NX) * exp(2*pi*i*2*(iy-1)/NY)
-  ! Expected 2D DFT (0-indexed): Z(kx=1,ky=2) = NX*NY, rest 0
-  ! ===========================================================================
+  ! 2D C2C on z(1:NX, 1:NY, :) of z(LDX, NY, howmany): n = [NY, NX],
+  ! inembed = [NY, LDX]. A single mode: Z(kx=1, ky=2) = NX*NY, rest 0.
   subroutine test_2d_c2c_padded_embed(nfail)
     integer, intent(inout) :: nfail
     integer(c_int), parameter :: NX = 4, NY = 6, LDX = 8, howmany = 2
@@ -217,11 +193,7 @@ contains
     deallocate(hx, hresult)
   end subroutine
 
-  ! ===========================================================================
-  ! 1D C2R round-trip: c2r(r2c(x)) = N * x
-  ! Tests both fftw_plan_many_dft_r2c and fftw_plan_many_dft_c2r.
-  ! Uses random real input (any real signal is valid for R2C).
-  ! ===========================================================================
+  ! 1D R2C then C2R round trip on random input: c2r(r2c(x)) = N * x.
   subroutine test_1d_c2r_roundtrip(nfail)
     integer, intent(inout) :: nfail
     integer(c_int), parameter :: N = 16, Nc = N/2+1, howmany = 3
@@ -273,10 +245,7 @@ contains
     deallocate(hx, hresult)
   end subroutine
 
-  ! ===========================================================================
-  ! 1D C2C: many_dft vs individual dft_1d per batch on GPU
-  ! Uses random complex input (any complex signal is valid for C2C).
-  ! ===========================================================================
+  ! 1D C2C on random input: plan_many_dft against one dft_1d per batch.
   subroutine test_many_vs_individual_c2c(nfail)
     integer, intent(inout) :: nfail
     integer(c_int), parameter :: N = 16, howmany = 5

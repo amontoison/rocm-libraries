@@ -91,7 +91,7 @@ if(BUILD_WITH_LIB STREQUAL "CUDA")
     "hipFFT: the Fortran bindings were requested on the CUDA backend. "
     "hipfft.F90 and hipfftw.F90 are generated from the ROCm code path and are "
     "not tested against a cuFFT-backed libhipfft, which is why they are off by "
-    "default there. Building them is supported; vouching for them is not.")
+    "default there.")
 endif()
 
 # ROCM_LIBS_HAVE_FORTRAN is the root's current name; drop it once the root
