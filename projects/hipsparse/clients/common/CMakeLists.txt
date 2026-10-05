@@ -87,9 +87,7 @@ if(HIPSPARSE_ENABLE_FORTRAN AND HIPSPARSE_ENABLE_HOST)
     add_library(hipsparse-fortran-samples-common INTERFACE)
     add_library(hipsparse::fortran-samples-common ALIAS hipsparse-fortran-samples-common)
     
-    # roc::hipsparse_fortran carries both the .mod include directory and the
-    # archive, so the samples no longer compile the binding themselves. Built by
-    # projects/hipsparse/fortran, which is added before clients.
+    # Built by ../fortran, which is added before clients.
     target_link_libraries(hipsparse-fortran-samples-common
         INTERFACE
             hipsparse::samples-common
