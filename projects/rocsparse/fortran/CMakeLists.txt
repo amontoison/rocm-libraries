@@ -54,6 +54,11 @@ set(FORTRAN_ARRAY_INTERFACES "assumed-shape" CACHE STRING
 set_property(CACHE FORTRAN_ARRAY_INTERFACES PROPERTY STRINGS
              none assumed-shape assumed-rank)
 
+# Standalone, PARENT_SCOPE at top level fails under -Werror=dev.
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(ROCSPARSE_HAVE_FORTRAN_BINDINGS FALSE PARENT_SCOPE)
+endif()
+
 if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
@@ -155,6 +160,10 @@ endif()
 add_library(rocsparse_fortran STATIC rocsparse.F90)
 
 add_library(roc::rocsparse_fortran ALIAS rocsparse_fortran)
+
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(ROCSPARSE_HAVE_FORTRAN_BINDINGS TRUE PARENT_SCOPE)
+endif()
 
 # A .mod is compiler-specific, so artifacts install per compiler, named as the
 # user types it. Must match the mapping in rocsparse-fortran-config.cmake.in.
