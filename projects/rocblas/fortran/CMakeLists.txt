@@ -53,8 +53,8 @@ if(NOT BUILD_FORTRAN_BINDINGS)
   return()
 endif()
 
-# ROCM_HAVE_FORTRAN is the monorepo root's one probe (ROCM_LIBS_HAVE_FORTRAN its
-# legacy spelling); the local probe is for standalone builds.
+# ROCM_LIBS_HAVE_FORTRAN is the root's current name; drop it once the root
+# publishes ROCM_HAVE_FORTRAN.
 if(DEFINED ROCM_HAVE_FORTRAN)
   set(_have_fortran ${ROCM_HAVE_FORTRAN})
 elseif(DEFINED ROCM_LIBS_HAVE_FORTRAN)
