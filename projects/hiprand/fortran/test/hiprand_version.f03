@@ -23,23 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Demonstrates hiprandGetVersion, the hipRAND library version query.
-!
-! 'version' is an OUTPUT scalar: the binding declares it as a bare
-! 'integer(c_int)' dummy, so the variable is passed directly (no c_loc).
-!
-! The test poisons both result variables with a sentinel, then:
-!   * checks the sentinel was overwritten, proving the library really wrote
-!     through the by-reference dummy;
-!   * checks the version code is positive and decodes (major/minor/patch, per
-!     the encoding documented in hiprand_version.h) into a plausible range;
-!   * calls the query a second time and requires the same answer, so the
-!     result is a stable readback and not a stack address or stale slot.
-!
-! The runtime value is NOT compared against the module's HIPRAND_VERSION:
-! hipRAND on ROCm reports the underlying rocRAND version. Instead, in-tree CMake
-! passes this tree's version in HIPRAND_FORTRAN_EXPECTED_VERSION, and the
-! module's HIPRAND_VERSION constant must equal it (a stale binding fails).
+! hipRAND on ROCm reports rocRAND's version, so the module's HIPRAND_VERSION is
+! checked against HIPRAND_FORTRAN_EXPECTED_VERSION (set in-tree) instead.
 program hiprand_version_test
 
     use iso_c_binding
@@ -60,7 +45,6 @@ program hiprand_version_test
     version  = poison
     version2 = poison
 
-    ! Output scalar passed directly -- the dummy is 'integer(c_int) :: version'.
     call hiprandCheck(hiprandGetVersion(version))
     call hiprandCheck(hiprandGetVersion(version2))
 
