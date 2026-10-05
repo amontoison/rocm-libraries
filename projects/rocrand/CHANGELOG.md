@@ -25,7 +25,7 @@ Documentation for rocRAND is available at
   `BUILD_FORTRAN_WRAPPER` option, deprecated in favour of hipfort in rocRAND 4.0.0 and never
   shipped enabled. Builds passing `-DBUILD_FORTRAN_WRAPPER=ON` should switch to `use rocrand`.
 * The hand-written HIP Fortran modules under `library/src/fortran/hip/` (`hip_nvcc_m.f90`,
-  `hip_rocm_m.f90`), which shipped alongside that wrapper.
+  `hip_rocm_m.f90`), which lived alongside that wrapper.
 * `find_package(rocrand)` no longer sets `rocrand_FORTRAN_FOUND`, `rocrand_FORTRAN_SRC_DIR` or
   `rocrand_FORTRAN_SRC_DIRS`; use `find_package(rocrand-fortran)`, which sets
   `rocrand_FORTRAN_FOUND`.
