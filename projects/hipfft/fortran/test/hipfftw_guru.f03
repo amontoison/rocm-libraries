@@ -33,9 +33,10 @@ program hipfftw_guru_test
   integer(c_int), parameter :: N = 16, HOWMANY = 3
   integer(c_size_t), parameter :: Nbytes = N * HOWMANY * 16  ! sizeof(double complex) = 16
   double precision, parameter :: pi = 4.0d0 * atan(1.0d0)
-  double precision, parameter :: tol = 1.0d-10
+  double precision, parameter :: tol = 1.0d-10, tol_s = 1.0d-5
 
   complex(c_double_complex), allocatable, target, dimension(:) :: hx, hresult
+  complex(c_float_complex), allocatable, target, dimension(:) :: hxs, hresults
   type(c_ptr) :: dx = c_null_ptr, dy = c_null_ptr
   type(c_ptr) :: plan = c_null_ptr
   type(fftw_iodim) :: dims(1), howmany_dims(1)
@@ -64,6 +65,7 @@ program hipfftw_guru_test
   howmany_dims(1) = fftw_iodim(HOWMANY, N, N)  ! n=HOWMANY, is=N, os=N
   ! dims and howmany_dims are arrays of rank and howmany_rank fftw_iodim; the
   ! dummies are assumed-size type(fftw_iodim) :: dims(*), so pass the arrays.
+  ! The fftwf_ planner below takes the same arrays (fftwf_iodim is fftw_iodim).
   plan = fftw_plan_guru_dft(1, dims, 1, howmany_dims, &
       dx, dy, FFTW_FORWARD, FFTW_ESTIMATE)
   call fftw_execute_dft(plan, dx, dy)
@@ -90,9 +92,46 @@ program hipfftw_guru_test
     call exit(1)
   end if
 
+  ! Same transform in single precision through fftwf_plan_guru_dft. The buffers
+  ! are reused: the single-precision data takes half the bytes.
+  allocate(hxs(N*HOWMANY), hresults(N*HOWMANY))
+  hxs = cmplx(hx, kind=c_float_complex)
+  hresults = cmplx(-1.0, -1.0, kind=c_float_complex)
+  call hipCheck(hipMemcpy(dx, c_loc(hxs(1)), Nbytes / 2, hipMemcpyHostToDevice))
+  call hipCheck(hipMemcpy(dy, c_loc(hresults(1)), Nbytes / 2, hipMemcpyHostToDevice))
+
+  plan = fftwf_plan_guru_dft(1, dims, 1, howmany_dims, &
+      dx, dy, FFTW_FORWARD, FFTW_ESTIMATE)
+  if (.not. c_associated(plan)) then
+    write(*,*) "FAILED! fftwf_plan_guru_dft returned a null plan"
+    call exit(1)
+  end if
+  call fftwf_execute_dft(plan, dx, dy)
+  call fftwf_destroy_plan(plan)
+
+  call hipCheck(hipMemcpy(c_loc(hresults(1)), dy, Nbytes / 2, hipMemcpyDeviceToHost))
+
+  max_error = 0.0d0
+  do b = 0, HOWMANY-1
+    do k = 0, N-1
+      if (k == b+1) then
+        expected = cmplx(dble(N), 0.0d0, kind=c_double_complex)
+      else
+        expected = cmplx(0.0d0, 0.0d0, kind=c_double_complex)
+      end if
+      error = abs(cmplx(hresults(b*N + k + 1), kind=c_double_complex) - expected)
+      if (max_error == max_error .and. .not. (error <= max_error)) max_error = error  ! keeps a NaN
+    end do
+  end do
+
+  if (.not. (max_error <= tol_s * dble(N))) then
+    write(*,*) "FAILED! single-precision max error = ", max_error
+    call exit(1)
+  end if
+
   call hipCheck(hipFree(dx))
   call hipCheck(hipFree(dy))
-  deallocate(hx, hresult)
+  deallocate(hx, hresult, hxs, hresults)
 
   write(*,*) "PASSED!"
 end program hipfftw_guru_test
