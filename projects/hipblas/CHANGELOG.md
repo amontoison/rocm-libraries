@@ -33,8 +33,9 @@ Documentation for hipBLAS is available at
   same convention.
 * On the CUDA backend the Fortran gtests, benchmark and samples are no longer built by default,
   since the bindings are OFF there: pass `-DBUILD_FORTRAN_BINDINGS=ON` to keep them.
-* `rmake.py` builds use ROCm's `amdflang` for Fortran when present, falling back to `gfortran`;
-  the client packages depend on `libgfortran` only when `gfortran` built them.
+* The default Fortran compiler is now ROCm's `amdflang` when the Fortran bindings are built and the
+  test and benchmark clients are not. It stays `gfortran` when those clients are built, since they
+  link the host LAPACK; the client packages depend on `libgfortran` only when `gfortran` built them.
 
 ### Removed
 
