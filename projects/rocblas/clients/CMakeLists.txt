@@ -73,23 +73,8 @@ if ( NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC} )
   set( CMAKE_Fortran_COMPILER "gfortran" )
 endif()
 
-# The Fortran binding is no longer built here from the hand-written
-# ../library/include/rocblas_module.f90: it is generated from the C headers and
-# built by ../fortran, which exports roc::rocblas_fortran. Building it twice
-# would also collide, since both targets carry the same name.
-#
-# So the Fortran clients can be built only where that directory produced the
-# target, and BUILD_FORTRAN_CLIENTS merely keeping its ON default is not a
-# request for them: -DBUILD_FORTRAN_BINDINGS=OFF and a host with no Fortran
-# compiler both leave it absent, and neither is a mistake worth stopping the
-# whole configure over. Skip, and say so.
-#
-# This has to run before project() below, not after it: with no Fortran compiler
-# on the host, ${fortran_language} would ask project() to enable Fortran and the
-# configure would die there, before anything here could explain why. Shadowing
-# BUILD_FORTRAN_CLIENTS as a plain variable is deliberate -- the cache entry is
-# one switch shared by every library in the monorepo -- and it is what every use
-# below, including those in gtest/, benchmarks/ and samples/, reads.
+# rocblas_fortran comes from ../fortran. Checked before project(), which would
+# otherwise try to enable Fortran on a host with no Fortran compiler.
 if ( BUILD_FORTRAN_CLIENTS AND NOT TARGET rocblas_fortran )
   message(STATUS
     "rocBLAS: the Fortran bindings were not built, so the Fortran clients are "
@@ -119,9 +104,6 @@ if ( BUILD_FORTRAN_CLIENTS )
     list( APPEND rocblas_f90_source_clients include/rocblas_fortran_tensile.f90 )
   endif()
 
-  # Linking rather than absorbing $<TARGET_OBJECTS:rocblas_fortran>: the binding
-  # is a real library now, with its own .mod directory and link interface, and
-  # rocblas_fortran_client only needs to compile against it and carry it forward.
   add_library(rocblas_fortran_client STATIC ${rocblas_f90_source_clients})
   target_link_libraries(rocblas_fortran_client PUBLIC roc::rocblas_fortran)
 else()

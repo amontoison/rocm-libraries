@@ -106,10 +106,6 @@ target_link_libraries(rocblas PRIVATE rocblas-helper roc::tensile-host rocblas-i
 if(ROCBLAS_ENABLE_FORTRAN)
   add_library(rocblas-fortran-module OBJECT)
   add_library(rocblas::rocblas-fortran-module ALIAS rocblas-fortran-module)
-  # The hand-written include/rocblas_module.f90 was removed; this builds the
-  # generated binding instead. It is the same module name (rocblas), so the
-  # clients that `use rocblas` are unaffected, but the enum constants now come
-  # from it rather than from a separate rocblas_enums module.
   target_sources(
     rocblas-fortran-module
     PRIVATE
@@ -121,12 +117,7 @@ if(ROCBLAS_ENABLE_FORTRAN)
     # guards, so the source must go through the C preprocessor.
     Fortran_PREPROCESS ON
     POSITION_INDEPENDENT_CODE ON)
-  # The per-rank array overloads, matching the assumed-shape default of
-  # ../fortran and so the surface the bindings shipped in ROCm are built with.
-  # USE_ASSUMED_RANK is the F2018 alternative and replaces this one rather than
-  # adding to it. Exactly one is defined here; both regions of rocblas.F90 test
-  # USE_ASSUMED_RANK ahead of USE_ASSUMED_SHAPE, so defining both would compile
-  # but would quietly give assumed-rank.
+  # Same tier as ../fortran's default; define only one of USE_ASSUMED_SHAPE/RANK.
   target_compile_definitions(rocblas-fortran-module PRIVATE USE_ASSUMED_SHAPE=1)
 
   target_include_directories(rocblas-fortran-module

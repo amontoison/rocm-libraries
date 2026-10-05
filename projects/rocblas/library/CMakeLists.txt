@@ -259,11 +259,6 @@ add_subdirectory( src )
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/library/include ${PROJECT_BINARY_DIR}/include/rocblas)
 
-# The Fortran binding is generated from the headers above and lives in
-# ../fortran, which installs its own archive and .mod set. Nothing to install
-# here any more: the hand-written include/rocblas_module.f90 that used to be
-# shipped as a source file has been superseded and removed.
-
 ############################################################
 # Packaging
 
