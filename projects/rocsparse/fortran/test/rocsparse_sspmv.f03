@@ -67,7 +67,7 @@ program sspmv
   integer(c_size_t) :: buffer_size
 
   real :: error
-  real, parameter :: error_max = 1.0e-4
+  real, parameter :: error_max = 10 * epsilon(error_max)
 
   write(*,"(a)",advance="no") "-- Running test 'rocsparse_sspmv' (Fortran 2003 interfaces) - "
 

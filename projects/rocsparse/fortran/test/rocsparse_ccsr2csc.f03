@@ -68,9 +68,6 @@ program ccsr2csc
   type(c_ptr) :: handle, d_buffer
   integer(c_size_t) :: buffer_size
 
-  real :: error
-  real, parameter :: error_max = 1.0e-4
-
   write(*,"(a)",advance="no") "-- Running test 'rocsparse_ccsr2csc' (Fortran 2003 interfaces) - "
 
   ! Allocate device memory and copy the CSR matrix to device
@@ -116,8 +113,8 @@ program ccsr2csc
         write(*,*) "FAILED! csc_row_ind(", i, ") = ", h_csc_row_ind(i), " expected ", h_exp_row_ind(i)
         call exit(1)
     end if
-    error = abs(h_csc_val(i) - h_exp_val(i))
-    if(.not. (error .le. error_max)) then
+    ! A permutation: the values must come back bit for bit.
+    if(h_csc_val(i) /= h_exp_val(i)) then
         write(*,*) "FAILED! csc_val(", i, ") = ", h_csc_val(i), " expected ", h_exp_val(i)
         call exit(1)
     end if

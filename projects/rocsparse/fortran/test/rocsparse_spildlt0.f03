@@ -95,6 +95,8 @@ program spildlt0
   call hipCheck(hipDeviceSynchronize())
 
   call rocsparseCheck(rocsparse_set_pointer_mode(handle, rocsparse_pointer_mode_host))
+  ! Not a singularity value, so a getter that writes nothing fails the check.
+  sing = -1
   call rocsparseCheck(rocsparse_spildlt0_get_output(handle, descr, rocsparse_spildlt0_output_singularity, &
        c_loc(sing), int(c_sizeof(sing),c_size_t)))
 

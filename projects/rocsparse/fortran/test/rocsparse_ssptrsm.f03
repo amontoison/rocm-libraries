@@ -72,7 +72,7 @@ program ssptrsm
   integer(c_size_t) :: buffer_size
 
   real :: error
-  real, parameter :: error_max = 1.0e-4
+  real, parameter :: error_max = 100 * epsilon(error_max)
 
   write(*,"(a)",advance="no") "-- Running test 'rocsparse_ssptrsm' (Fortran 2003 interfaces) - "
 
