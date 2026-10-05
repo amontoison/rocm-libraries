@@ -22,8 +22,9 @@
 # THE SOFTWARE.
 # #############################################################################
 
-# Classic Intel toolchain (ifort). Deprecated by Intel in favour of ifx; kept for sites still pinned to it.
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel-classic.cmake
+# Classic Intel toolchain (ifort, deprecated by Intel in favour of ifx).
+# Usage, from projects/rocfft/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/intel-classic.cmake
 
 set(CMAKE_Fortran_COMPILER ifort CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       icx CACHE FILEPATH "C compiler")

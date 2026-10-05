@@ -93,9 +93,7 @@ program rocfft_work_buffer_z
                                       one,&
                                       c_null_ptr))
 
-  ! Ask each plan how much scratch memory it needs. rocFFT allocates the work
-  ! buffer itself when none is supplied; providing one explicitly lets the
-  ! application control its lifetime and share a single buffer between plans.
+  ! One explicit work buffer, shared by both plans.
   call rocfftCheck(rocfft_plan_get_work_buffer_size(plan_fwd, work_fwd))
   call rocfftCheck(rocfft_plan_get_work_buffer_size(plan_bwd, work_bwd))
   work_bytes = max(work_fwd, work_bwd)

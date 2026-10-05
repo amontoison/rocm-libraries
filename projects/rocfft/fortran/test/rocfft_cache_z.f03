@@ -23,10 +23,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Demonstrates the compiled-kernel cache described in the rocFFT
-! "Runtime compilation" guide: rocFFT compiles the kernels a plan needs when the
-! plan is created, and the resulting cache can be serialized, moved and loaded
-! back into another process.
+! Serializes the runtime-compiled kernel cache and loads it back.
 program rocfft_cache_z
   use iso_c_binding
   use hip
@@ -85,9 +82,7 @@ program rocfft_cache_z
                                       one,&
                                       c_null_ptr))
 
-  ! Copy the cache into a buffer that rocFFT allocates. The buffer address is
-  ! written to the first argument, its size in bytes to the second, an
-  ! integer(c_size_t) passed by reference.
+  ! rocFFT allocates the buffer; its size comes back by reference.
   call rocfftCheck(rocfft_cache_serialize(cache, cache_bytes))
   if (.not. c_associated(cache) .or. cache_bytes == 0) then
      write(*,*) "FAILED! empty kernel cache"
@@ -95,9 +90,6 @@ program rocfft_cache_z
      STOP 1
   end if
 
-  ! The buffer can be written to a file and loaded in another process. Loading
-  ! it back replaces matching kernels and leaves the rest of the cache alone,
-  ! so plans created afterwards reuse the kernels instead of recompiling them.
   call rocfftCheck(rocfft_cache_deserialize(cache, cache_bytes))
 
   ! The buffer belongs to the caller once it has been handed out.

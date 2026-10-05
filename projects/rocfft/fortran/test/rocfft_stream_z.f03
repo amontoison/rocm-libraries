@@ -81,9 +81,8 @@ program rocfft_stream_z
   end do
   hx_input(:,:) = hx(:,:)
 
-  ! Preparation: one buffer, one stream, one execution info and two plans per
-  ! transform. The stream is carried by the execution info handle, which is
-  ! then passed to every rocfft_execute call that should use that stream.
+  ! Per transform: one buffer, stream, execution info (carrying the stream)
+  ! and two plans.
   do k = 1, Nfft
      call hipCheck(hipMalloc(ffts(k)%buf, Nbytes))
      call hipCheck(hipMemcpy(ffts(k)%buf, c_loc(hx(1,k)), Nbytes, hipMemcpyHostToDevice))

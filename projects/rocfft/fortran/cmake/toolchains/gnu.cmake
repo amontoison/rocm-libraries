@@ -23,7 +23,8 @@
 # #############################################################################
 
 # GNU toolchain (gfortran).
-# Usage: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/gnu.cmake
+# Usage, from projects/rocfft/fortran:
+#   cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/gnu.cmake
 
 set(CMAKE_Fortran_COMPILER gfortran CACHE FILEPATH "Fortran compiler")
 set(CMAKE_C_COMPILER       gcc CACHE FILEPATH "C compiler")

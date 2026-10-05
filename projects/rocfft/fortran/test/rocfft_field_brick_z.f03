@@ -71,7 +71,6 @@ program rocfft_field_brick_z
   write(*,"(a)",advance="no") &
     "-- Running test 'rocFFT field/brick 2D z' (Fortran 2003 interfaces) - "
 
-  ! Mandatory guard: need at least 2 GPUs
   call hipCheck(hipGetDeviceCount(ndev))
   if (ndev < 2_c_int) then
     write(*,*) "SKIPPED (requires 2 GPUs)"
@@ -225,7 +224,6 @@ program rocfft_field_brick_z
     deallocate(hbuf)
   end do
 
-  ! Teardown in sample order: info, description, plan, cleanup, buffers
   if (c_associated(planinfo)) &
     call rocfftCheck(rocfft_execution_info_destroy(planinfo))
   call rocfftCheck(rocfft_plan_description_destroy(description))

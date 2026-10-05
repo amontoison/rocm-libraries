@@ -23,9 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Demonstrates rocfft_plan_description_set_scale_factor, described in the
-! rocFFT "Working with rocFFT" guide: fold the 1/N normalization into the
-! transform instead of scaling the result with a separate kernel.
+! The 1/N normalization is folded into the transform with
+! rocfft_plan_description_set_scale_factor.
 program rocfft_scale_factor_z
   use iso_c_binding
   use hip

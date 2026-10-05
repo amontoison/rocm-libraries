@@ -23,10 +23,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Demonstrates rocfft_plan_get_print, the plan introspection helper described in
-! the rocFFT "Working with rocFFT" guide. It writes a human-readable summary of
-! a plan to stdout, which is the quickest way to check how rocFFT interpreted
-! the lengths, strides and distances of a plan description.
+! rocfft_plan_get_print writes a summary of the plan to stdout.
 program rocfft_plan_print_z
   use iso_c_binding
   use iso_fortran_env, only: output_unit
