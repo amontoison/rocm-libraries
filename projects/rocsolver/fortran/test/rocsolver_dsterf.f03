@@ -61,7 +61,7 @@ program dsterf
 
   ! Allocate device-side memory
   call hipCheck(hipMalloc(dD, size_D * 8))
-  call hipCheck(hipMalloc(dE, size_E * 8)) 
+  call hipCheck(hipMalloc(dE, size_E * 8))
   call hipCheck(hipMalloc(dInfo, size_Info * 4))
 
   ! Create rocBLAS handle
@@ -105,5 +105,5 @@ program dsterf
   do i = 1,n
     write(*,*) hD(i)
   end do
-  
+
 end program dsterf

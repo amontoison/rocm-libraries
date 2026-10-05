@@ -23,29 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!
-! rocSOLVER library version query (Fortran 2003 interfaces)
-!
-! Exercises the pair rocsolver_get_version_string_size / rocsolver_get_version_string.
-!
-! rocsolver_get_version_string_size declares its `len` dummy as a bare
-! `integer(c_size_t)` (by reference), so the Fortran variable is passed
-! DIRECTLY -- not wrapped in c_loc. The test seeds that variable with the
-! sentinel -1 and checks it really was written through, which is exactly the
-! regression an incorrect out-argument classification would cause.
-!
-! rocsolver_get_version_string takes `type(c_ptr),value :: buf` and
-! `integer(c_size_t),value :: len`, so the buffer address and the capacity are
-! passed by value.
-!
-! Pass/fail: the reported minimum buffer size must be strictly positive, must
-! fit in our fixed buffer, and must be large enough for the returned string
-! plus its NUL terminator; the string itself must be non-empty and look like a
-! dotted version number. Any violation prints "FAILED! ..." and stops with 1.
-!
-! No handle and no device memory are needed for this query: it is a plain host
-! call into librocsolver.
-!!!!!!!!!!!!!!
+! rocsolver_get_version_string_size / rocsolver_get_version_string. `len` is
+! seeded with -1 and passed by reference, so a getter that does not write it fails.
 program rocsolver_version
   use iso_c_binding
   use hip

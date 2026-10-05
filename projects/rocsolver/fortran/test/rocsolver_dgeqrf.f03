@@ -55,7 +55,7 @@ program dgeqrf
   type(c_ptr) :: dIpiv  ! GPU buffer for Householder scalars
 
   type(c_ptr) :: handle ! rocblas_handle
-    
+
   real(c_double) :: error
   real(c_double), parameter :: error_max = 100 * epsilon(error_max)
   !
@@ -96,7 +96,7 @@ program dgeqrf
   call hipCheck(hipFree(dIpiv))
   call rocblasCheck(rocblas_destroy_handle(handle))
   call hipCheck(hipDeviceReset())
-    
+
   write(*,*) "PASSED!"
 
 end program dgeqrf

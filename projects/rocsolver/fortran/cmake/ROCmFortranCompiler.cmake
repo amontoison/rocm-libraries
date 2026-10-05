@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Prefers ROCm's amdflang over the first Fortran compiler on PATH (often
-# gfortran). Shared by fortran/ and the hipSPARSE root, whose
+# gfortran). Shared by fortran/ and the library root, whose
 # enable_language(Fortran) runs first; an explicit CMAKE_Fortran_COMPILER or FC
 # always wins, which also makes the macro idempotent.
 macro(rocm_fortran_prefer_amdflang)

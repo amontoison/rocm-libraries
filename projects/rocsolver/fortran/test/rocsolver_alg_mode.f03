@@ -23,19 +23,9 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Round-trip test of rocsolver_set_alg_mode / rocsolver_get_alg_mode.
-!
-! rocsolver_get_alg_mode takes its `mode` argument by reference (a bare
-! `integer(kind(rocsolver_alg_mode_gpu))` dummy, not `type(c_ptr),value`), so
-! the variable must be passed DIRECTLY -- never wrapped in c_loc().
-!
-! The test sets a mode for a function, resets the local variable to the
-! sentinel -1, reads the mode back and requires an exact match.  Because the
-! sentinel is restored before every get, a getter that fails to write through
-! the reference is caught immediately.  Because two (resp. three) DISTINCT
-! modes are exercised per function, a getter that returns a constant or a
-! setter that is ignored is caught as well.  No default mode is asserted:
-! defaults are not portable across GPUs.
+! Round-trip of rocsolver_set_alg_mode / rocsolver_get_alg_mode over distinct modes,
+! resetting `mode` (passed by reference) to -1 before each get. Defaults are not
+! asserted: they differ across GPUs.
 program rocsolver_alg_mode
   use iso_c_binding
   use hip
