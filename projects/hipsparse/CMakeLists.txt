@@ -276,8 +276,11 @@ if(HIPSPARSE_ENABLE_COVERAGE)
         target_compile_options(hipsparse-clients-common PUBLIC -fprofile-arcs -ftest-coverage)
         target_link_options(hipsparse-clients-common PUBLIC --coverage)
         
-        target_compile_options(hipsparse-samples-common PUBLIC -fprofile-arcs -ftest-coverage)
-        target_link_options(hipsparse-samples-common PUBLIC --coverage)
+        # Also linked by the Fortran samples; amdflang rejects these flags.
+        target_compile_options(hipsparse-samples-common PUBLIC
+            "$<$<COMPILE_LANGUAGE:C,CXX>:-fprofile-arcs;-ftest-coverage>")
+        target_link_options(hipsparse-samples-common PUBLIC
+            "$<$<LINK_LANGUAGE:C,CXX>:--coverage>")
     endif()
     
     add_custom_target(coverage_cleanup
