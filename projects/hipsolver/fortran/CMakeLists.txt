@@ -209,6 +209,13 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   set(BUILD_FORTRAN_CLIENTS OFF)
 endif()
 
+# The uninstrumented Fortran executables cannot link an ASan libhipsolver.
+if(BUILD_FORTRAN_CLIENTS AND BUILD_ADDRESS_SANITIZER)
+  message(STATUS
+    "hipSOLVER: address sanitizer is enabled, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
   enable_testing()
   add_subdirectory(test)
