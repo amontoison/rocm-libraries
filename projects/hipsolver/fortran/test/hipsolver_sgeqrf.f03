@@ -33,10 +33,7 @@
 ! output, form R**T * R, and compare against A0**T * A0 computed on the host.
 !
 ! f2003 style: device buffers are type(c_ptr) allocated by byte count; host
-! data is moved with hipMemcpy + c_loc. hipsolverSgeqrf is a plain bind(c)
-! interface -- the module has no generic overloads -- that takes every device
-! argument, tau and devInfo included, as type(c_ptr) by value, so the
-! allocations are handed over as they come back from hipMalloc.
+! data is moved with hipMemcpy + c_loc.
 !!!!!!!!!!!!!!/
 !
 program sgeqrf

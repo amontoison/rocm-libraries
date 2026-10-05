@@ -46,15 +46,7 @@ target_include_directories(hipsolver-bench
     $<BUILD_INTERFACE:${HIP_INCLUDE_DIRS}>
 )
 
-# Prefer the lapack_libraries TARGET over the bare ${LAPACK_LIBRARIES}, the same
-# way hipsolver-test does (clients/gtest/CMakeLists.txt). The two are NOT the
-# same LAPACK when HIPSOLVER_INTERNAL_LAPACK_BUILD is on: the target points at
-# the OpenBLAS this project builds in-tree, while the variable comes from the
-# separate find_package(LAPACK) in clients/CMakeLists.txt and resolves to
-# whatever LAPACK the host happens to ship. Linking the host one pulled in
-# Fortran objects (xerbla, sgesvd, sormbr) whose gfortran runtime nothing puts
-# on the link line, so hipsolver-bench failed with undefined references to
-# _gfortran_* while hipsolver-test, consuming the in-tree build, linked fine.
+# Same LAPACK as hipsolver-test: the in-tree OpenBLAS, not the host one.
 if(NOT "${HIP_PLATFORM}" STREQUAL "nvidia" AND TARGET lapack_libraries)
   target_link_libraries(hipsolver-bench PRIVATE
     lapack_libraries

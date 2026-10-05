@@ -24,25 +24,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!
-! hipsolver syevjInfo query test (Fortran 2003 interfaces)
-! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
-!
-! Exercises the Jacobi-convergence getters hipsolverXsyevjGetResidual and
-! hipsolverXsyevjGetSweeps (plus their hipsolverDnXsyevj* aliases), whose
-! output arguments are plain Fortran scalars passed by reference.
-!
-! The same 3x3 symmetric system is solved twice with hipsolverDsyevj, the two
-! runs differing only in hipsolverXsyevjSetMaxSweeps. That makes the getters'
-! outputs provably data-dependent rather than constant:
-!   run 1 caps the solver at 1 sweep  -> few sweeps, a large residual
-!   run 2 allows up to 100 sweeps     -> more sweeps, a residual near zero
-! Both out-arguments are poisoned (-1) before every read so a binding that
-! failed to write them would be caught. We then assert sweeps/residual order,
-! that the Dn aliases report the identical values, and that run 2's
-! eigenvalues really are 2-sqrt(2), 2, 2+sqrt(2).
-!
-! f2003 style: device buffers, devInfo included, are type(c_ptr) allocated by
-! byte count, and host data is moved with hipMemcpy + c_loc.
+! hipsolverXsyevjGetResidual/GetSweeps (and Dn aliases) after two hipsolverDsyevj
+! runs with max sweeps 1 and 100: sweeps must grow, the residual must shrink.
 !!!!!!!!!!!!!!
 !
 program hipsolver_syevj_info

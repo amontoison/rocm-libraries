@@ -24,26 +24,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!
-! hipSOLVER handle attribute round-trip (Fortran 2003 interfaces)
-! see: https://rocm.docs.amd.com/projects/hipSOLVER/en/latest/
-!
-! Exercises the pure "query the handle" entry points, which have no test
-! coverage otherwise:
-!   hipsolverSetDeterministicMode / hipsolverGetDeterministicMode
-!   hipsolverDnSetDeterministicMode / hipsolverDnGetDeterministicMode
-!   hipsolverSetStream / hipsolverGetStream
-!   hipsolverDnSetStream / hipsolverDnGetStream
-!
-! The getters take their output argument BY REFERENCE (a bare
-! integer(kind(HIPSOLVER_DETERMINISTIC_RESULTS)) and a bare type(c_ptr)),
-! so the variable is passed directly, never wrapped in c_loc.
-!
-! Pass/fail: the mode variable is poisoned with -99 before every get, so a
-! getter that writes nothing is caught. Each set/get pair must round-trip the
-! exact enum that was stored, the Dn aliases must observe the same handle
-! state as the non-Dn entry points, and the stream pointer must come back
-! both as the stream that was set and as NULL after the stream is cleared.
-! Any mismatch prints "FAILED! ..." and stops with exit code 1.
+! Set/get round-trips of the deterministic mode and the stream, through both the
+! plain and the Dn entry points; outputs are poisoned before every get.
 !!!!!!!!!!!!!!
 !
 program hipsolver_deterministic_mode

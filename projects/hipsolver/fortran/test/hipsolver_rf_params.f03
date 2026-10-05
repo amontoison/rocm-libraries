@@ -24,30 +24,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!
-! hipSOLVER refactorization (Rf) parameter queries, Fortran 2003 interfaces.
-!
-! Exercises the getters of the hipsolverRfHandle_t: hipsolverRfGetMatrixFormat,
-! hipsolverRfGetNumericProperties, hipsolverRfGetNumericBoostReport,
-! hipsolverRfGetResetValuesFastMode and hipsolverRfGet_Algs. All eight of their
-! output scalars are declared BARE (by reference) in the binding, so the test
-! passes the Fortran variables directly, never c_loc(...).
-!
-! No sparse matrix setup is needed: hipsolverRfCreate alone produces a handle
-! whose parameters are already at their documented defaults.
-!
-! How it decides pass/fail: every output variable is poisoned with a value the
-! library can never legitimately return (-1, or -1.0d0), then the getter is
-! called and the result is compared against the documented default. A variable
-! that still holds its poison proves the by-reference argument was not written,
-! which is exactly the regression this test guards against. The two-output
-! getters (matrix format, numeric properties, algorithms) additionally pin down
-! two distinct values -- hipsolverRfGet_Algs must return 0 for the
-! factorization algorithm and 1 for the triangular solve algorithm -- so the
-! second bare out-arg is demonstrably written independently of the first.
-!
-! NOTE: on ROCm the hipsolverRfSet* entry points return
-! HIPSOLVER_STATUS_NOT_SUPPORTED, so a set/get round-trip is not possible and
-! the test deliberately queries the defaults only.
+! hipSOLVER Rf parameter getters, each output poisoned and checked against its default.
+! On ROCm the hipsolverRfSet* entry points return HIPSOLVER_STATUS_NOT_SUPPORTED,
+! so only the defaults are queried, not a set/get round-trip.
 !!!!!!!!!!!!!!
 !
 program hipsolver_rf_params

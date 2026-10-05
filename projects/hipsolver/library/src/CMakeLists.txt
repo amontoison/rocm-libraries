@@ -68,12 +68,6 @@ else()
   )
 endif()
 
-# The Fortran binding is no longer built here. hipsolver_module.f90, the
-# hand-written one, is removed; the binding is generated from the C headers
-# above and built by ../../fortran, which exports roc::hipsolver_fortran. Both
-# carried the same target name, so building both would have aborted the
-# configure with a duplicate-target error.
-
 add_library(hipsolver
   ${hipsolver_source}
   ${relative_hipsolver_headers_public}
@@ -259,12 +253,6 @@ else()
     NAMESPACE roc::
   )
 endif()
-
-# The rule that shipped hipsolver_module.f90 into include/hipsolver, and the
-# backward-compatibility symlinks to it, are gone with the source. The generated
-# binding installs its source as share/hipsolver/fortran/hipsolver.F90, its .mod
-# under include/fortran/<compiler> and its archive under <libdir>/fortran/<compiler>;
-# see ../../fortran.
 
 if(BUILD_FILE_REORG_BACKWARD_COMPATIBILITY)
   rocm_install(
