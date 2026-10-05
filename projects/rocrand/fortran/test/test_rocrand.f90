@@ -23,13 +23,6 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!! Ported from the hand-written Fortran wrapper to the generated bindings:
-!! `hipfor` became `hip` and `rocrand_m` became `rocrand`. The one change
-!! beyond the two module names is the handle type. The wrapper passed a
-!! generator and a discrete distribution as integer(kind=8), a stand-in for
-!! the opaque C pointer; the generated binding declares both as type(c_ptr),
-!! so every handle below is declared that way.
-
 module test_rocrand
     use fruit
     use fruit_helpers

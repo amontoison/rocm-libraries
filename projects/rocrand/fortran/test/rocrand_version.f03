@@ -23,18 +23,8 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Exercises rocrand_get_version, the rocRAND library version query.
-!
-! 'version' is a plain integer(c_int) output dummy in rocrand.F90, so it is
-! passed directly.
-!
-! The test poisons the output variable first, so a binding that silently failed
-! to write through would be caught. It then checks that the returned code is a
-! plausible encoded version (ROCRAND_VERSION = major*100000 + minor*100 +
-! patch, see rocrand_version.h) and that a second query returns the same value.
-! In-tree, where the module and the library come from the same headers, CMake
-! sets ROCRAND_FORTRAN_EXACT_VERSION and the code must also equal the module's
-! ROCRAND_VERSION constant; standalone a mismatch is only reported.
+! ROCRAND_FORTRAN_EXACT_VERSION is set only in-tree, where the module and the
+! library come from the same headers; standalone a mismatch is only reported.
 program rocrand_version_test
 
     use iso_c_binding
