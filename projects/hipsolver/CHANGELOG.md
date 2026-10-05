@@ -11,26 +11,19 @@ Full documentation for hipSOLVER is available at the [hipSOLVER Documentation](h
   * getrfBatched
     * hipsolverSgetrfBatched_bufferSize, hipsolverDgetrfBatched_bufferSize, hipsolverCgetrfBatched_bufferSize, and hipsolverZgetrfBatched_bufferSize
     * hipsolverSgetrfBatched, hipsolverDgetrfBatched, hipsolverCgetrfBatched, and hipsolverZgetrfBatched
-* Generated Fortran bindings, as a single `hipsolver` module: `use hipsolver`, link
-  `roc::hipsolver_fortran`. Controlled by `BUILD_FORTRAN_BINDINGS` (defaults to `${UNIX}`: ON on Linux,
-  OFF on Windows; OFF on the CUDA backend) and `BUILD_FORTRAN_CLIENTS`. `FORTRAN_ARRAY_INTERFACES` is
-  accepted for uniformity with the other bindings but has no effect: the hipSOLVER module carries no
-  array overloads. Found with `find_package(hipsolver-fortran)`; the archive and the
-  `.mod` files install per compiler, under `<libdir>/fortran/<compiler>` and
-  `<includedir>/fortran/<compiler>`.
 
 ### Changed
 
-* The Fortran binding is now generated from the hipSOLVER headers instead of hand-written.
-  `use hipsolver` is unchanged, but the separate `hipsolver_enums` module is gone: its constants are
-  part of `hipsolver`, so code that said `use hipsolver_enums` should now say `use hipsolver`. A static
-  archive and a `.mod` are installed in place of the shared library and the `.f90` source to compile
-  yourself; link `roc::hipsolver_fortran`. Output arguments the old module declared
-  `type(c_ptr), value` -- the `lwork` of every `_bufferSize` routine, the `residual` and
-  `executed_sweeps` of the gesvdj/syevj getters, and the `niters` of `hipsolver{SS,DD,CC,ZZ}gels` and
-  `hipsolver{SS,DD,CC,ZZ}gesv` -- are now typed and passed by reference, as are the
-  outputs of the routines new to the module (`nev`, the deterministic `mode`, the Rf getters): callers
-  must drop the `c_loc()` and pass the variable itself.
+* The Fortran binding is now generated from the hipSOLVER headers, as a static archive and a `.mod`
+  found with `find_package(hipsolver-fortran)` and linked as `roc::hipsolver_fortran`; the archive and
+  the `.mod` files install per compiler, under `<libdir>/fortran/<compiler>` and
+  `<includedir>/fortran/<compiler>`. `use hipsolver_enums` becomes `use hipsolver`. Controlled by
+  `BUILD_FORTRAN_BINDINGS` (ON on Linux, OFF on Windows and on the CUDA backend) and
+  `BUILD_FORTRAN_CLIENTS`; `FORTRAN_ARRAY_INTERFACES` is accepted but has no effect here.
+* Output arguments the old module declared `type(c_ptr), value` -- `lwork` of every `_bufferSize`
+  routine, `residual` and `executed_sweeps` of the gesvdj/syevj getters, `niters` of
+  `hipsolver{SS,DD,CC,ZZ}gels` and `hipsolver{SS,DD,CC,ZZ}gesv` -- are now typed and passed by reference,
+  as are `nev`, the deterministic `mode` and the Rf getter outputs: drop the `c_loc()`.
 * The handle and info outputs of `hipsolverCreate`, `hipsolverGetStream`, `hipsolverCreateGesvdjInfo` and
   `hipsolverCreateSyevjInfo` are now `type(c_ptr)` passed by reference instead of `type(c_ptr), value`.
   The old spelling `hipsolverCreate(c_loc(handle))` still compiles but leaves `handle` null: pass the
