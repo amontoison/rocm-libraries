@@ -140,6 +140,11 @@ add_subdirectory(fortran)
 
 include( clients/cmake/build-options.cmake )
 
+# Seen by clients/, where the Fortran clients are built.
+if(DEFINED HIPBLAS_BUILD_FORTRAN_CLIENTS)
+  set(BUILD_FORTRAN_CLIENTS ${HIPBLAS_BUILD_FORTRAN_CLIENTS})
+endif()
+
 # Build clients of the library
 if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
   if(NOT CLIENTS_OS)
