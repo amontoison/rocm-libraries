@@ -672,11 +672,11 @@ module hipfftw
     function fftwf_plan_guru_dft(rank, dims, howmany_rank, howmany_dims, in, out, sign, flags) &
        result(f_plan_guru_dft) &
        bind(C, name="fftwf_plan_guru_dft")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: sign
@@ -707,11 +707,11 @@ module hipfftw
     function fftwf_plan_guru_dft_r2c(rank, dims, howmany_rank, howmany_dims, in, out, flags) &
        result(f_plan_guru_dft_r2c) &
        bind(C, name="fftwf_plan_guru_dft_r2c")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -741,11 +741,11 @@ module hipfftw
     function fftwf_plan_guru_dft_c2r(rank, dims, howmany_rank, howmany_dims, in, out, flags) &
        result(f_plan_guru_dft_c2r) &
        bind(C, name="fftwf_plan_guru_dft_c2r")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -776,11 +776,11 @@ module hipfftw
     function fftwf_plan_guru64_dft(rank, dims, howmany_rank, howmany_dims, in, out, sign, flags) &
        result(f_plan_guru64_dft) &
        bind(C, name="fftwf_plan_guru64_dft")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: sign
@@ -811,11 +811,11 @@ module hipfftw
     function fftwf_plan_guru64_dft_r2c(rank, dims, howmany_rank, howmany_dims, in, out, flags) &
        result(f_plan_guru64_dft_r2c) &
        bind(C, name="fftwf_plan_guru64_dft_r2c")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
@@ -845,11 +845,11 @@ module hipfftw
     function fftwf_plan_guru64_dft_c2r(rank, dims, howmany_rank, howmany_dims, in, out, flags) &
        result(f_plan_guru64_dft_c2r) &
        bind(C, name="fftwf_plan_guru64_dft_c2r")
-       import :: c_int, c_ptr
+       import :: c_int, fftw_iodim64, c_ptr
        integer(c_int), value :: rank
-       type(c_ptr), value :: dims
+       type(fftw_iodim64) :: dims(*)
        integer(c_int), value :: howmany_rank
-       type(c_ptr), value :: howmany_dims
+       type(fftw_iodim64) :: howmany_dims(*)
        type(c_ptr), value :: in
        type(c_ptr), value :: out
        integer(c_int), value :: flags
