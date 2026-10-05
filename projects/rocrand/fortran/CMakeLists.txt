@@ -219,6 +219,13 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR
   set(BUILD_FORTRAN_CLIENTS OFF)
 endif()
 
+# The uninstrumented Fortran executables cannot link an ASan librocrand.
+if(BUILD_FORTRAN_CLIENTS AND BUILD_ADDRESS_SANITIZER)
+  message(STATUS
+    "rocRAND: address sanitizer is enabled, skipping the Fortran binding tests.")
+  set(BUILD_FORTRAN_CLIENTS OFF)
+endif()
+
 if(BUILD_FORTRAN_CLIENTS)
   # In-tree the root enables testing under BUILD_TEST.
   enable_testing()

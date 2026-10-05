@@ -28,7 +28,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
          CMAKE_Fortran_COMPILE_OBJECT "${CMAKE_Fortran_COMPILE_OBJECT}")
 endif()
 
-# The tests `use hip`, so hip.mod (rocm-systems, same compiler) is required.
+# Every test but the version one `use hip` (hip.mod: rocm-systems, same compiler).
 if(NOT TARGET hip::hip_fortran)
   find_package(hip-fortran QUIET)
 endif()
@@ -36,8 +36,8 @@ set(_have_hip_binding TRUE)
 if(NOT TARGET hip::hip_fortran)
   set(_have_hip_binding FALSE)
   message(STATUS
-    "rocRAND: no hip::hip_fortran target, skipping the Fortran binding tests "
-    "(they `use hip`). Point CMAKE_PREFIX_PATH at a ROCm whose HIP Fortran "
+    "rocRAND: no hip::hip_fortran target, skipping all but the version test "
+    "(the others `use hip`). Point CMAKE_PREFIX_PATH at a ROCm whose HIP Fortran "
     "bindings were built with ${CMAKE_Fortran_COMPILER}.")
 endif()
 
@@ -77,7 +77,7 @@ function(rocrand_fortran_add_test name)
     Fortran_MODULE_DIRECTORY
       "${CMAKE_CURRENT_BINARY_DIR}/rocrand_fortran_test_${name}.mod.dir")
   target_link_libraries(rocrand_fortran_test_${name} PRIVATE
-    rocrand_fortran hip::hip_fortran roc::rocrand)
+    rocrand_fortran roc::rocrand)
   # EXIT is a GNU extension.
   target_compile_options(rocrand_fortran_test_${name} PRIVATE
     $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-std=gnu>)
@@ -103,7 +103,6 @@ set(ROCRAND_FORTRAN_TESTS
     philox_poisson
     philox_uniform
     philox_uniform_double
-    rocrand_version
     sobol32_normal
     sobol32_normal_double
     sobol32_uniform
@@ -113,19 +112,21 @@ set(ROCRAND_FORTRAN_TESTS
     xorwow_uniform
     xorwow_uniform_double)
 
+rocrand_fortran_add_test(rocrand_version)
+# The version query touches no device.
+set_tests_properties(rocrand_fortran_rocrand_version PROPERTIES LABELS "")
+# In-tree the module and the library come from the same headers.
+get_target_property(_rocrand_aliased roc::rocrand ALIASED_TARGET)
+if(_rocrand_aliased STREQUAL "rocrand")
+  set_tests_properties(rocrand_fortran_rocrand_version PROPERTIES
+                       ENVIRONMENT "ROCRAND_FORTRAN_EXACT_VERSION=1")
+endif()
+
 if(_have_hip_binding)
   foreach(_t IN LISTS ROCRAND_FORTRAN_TESTS)
     rocrand_fortran_add_test(${_t})
+    target_link_libraries(rocrand_fortran_test_${_t} PRIVATE hip::hip_fortran)
   endforeach()
-
-  # The version query touches no device.
-  set_tests_properties(rocrand_fortran_rocrand_version PROPERTIES LABELS "")
-  # In-tree the module and the library come from the same headers.
-  get_target_property(_rocrand_aliased roc::rocrand ALIASED_TARGET)
-  if(_rocrand_aliased STREQUAL "rocrand")
-    set_tests_properties(rocrand_fortran_rocrand_version PROPERTIES
-                         ENVIRONMENT "ROCRAND_FORTRAN_EXACT_VERSION=1")
-  endif()
 
   # One CTest test: FRUIT reports its own per-case results.
   rocrand_fortran_add_test(fruit
@@ -134,4 +135,5 @@ if(_have_hip_binding)
       fruit_helpers.f90
       test_rocrand.f90
       fruit_test_driver_rocrand.f90)
+  target_link_libraries(rocrand_fortran_test_fruit PRIVATE hip::hip_fortran)
 endif()
