@@ -52,7 +52,11 @@ if(_rocsolver_prefer_amdflang)
   rocm_fortran_prefer_amdflang()
 endif()
 unset(_rocsolver_prefer_amdflang)
-if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC})
+# Only for the clients, which require Fortran: a preset compiler would make fortran/
+# skip its probe and fail on a host without one instead of skipping the bindings.
+if(NOT DEFINED CMAKE_Fortran_COMPILER AND NOT DEFINED ENV{FC}
+   AND (BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS OR BUILD_CLIENTS_SAMPLES
+        OR (NOT DEFINED BUILD_CLIENTS_TESTS AND BUILD_TESTING)))
   set(CMAKE_Fortran_COMPILER  "gfortran")
 endif()
 
