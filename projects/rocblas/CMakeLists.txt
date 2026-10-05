@@ -320,53 +320,17 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
         RPM "${OPENMP_RPM}"
     )
   endif()
-  # The libgfortran dependency of the tests and benchmarks packages is declared
-  # after add_subdirectory(fortran) below, once BUILD_FORTRAN_CLIENTS reflects
-  # whether any Fortran was really built rather than the ON it defaults to.
 endif()
 
 if( NOT SKIP_LIBRARY )
     add_subdirectory( library )
 endif()
 
-# Fortran bindings, generated from the headers above and committed next to them.
-# Self-guarded: the subdirectory returns early when BUILD_FORTRAN_BINDINGS is OFF
-# or when no Fortran compiler is available, so a C-only site is unaffected.
-#
-# Outside the SKIP_LIBRARY guard on purpose, and not merely for symmetry with the
-# other libraries. That guard decides whether librocblas is BUILT here; the
-# bindings need it linked, not built, and resolve it from the prefix path when
-# the in-tree target is absent. Inheriting the skip would be actively broken now
-# that clients consume this target rather than building their own from
-# rocblas_module.f90: BUILD_FORTRAN_CLIENTS would then find no rocblas_fortran.
+# Outside the SKIP_LIBRARY guard: the bindings link librocblas, they do not build it.
 add_subdirectory(fortran)
 
-# The Fortran clients link roc::rocblas_fortran, so they cannot be built when
-# the bindings were not. Drop them rather than stopping the configure: switching
-# the bindings off is a supported choice (-DBUILD_FORTRAN_BINDINGS=OFF for the
-# whole monorepo, -DROCBLAS_BUILD_FORTRAN_BINDINGS=OFF for this library alone),
-# and so is having no Fortran compiler at all, while BUILD_FORTRAN_CLIENTS
-# defaults to ON. Failing here would mean that turning one thing off obliges the
-# user to turn a second one off as well, in a flag they never touched.
-#
-# ROCBLAS_HAVE_FORTRAN_BINDINGS is what fortran/ reports back, and it is the
-# only honest test: FALSE when the directory returned early, TRUE only when the
-# target was really created.
-if(BUILD_FORTRAN_CLIENTS AND NOT ROCBLAS_HAVE_FORTRAN_BINDINGS)
-  message(STATUS
-    "rocBLAS: the Fortran bindings were not built, so skipping the Fortran "
-    "clients. Enable BUILD_FORTRAN_BINDINGS to get them back.")
-  set(BUILD_FORTRAN_CLIENTS OFF)
-endif()
-
-# Only now, with BUILD_FORTRAN_CLIENTS settled. The clients' gtest and benchmark
-# executables pull in libgfortran only when they carry Fortran objects built by
-# gfortran: amdflang links its own runtime, shipped with ROCm. Fortran is enabled
-# in fortran/, not here, so its compiler ID comes back as
-# ROCBLAS_FORTRAN_COMPILER_ID. BUILD_FORTRAN_CLIENTS is declared in clients/,
-# later, and defaults to ON, so an undefined value counts as ON.
-if(BUILD_CLIENTS AND ROCBLAS_FORTRAN_COMPILER_ID STREQUAL "GNU"
-   AND (BUILD_FORTRAN_CLIENTS OR NOT DEFINED BUILD_FORTRAN_CLIENTS))
+# libgfortran only for gfortran-built clients; amdflang's runtime ships with ROCm.
+if(BUILD_CLIENTS AND BUILD_FORTRAN_CLIENTS AND ROCBLAS_FORTRAN_COMPILER_ID STREQUAL "GNU")
   rocm_package_add_rpm_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_RPM}")
   rocm_package_add_deb_dependencies(COMPONENT tests DEPENDS "${GFORTRAN_DEB}")
   rocm_package_add_rpm_dependencies(COMPONENT benchmarks DEPENDS "${GFORTRAN_RPM}")
