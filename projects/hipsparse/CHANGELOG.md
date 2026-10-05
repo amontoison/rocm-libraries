@@ -16,12 +16,16 @@ Documentation for hipSPARSE is available at
   follow `HIPSPARSE_ENABLE_FORTRAN`) and `FORTRAN_ARRAY_INTERFACES` (`assumed-shape` by default;
   `none` or `assumed-rank`). Found with `find_package(hipsparse-fortran)`; the archive and `.mod` files
   install per compiler under `<libdir>/fortran/<compiler>` and `<includedir>/fortran/<compiler>`.
-  Scalars the C API takes by pointer (`alpha`, `beta`, `nnzTotalDevHostPtr` and the rest) are
+  Pointer-mode-dependent scalars (`alpha`, `beta`, `nnzTotalDevHostPtr`, dot results) are
   `type(c_ptr), value`, so pass `c_loc(x)`; one interface covers both pointer modes.
 
 ### Changed
 * `hipsparse_enums` is merged into `hipsparse`: the generated binding defines only `hipsparse`,
   with the enum constants folded in. `use hipsparse` is unchanged; drop any `use hipsparse_enums`.
+* The Fortran samples are built with ROCm's `amdflang` when present, falling back to `gfortran`;
+  an explicit `CMAKE_Fortran_COMPILER` or `FC` still wins.
+* On the CUDA backend the Fortran samples are no longer built by default, since the bindings are
+  OFF there: pass `-DBUILD_FORTRAN_BINDINGS=ON -DFORTRAN_ARRAY_INTERFACES=none` to keep them.
 
 ### Removed
 * The hand-written `library/src/hipsparse.f90` and `library/src/hipsparse_enums.f90`. They were
