@@ -39,10 +39,10 @@ program hipfft_estimate_getsize_d
   integer(c_size_t), parameter :: Nbytes_r = int(N1d, c_size_t) * 8
   integer(c_size_t), parameter :: Nbytes_c = int(Nout, c_size_t) * 16
 
-  integer(c_size_t) :: workEst1d, workGS1d
-  integer(c_size_t) :: workEst2d, workGS2d
-  integer(c_size_t) :: workEst3d, workGS3d
-  integer(c_size_t) :: workTmp
+  ! Every size output is poisoned first, so a binding that never writes it fails.
+  integer(c_size_t), parameter :: poison = -12345_c_size_t
+
+  integer(c_size_t) :: workEst, workGS, workTmp
 
   type(c_ptr) :: plan1d = c_null_ptr
   type(c_ptr) :: plan2d = c_null_ptr
@@ -52,6 +52,7 @@ program hipfft_estimate_getsize_d
 
   real(c_double), allocatable, target, dimension(:)            :: hrx
   complex(c_double_complex), allocatable, target, dimension(:) :: hcx
+  complex(c_double_complex) :: expected
 
   double precision, parameter :: tol = 1.0d-8
   integer :: i
@@ -60,55 +61,51 @@ program hipfft_estimate_getsize_d
     "-- Running test 'hipFFT Estimate/GetSize D2Z (d)' (Fortran 2003 interfaces) - "
 
   ! --- 1D D2Z ---
-  call hipfftCheck(hipfftEstimate1d(N1d, HIPFFT_D2Z, one_i, workEst1d))
-
+  workEst = poison
+  workGS  = poison
+  call hipfftCheck(hipfftEstimate1d(N1d, HIPFFT_D2Z, one_i, workEst))
   call hipfftCheck(hipfftCreate(plan1d))
-  call hipfftCheck(hipfftMakePlan1d(plan1d, N1d, HIPFFT_D2Z, one_i, workGS1d))
-  ! GetSize1d and GetSize provide alternative query paths on the same configured plan.
+  call hipfftCheck(hipfftMakePlan1d(plan1d, N1d, HIPFFT_D2Z, one_i, workGS))
+  call check_sizes("1d", workEst, workGS)
+  workTmp = poison
   call hipfftCheck(hipfftGetSize1d(plan1d, N1d, HIPFFT_D2Z, one_i, workTmp))
+  call check_equal("GetSize1d", workTmp, workGS)
+  workTmp = poison
   call hipfftCheck(hipfftGetSize(plan1d, workTmp))
-
-  ! hipfftEstimate* is a pre-plan upper bound; hipfftGetSize* is the accurate post-config value.
-  if (workEst1d < workGS1d) then
-    write(*,*) "FAILED! Estimate1d returned less than GetSize1d"
-    STOP 1
-  end if
+  call check_equal("GetSize", workTmp, workGS)
 
   ! --- 2D Z2Z ---
-  call hipfftCheck(hipfftEstimate2d(Nx2, Ny2, HIPFFT_Z2Z, workEst2d))
-
+  workEst = poison
+  workGS  = poison
+  call hipfftCheck(hipfftEstimate2d(Nx2, Ny2, HIPFFT_Z2Z, workEst))
   call hipfftCheck(hipfftCreate(plan2d))
-  call hipfftCheck(hipfftMakePlan2d(plan2d, Nx2, Ny2, HIPFFT_Z2Z, workGS2d))
+  call hipfftCheck(hipfftMakePlan2d(plan2d, Nx2, Ny2, HIPFFT_Z2Z, workGS))
+  call check_sizes("2d", workEst, workGS)
+  workTmp = poison
   call hipfftCheck(hipfftGetSize2d(plan2d, Nx2, Ny2, HIPFFT_Z2Z, workTmp))
-
-  if (workEst2d < workGS2d) then
-    write(*,*) "FAILED! Estimate2d returned less than GetSize2d"
-    STOP 1
-  end if
+  call check_equal("GetSize2d", workTmp, workGS)
 
   ! --- 3D Z2Z ---
-  call hipfftCheck(hipfftEstimate3d(Nx3, Ny3, Nz3, HIPFFT_Z2Z, workEst3d))
-
+  workEst = poison
+  workGS  = poison
+  call hipfftCheck(hipfftEstimate3d(Nx3, Ny3, Nz3, HIPFFT_Z2Z, workEst))
   call hipfftCheck(hipfftCreate(plan3d))
-  call hipfftCheck(hipfftMakePlan3d(plan3d, Nx3, Ny3, Nz3, HIPFFT_Z2Z, workGS3d))
+  call hipfftCheck(hipfftMakePlan3d(plan3d, Nx3, Ny3, Nz3, HIPFFT_Z2Z, workGS))
+  call check_sizes("3d", workEst, workGS)
+  workTmp = poison
   call hipfftCheck(hipfftGetSize3d(plan3d, Nx3, Ny3, Nz3, HIPFFT_Z2Z, workTmp))
+  call check_equal("GetSize3d", workTmp, workGS)
 
-  if (workEst3d < workGS3d) then
-    write(*,*) "FAILED! Estimate3d returned less than GetSize3d"
-    STOP 1
-  end if
-
-  ! --- 1D D2Z transform: verify DC bin equals sum of input ---
+  ! --- 1D D2Z transform of all ones: N1d in the DC bin, 0 elsewhere ---
   allocate(hrx(N1d), hcx(Nout))
-  do i = 1, N1d
-    hrx(i) = 1.0d0
-  end do
+  hrx(:) = 1.0d0
+  hcx(:) = cmplx(1.0d30, 1.0d30, kind=c_double_complex)
 
   call hipCheck(hipMalloc(dx_r, Nbytes_r))
   call hipCheck(hipMalloc(dx_c, Nbytes_c))
   call hipCheck(hipMemcpy(dx_r, c_loc(hrx(1)), Nbytes_r, hipMemcpyHostToDevice))
+  call hipCheck(hipMemcpy(dx_c, c_loc(hcx(1)), Nbytes_c, hipMemcpyHostToDevice))
 
-  ! plan1d was configured by MakePlan1d (auto-alloc ON by default); ready to execute.
   call hipfftCheck(hipfftExecD2Z(plan1d, dx_r, dx_c))
   call hipCheck(hipDeviceSynchronize())
 
@@ -120,14 +117,42 @@ program hipfft_estimate_getsize_d
   call hipCheck(hipFree(dx_r))
   call hipCheck(hipFree(dx_c))
 
-  ! DC bin = sum of real inputs = N1d (all ones).
-  if (.not. (abs(hcx(1) - cmplx(dble(N1d), 0.0d0, kind=c_double_complex)) <= tol * N1d)) then
-    write(*,*) "FAILED! DC bin error"
-    STOP 1
-  end if
+  do i = 1, Nout
+    expected = (0.0d0, 0.0d0)
+    if (i == 1) expected = cmplx(dble(N1d), 0.0d0, kind=c_double_complex)
+    if (.not. (abs(hcx(i) - expected) <= tol * N1d)) then
+      write(*,*) "FAILED! bin ", i - 1, " = ", hcx(i)
+      STOP 1
+    end if
+  end do
 
   deallocate(hrx, hcx)
 
   write(*,*) "PASSED!"
+
+contains
+
+  ! hipfftEstimate* is an upper bound on the planned work size.
+  subroutine check_sizes(what, est, gs)
+    character(*), intent(in) :: what
+    integer(c_size_t), intent(in) :: est, gs
+    if (gs == poison .or. gs < 0) then
+      write(*,*) "FAILED! MakePlan", what, " work size: ", gs
+      STOP 1
+    end if
+    if (est == poison .or. est < gs) then
+      write(*,*) "FAILED! Estimate", what, " = ", est, " < MakePlan", what, " = ", gs
+      STOP 1
+    end if
+  end subroutine check_sizes
+
+  subroutine check_equal(what, got, ref)
+    character(*), intent(in) :: what
+    integer(c_size_t), intent(in) :: got, ref
+    if (got /= ref) then
+      write(*,*) "FAILED! hipfft", what, " = ", got, ", MakePlan reported ", ref
+      STOP 1
+    end if
+  end subroutine check_equal
 
 end program hipfft_estimate_getsize_d
