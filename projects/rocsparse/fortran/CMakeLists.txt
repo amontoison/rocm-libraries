@@ -236,6 +236,12 @@ if(BUILD_FORTRAN_CLIENTS)
   add_subdirectory(test)
 endif()
 
+# A clients-only build links the installed library: keep the binding out of
+# its devel package.
+if(BUILD_CLIENTS_ONLY)
+  return()
+endif()
+
 include(CMakePackageConfigHelpers)
 
 set(_fortran_pkgdir "${CMAKE_INSTALL_LIBDIR}/cmake/rocsparse")
