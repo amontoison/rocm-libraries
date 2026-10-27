@@ -23,6 +23,7 @@
  * ************************************************************************ */
 #include "rocsparse_enum.hpp"
 #include "testing.hpp"
+#include "testing_reuse_zero_pivot.hpp"
 
 #include "testing_csrilu0.hpp"
 
@@ -711,9 +712,10 @@ static void testing_csrilu0_extra_template(const Arguments& arg)
 void testing_csrilu0_extra(const Arguments& arg)
 {
 
-#define CALL_TEST(TYPE)                            \
-    {                                              \
-        testing_csrilu0_extra_template<TYPE>(arg); \
+#define CALL_TEST(TYPE)                                         \
+    {                                                           \
+        testing_csrilu0_extra_template<TYPE>(arg);              \
+        testing_reuse_zero_pivot<TYPE>(reuse_routine::csrilu0); \
     }
     CALL_TEST(float);
     CALL_TEST(double);

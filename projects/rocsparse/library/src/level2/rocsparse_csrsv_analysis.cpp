@@ -481,18 +481,28 @@ rocsparse_status rocsparse::csrsv_analysis(rocsparse_handle            handle,
     // Differentiate the analysis policies
     if(analysis_policy == rocsparse_analysis_policy_reuse)
     {
-        rocsparse::trm_info_t* p = info->get_csrsv_info(trans, descr->fill_mode);
-
-        if((descr->fill_mode == rocsparse_fill_mode_lower) && (trans == rocsparse_operation_none))
+        const rocsparse_fill_mode fill_mode = descr->fill_mode;
+        const bool                lower_none
+            = (fill_mode == rocsparse_fill_mode_lower) && (trans == rocsparse_operation_none);
+        rocsparse_csrsv_info dst = info->get_csrsv_info();
+        bool                 found;
+        RETURN_IF_ROCSPARSE_ERROR(
+            dst->reuse(trans,
+                       fill_mode,
+                       {{dst, trans, fill_mode},
+                        {lower_none ? info->get_csrilu0_info() : nullptr, trans, fill_mode},
+                        {lower_none ? info->get_csric0_info() : nullptr, trans, fill_mode},
+                        {info->get_csrsm_info(), trans, fill_mode}},
+                       handle->stream,
+                       &found));
+        if(found)
         {
-            p = (p != nullptr) ? p : info->get_csrilu0_info(trans, descr->fill_mode);
-            p = (p != nullptr) ? p : info->get_csric0_info(trans, descr->fill_mode);
-        }
-
-        p = (p != nullptr) ? p : info->get_csrsm_info(trans, descr->fill_mode);
-        if(p != nullptr)
-        {
-            info->set_csrsv_info(trans, descr->fill_mode, p);
+            // A unit diagonal has no structural zero pivot.
+            if(descr->diag_type == rocsparse_diag_type_unit)
+            {
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::assign_max_async(
+                    1, dst->get_indextype(), dst->get_position(), handle->stream));
+            }
             return rocsparse_status_success;
         }
     }

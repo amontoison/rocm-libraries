@@ -29,6 +29,7 @@
 #include "rocsparse_indextype_utils.hpp"
 #include "rocsparse_pivot_info_t.hpp"
 #include "rocsparse_trm_info.hpp"
+#include <initializer_list>
 #include <memory>
 
 namespace rocsparse
@@ -90,6 +91,21 @@ namespace rocsparse
                  rocsparse::trm_info_t* trm_info);
 
         rocsparse_indextype get_indextype_J() const;
+
+        struct source_t
+        {
+            trm_data_t*         data;
+            rocsparse_operation operation;
+            rocsparse_fill_mode fill_mode;
+        };
+
+        // Share the first analysis found in sources into (operation, fill_mode), together with
+        // the zero pivot of its container. p_found is set to false if none is found.
+        rocsparse_status reuse(rocsparse_operation             operation,
+                               rocsparse_fill_mode             fill_mode,
+                               std::initializer_list<source_t> sources,
+                               hipStream_t                     stream,
+                               bool*                           p_found);
 
         rocsparse::trm_info_t* create(rocsparse_handle          handle,
                                       rocsparse_operation       trans,

@@ -110,3 +110,29 @@ rocsparse_indextype rocsparse::trm_data_t::get_indextype_J() const
     }
     return rocsparse_indextype_i32;
 }
+
+rocsparse_status rocsparse::trm_data_t::reuse(rocsparse_operation             operation,
+                                              rocsparse_fill_mode             fill_mode,
+                                              std::initializer_list<source_t> sources,
+                                              hipStream_t                     stream,
+                                              bool*                           p_found)
+{
+    for(const source_t& source : sources)
+    {
+        rocsparse::trm_info_t* trm_info = (source.data != nullptr)
+                                              ? source.data->get(source.operation, source.fill_mode)
+                                              : nullptr;
+        if(trm_info != nullptr)
+        {
+            this->set(operation, fill_mode, trm_info);
+            if(source.data != this)
+            {
+                RETURN_IF_ROCSPARSE_ERROR(this->copy_pivot_info_async(source.data, stream));
+            }
+            p_found[0] = true;
+            return rocsparse_status_success;
+        }
+    }
+    p_found[0] = false;
+    return rocsparse_status_success;
+}

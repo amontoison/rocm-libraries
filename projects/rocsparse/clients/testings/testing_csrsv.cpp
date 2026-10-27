@@ -23,6 +23,7 @@
  * ************************************************************************ */
 #include "rocsparse_enum.hpp"
 #include "testing.hpp"
+#include "testing_reuse_zero_pivot.hpp"
 
 template <typename T>
 void testing_csrsv_bad_arg(const Arguments& arg)
@@ -685,4 +686,10 @@ INSTANTIATE(float);
 INSTANTIATE(double);
 INSTANTIATE(rocsparse_float_complex);
 INSTANTIATE(rocsparse_double_complex);
-void testing_csrsv_extra(const Arguments& arg) {}
+void testing_csrsv_extra(const Arguments& arg)
+{
+    testing_reuse_zero_pivot<float>(reuse_routine::csrsv);
+    testing_reuse_zero_pivot<double>(reuse_routine::csrsv);
+    testing_reuse_zero_pivot<rocsparse_float_complex>(reuse_routine::csrsv);
+    testing_reuse_zero_pivot<rocsparse_double_complex>(reuse_routine::csrsv);
+}

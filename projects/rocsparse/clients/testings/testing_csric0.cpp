@@ -23,6 +23,7 @@
  * ************************************************************************ */
 #include "rocsparse_enum.hpp"
 #include "testing.hpp"
+#include "testing_reuse_zero_pivot.hpp"
 
 template <typename T>
 static void test_csric0_matrix(rocsparse_local_handle&    handle,
@@ -1250,4 +1251,9 @@ void testing_csric0_extra(const Arguments& arg)
     testing_csric0_extra_template<rocsparse_double_complex>(arg);
 
     testing_csric0_extra_dense_matrix(arg);
+
+    testing_reuse_zero_pivot<float>(reuse_routine::csric0);
+    testing_reuse_zero_pivot<double>(reuse_routine::csric0);
+    testing_reuse_zero_pivot<rocsparse_float_complex>(reuse_routine::csric0);
+    testing_reuse_zero_pivot<rocsparse_double_complex>(reuse_routine::csric0);
 }

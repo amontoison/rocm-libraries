@@ -44,41 +44,24 @@ rocsparse_status rocsparse::csrildlt0_analysis(rocsparse_handle          handle,
 
     if(analysis == rocsparse_analysis_policy_reuse)
     {
-        auto trm = csrildlt0_info->get(rocsparse_operation_none, rocsparse_fill_mode_lower);
-        if(trm == nullptr)
-        {
-            // Try to reuse analysis from other compatible factorizations
-            trm = (trm != nullptr)
-                      ? trm
-                      : info->get_csric0_info(rocsparse_operation_none, rocsparse_fill_mode_lower);
-
-            trm = (trm != nullptr)
-                      ? trm
-                      : info->get_csrilu0_info(rocsparse_operation_none, rocsparse_fill_mode_lower);
-
-            trm = (trm != nullptr)
-                      ? trm
-                      : info->get_csrsv_info(rocsparse_operation_none, rocsparse_fill_mode_lower);
-
-            trm = (trm != nullptr)
-                      ? trm
-                      : info->get_csrsm_info(rocsparse_operation_none, rocsparse_fill_mode_lower);
-
-            trm = (trm != nullptr) ? trm
-                                   : info->get_csrsv_info(rocsparse_operation_transpose,
-                                                          rocsparse_fill_mode_upper);
-
-            trm = (trm != nullptr) ? trm
-                                   : info->get_csrsm_info(rocsparse_operation_transpose,
-                                                          rocsparse_fill_mode_upper);
-
-            if(trm != nullptr)
-            {
-                info->set_csrildlt0_info(rocsparse_operation_none, rocsparse_fill_mode_lower, trm);
-            }
-        }
-
-        if(trm != nullptr)
+        const rocsparse_operation op    = rocsparse_operation_none;
+        const rocsparse_operation trans = rocsparse_operation_transpose;
+        const rocsparse_fill_mode lower = rocsparse_fill_mode_lower;
+        const rocsparse_fill_mode upper = rocsparse_fill_mode_upper;
+        auto                      dst   = info->get_csrildlt0_info();
+        bool                      found;
+        RETURN_IF_ROCSPARSE_ERROR(dst->reuse(op,
+                                             lower,
+                                             {{dst, op, lower},
+                                              {info->get_csric0_info(), op, lower},
+                                              {info->get_csrilu0_info(), op, lower},
+                                              {info->get_csrsv_info(), op, lower},
+                                              {info->get_csrsm_info(), op, lower},
+                                              {info->get_csrsv_info(), trans, upper},
+                                              {info->get_csrsm_info(), trans, upper}},
+                                             handle->stream,
+                                             &found));
+        if(found)
         {
             return rocsparse_status_success;
         }

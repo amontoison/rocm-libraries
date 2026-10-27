@@ -66,33 +66,29 @@ rocsparse_status rocsparse::csrsm_analysis_core(rocsparse_handle          handle
     // Differentiate the analysis policies
     if(analysis == rocsparse_analysis_policy_reuse)
     {
-        // Reuse an analysis from csrsm, csrilu0, csric0 or csrsv, together with its zero pivot.
-        rocsparse_csrsm_info dst        = info->get_csrsm_info();
-        const bool           lower_none = (descr->fill_mode == rocsparse_fill_mode_lower)
-                                && (trans_A == rocsparse_operation_none);
-        rocsparse::trm_data_t* candidates[] = {dst,
-                                               lower_none ? info->get_csrilu0_info() : nullptr,
-                                               lower_none ? info->get_csric0_info() : nullptr,
-                                               info->get_csrsv_info()};
-        for(rocsparse::trm_data_t* src : candidates)
+        const rocsparse_fill_mode fill_mode = descr->fill_mode;
+        const bool                lower_none
+            = (fill_mode == rocsparse_fill_mode_lower) && (trans_A == rocsparse_operation_none);
+        rocsparse_csrsm_info dst = info->get_csrsm_info();
+        bool                 found;
+        RETURN_IF_ROCSPARSE_ERROR(
+            dst->reuse(trans_A,
+                       fill_mode,
+                       {{dst, trans_A, fill_mode},
+                        {lower_none ? info->get_csrilu0_info() : nullptr, trans_A, fill_mode},
+                        {lower_none ? info->get_csric0_info() : nullptr, trans_A, fill_mode},
+                        {info->get_csrsv_info(), trans_A, fill_mode}},
+                       handle->stream,
+                       &found));
+        if(found)
         {
-            rocsparse::trm_info_t* p
-                = (src != nullptr) ? src->get(trans_A, descr->fill_mode) : nullptr;
-            if(p != nullptr)
+            // A unit diagonal has no structural zero pivot.
+            if(descr->diag_type == rocsparse_diag_type_unit)
             {
-                dst->set(trans_A, descr->fill_mode, p);
-                if(src != dst)
-                {
-                    RETURN_IF_ROCSPARSE_ERROR(dst->copy_pivot_info_async(src, handle->stream));
-                }
-                // A unit diagonal has no structural zero pivot.
-                if(descr->diag_type == rocsparse_diag_type_unit)
-                {
-                    RETURN_IF_ROCSPARSE_ERROR(rocsparse::assign_max_async(
-                        1, dst->get_indextype(), dst->get_position(), handle->stream));
-                }
-                return rocsparse_status_success;
+                RETURN_IF_ROCSPARSE_ERROR(rocsparse::assign_max_async(
+                    1, dst->get_indextype(), dst->get_position(), handle->stream));
             }
+            return rocsparse_status_success;
         }
     }
 
