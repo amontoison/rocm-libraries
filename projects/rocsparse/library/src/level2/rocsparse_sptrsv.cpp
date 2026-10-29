@@ -58,6 +58,9 @@ inline bool rocsparse::enum_utils::is_invalid(rocsparse_sptrsv_alg value)
     switch(value)
     {
     case rocsparse_sptrsv_alg_default:
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+    case rocsparse_sptrsv_alg_csc_push:
+#endif
     {
         return false;
     }
@@ -332,10 +335,16 @@ try
         case rocsparse_format_csc:
         {
             auto csrsv_info = sptrsv_descr->get_csrsv_info();
+            auto cscsv_info = sptrsv_descr->get_cscsv_info();
             if(csrsv_info != nullptr)
             {
                 symbolic_pivot = static_cast<rocsparse::pivot_info_t*>(csrsv_info);
                 exact_pivot    = csrsv_info->get_singularity_numeric_exact();
+            }
+            else if(cscsv_info != nullptr)
+            {
+                symbolic_pivot = static_cast<rocsparse::pivot_info_t*>(cscsv_info);
+                exact_pivot    = cscsv_info->get_singularity_numeric_exact();
             }
             break;
         }
@@ -397,6 +406,15 @@ try
         case rocsparse_format_coo:
         case rocsparse_format_csc:
         {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+            auto cscsv_info = sptrsv_descr->get_cscsv_info();
+            if(cscsv_info != nullptr)
+            {
+                status = rocsparse::cscsv_push_zero_pivot(
+                    handle, cscsv_info, rocsparse_indextype_i64, data);
+                break;
+            }
+#endif
             auto csrsv_info = sptrsv_descr->get_csrsv_info();
             status = rocsparse::csrsv_zero_pivot(handle, csrsv_info, rocsparse_indextype_i64, data);
             break;
@@ -438,6 +456,15 @@ catch(...)
 
 namespace rocsparse
 {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+    static bool use_cscsv_push(const _rocsparse_sptrsv_descr* sptrsv_descr, rocsparse_format format)
+    {
+        return sptrsv_descr->get_alg() == rocsparse_sptrsv_alg_csc_push
+               && format == rocsparse_format_csc
+               && sptrsv_descr->get_operation() == rocsparse_operation_none;
+    }
+#endif
+
     static rocsparse_status sptrsv_buffer_size(rocsparse_handle            handle,
                                                rocsparse_sptrsv_descr      sptrsv_descr,
                                                rocsparse_const_spmat_descr A,
@@ -471,6 +498,13 @@ namespace rocsparse
 
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+                if(rocsparse::use_cscsv_push(sptrsv_descr, format))
+                {
+                    buffer_size_in_bytes[0] = rocsparse::cscsv_push_analysis_buffer_size();
+                    return rocsparse_status_success;
+                }
+#endif
                 RETURN_IF_ROCSPARSE_ERROR(rocsparse::cscsv_analysis_buffer_size(
                     handle, operation, A, buffer_size_in_bytes));
                 return rocsparse_status_success;
@@ -516,6 +550,14 @@ namespace rocsparse
 
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+                if(rocsparse::use_cscsv_push(sptrsv_descr, format))
+                {
+                    buffer_size_in_bytes[0]
+                        = rocsparse::cscsv_push_solve_buffer_size(A, y->batch_count);
+                    return rocsparse_status_success;
+                }
+#endif
                 RETURN_IF_ROCSPARSE_ERROR(rocsparse::cscsv_solve_buffer_size(
                     handle, operation, A, x, y, buffer_size_in_bytes));
                 return rocsparse_status_success;
@@ -742,6 +784,17 @@ namespace rocsparse
             }
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+                if(rocsparse::use_cscsv_push(sptrsv_descr, format))
+                {
+                    // The push analysis is not shared through the matrix info.
+                    sptrsv_descr->set_cscsv_info(new _rocsparse_cscsv_info());
+                    RETURN_IF_ROCSPARSE_ERROR(rocsparse::cscsv_push_analysis(
+                        handle, A, sptrsv_descr->get_cscsv_info(), buffer));
+                    sptrsv_descr->set_stage(rocsparse_sptrsv_stage_analysis);
+                    return rocsparse_status_success;
+                }
+#endif
                 rocsparse_csrsv_info csrsv_info{};
                 switch(analysis_policy)
                 {
@@ -855,6 +908,37 @@ namespace rocsparse
 
             const rocsparse_datatype alpha_datatype = sptrsv_descr->get_compute_datatype();
             sptrsv_descr->m_batch_count             = dnvec_descr_y->batch_count;
+
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+            if(sptrsv_descr->get_cscsv_info() != nullptr)
+            {
+                if(sptrsv_descr->get_solve_mode() != rocsparse_solve_mode_triangular)
+                {
+                    RETURN_IF_ROCSPARSE_ERROR(
+                        rocsparse::cscsv_push_diagonal_solve(handle,
+                                                             sptrsv_descr->get_diagonal_modifier(),
+                                                             alpha,
+                                                             A,
+                                                             dnvec_descr_x,
+                                                             dnvec_descr_y,
+                                                             sptrsv_descr->get_cscsv_info()));
+                    sptrsv_descr->set_stage(rocsparse_sptrsv_stage_compute);
+                    return rocsparse_status_success;
+                }
+
+                RETURN_IF_ROCSPARSE_ERROR(
+                    rocsparse::cscsv_push_solve(handle,
+                                                alpha_datatype,
+                                                alpha,
+                                                A,
+                                                dnvec_descr_x,
+                                                dnvec_descr_y,
+                                                sptrsv_descr->get_cscsv_info(),
+                                                buffer));
+                sptrsv_descr->set_stage(rocsparse_sptrsv_stage_compute);
+                return rocsparse_status_success;
+            }
+#endif
 
             if(sptrsv_descr->get_solve_mode() != rocsparse_solve_mode_triangular)
             {

@@ -40,6 +40,9 @@ rocsparse::trm_info_t::~trm_info_t()
     WARNING_IF_HIP_ERROR(rocsparse_hipFree(this->diag_ind));
     this->diag_ind = nullptr;
 
+    WARNING_IF_HIP_ERROR(rocsparse_hipFree(this->dependency_count));
+    this->dependency_count = nullptr;
+
     WARNING_IF_HIP_ERROR(rocsparse_hipFree(this->transposed_perm));
     this->transposed_perm = nullptr;
 
@@ -87,6 +90,21 @@ void* rocsparse::trm_info_t::get_diag_ind()
 void** rocsparse::trm_info_t::get_ref_diag_ind()
 {
     return &this->diag_ind;
+}
+
+const void* rocsparse::trm_info_t::get_dependency_count() const
+{
+    return this->dependency_count;
+}
+
+void* rocsparse::trm_info_t::get_dependency_count()
+{
+    return this->dependency_count;
+}
+
+void** rocsparse::trm_info_t::get_ref_dependency_count()
+{
+    return &this->dependency_count;
 }
 
 const void* rocsparse::trm_info_t::get_transposed_perm() const
@@ -238,6 +256,15 @@ rocsparse::trm_info_t::trm_info_t(const rocsparse::trm_info_t& that)
             this->diag_ind, that.diag_ind, I_size * that.m, hipMemcpyDeviceToDevice));
     }
 
+    if(that.dependency_count != nullptr)
+    {
+        THROW_IF_HIP_ERROR(rocsparse_hipMalloc(&(this->dependency_count), J_size * that.m));
+        THROW_IF_HIP_ERROR(rocsparse_hipMemcpy(this->dependency_count,
+                                               that.dependency_count,
+                                               J_size * that.m,
+                                               hipMemcpyDeviceToDevice));
+    }
+
     if(that.transposed_perm != nullptr)
     {
         THROW_IF_HIP_ERROR(rocsparse_hipMalloc(&(this->transposed_perm), I_size * that.nnz));
@@ -301,6 +328,18 @@ rocsparse::trm_info_t& rocsparse::trm_info_t::operator=(const rocsparse::trm_inf
         }
         THROW_IF_HIP_ERROR(rocsparse_hipMemcpy(
             this->diag_ind, that.diag_ind, I_size * that.m, hipMemcpyDeviceToDevice));
+    }
+
+    if(that.dependency_count != nullptr)
+    {
+        if(this->dependency_count == nullptr)
+        {
+            THROW_IF_HIP_ERROR(rocsparse_hipMalloc(&(this->dependency_count), J_size * that.m));
+        }
+        THROW_IF_HIP_ERROR(rocsparse_hipMemcpy(this->dependency_count,
+                                               that.dependency_count,
+                                               J_size * that.m,
+                                               hipMemcpyDeviceToDevice));
     }
 
     if(that.transposed_perm != nullptr)

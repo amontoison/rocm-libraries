@@ -751,3 +751,11 @@ else()
     src/level3/rocsparse_sptrsm.cpp
   )
 endif()
+
+# CSC push triangular solve sources (rocsparse_sptrsv_alg_csc_push).
+if(BUILD_WITH_SPTRSV_CSC_PUSH)
+  list(APPEND rocsparse_source
+    src/level2/rocsparse_cscsv_analysis.cpp
+    src/level2/rocsparse_cscsv_buffer_size.cpp
+    src/level2/rocsparse_cscsv_solve.cpp)
+endif()
