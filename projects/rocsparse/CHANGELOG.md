@@ -5,6 +5,9 @@ Documentation for rocSPARSE is available at
 
 ## (Unreleased) rocSPARSE 5.3.0
 
+### Added
+* Added the experimental `rocsparse_sptrsv_alg_csc_push` algorithm to `rocsparse_sptrsv`. It solves with a CSC matrix without transpose directly on its columns, instead of building the transposed structure during the analysis and gathering the matrix values at every solve as `rocsparse_sptrsv_alg_default` does. Results are not bitwise reproducible because the solve uses atomic additions. Its name and behavior can change in a future release.
+
 ### Changed
 * The incomplete factorization kernels used by `rocsparse_spic0`, `rocsparse_spilu0`, and `rocsparse_spildlt0` (`csric0`, `csrilu0`, `csrildlt0`, `bsric0`, and `bsrilu0`) now clamp the batch dimension of their launch grids to the device limit and cover the remaining batch instances with a grid-stride loop. The singularity-position initialization grid-strides as well, so these routines support batch counts above the grid limit.
 

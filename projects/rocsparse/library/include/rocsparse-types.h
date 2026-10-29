@@ -1066,6 +1066,10 @@ typedef enum rocsparse_singularity_
 typedef enum rocsparse_sptrsv_alg_
 {
     rocsparse_sptrsv_alg_default = 0, /**< Default SpTRSV algorithm for the given format. */
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+    rocsparse_sptrsv_alg_csc_push
+    = 1, /**< Push SpTRSV algorithm for the CSC format without transpose. \warning Experimental, its name and behavior can change in a future release. */
+#endif
 } rocsparse_sptrsv_alg;
 
 /*! \ingroup types_module

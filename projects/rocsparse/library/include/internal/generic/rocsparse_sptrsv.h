@@ -100,6 +100,14 @@ rocsparse_status rocsparse_sptrsv_buffer_size(rocsparse_handle            handle
 *  Performing the above operation requires two stages, the stage \ref rocsparse_sptrsv_stage_analysis and the stage \ref rocsparse_sptrsv_stage_compute.
 *  The stage \ref rocsparse_sptrsv_stage_analysis is required to perform the stage \ref rocsparse_sptrsv_stage_compute and only need to be called once for a given sparse matrix \f$op(A)\f$, while the stage \ref rocsparse_sptrsv_stage_compute can be repeatedly used with different \f$x\f$ and \f$y\f$ vectors.
 *
+*  \p rocsparse_sptrsv supports the following algorithms, selected with \ref rocsparse_sptrsv_input_alg:
+*
+*  <table>
+*  <tr><th>Algorithm                          <th>Formats  <th>Deterministic  <th>Notes
+*  <tr><td>rocsparse_sptrsv_alg_default</td>   <td>All</td> <td>Yes</td>        <td>Level-scheduled solve on the rows of \f$op(A)\f$. For a CSC matrix without transpose, and for a CSR or COO matrix with (conjugate) transpose, the analysis builds the transposed structure and every solve gathers the matrix values. </td>
+*  <tr><td>rocsparse_sptrsv_alg_csc_push</td>  <td>CSC</td> <td>No</td>         <td>Solves a CSC matrix without transpose directly on its columns: once an unknown is computed, its column pushes its contributions to the unknowns that depend on it. No transposed structure is built, and the analysis is a single pass over the matrix. Atomic additions are used, so results are not bitwise reproducible. The analysis is kept in the SpTrSV descriptor regardless of the analysis policy. Other operations and formats use \ref rocsparse_sptrsv_alg_default. Experimental, its name and behavior can change in a future release. </td>
+*  </table>
+*
 *  \p rocsparse_sptrsv supports the following
 *  data types for \f$op(A)\f$, \f$x\f$, \f$y\f$, and scalar \f$\alpha\f$:
 *
