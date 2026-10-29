@@ -389,6 +389,10 @@ constexpr auto rocsparse_sptrsvalg2string(rocsparse_sptrsv_alg alg)
     {
     case rocsparse_sptrsv_alg_default:
         return "default";
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC_PUSH)
+    case rocsparse_sptrsv_alg_csc_push:
+        return "csc_push";
+#endif
     }
     return "invalid";
 }

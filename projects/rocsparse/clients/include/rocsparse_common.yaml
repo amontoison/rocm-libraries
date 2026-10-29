@@ -173,6 +173,7 @@ Datatypes:
       bases: [c_int ]
       attr:
         rocsparse_sptrsv_alg_default: 0
+        rocsparse_sptrsv_alg_csc_push: 1
   - rocsparse_solve_mode:
       bases: [c_int ]
       attr:
