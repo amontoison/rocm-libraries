@@ -1622,15 +1622,17 @@ static void testing_sptrsm_csr_extra2(const Arguments& arg)
     EXPECT_ROCSPARSE_STATUS(status, rocsparse_status_invalid_handle);
 }
 
-// SpSV analysis on the matrix, then SpTRSM with rocsparse_analysis_policy_reuse, which must
-// also reuse its zero pivot.
-static void sptrsm_csr_reuse_spsv(rocsparse_operation         trans,
-                                  rocsparse_fill_mode         uplo,
-                                  int64_t                     nrhs,
-                                  rocsparse_diag_type         diag,
-                                  const std::vector<int32_t>& ptr,
-                                  const std::vector<int32_t>& ind,
-                                  const std::vector<float>&   val)
+// One case of testing_sptrsm_csr_reuse_spsv_analysis: the rocsparse_spsv preprocess of A,
+// then the rocsparse_sptrsm analysis and compute stages with rocsparse_analysis_policy_reuse.
+// The zero pivot position, and the solution when there is no zero pivot, are compared with
+// host_csrsm.
+static void testing_sptrsm_csr_reuse_spsv_analysis_case(rocsparse_operation         trans,
+                                                        rocsparse_fill_mode         uplo,
+                                                        int64_t                     nrhs,
+                                                        rocsparse_diag_type         diag,
+                                                        const std::vector<int32_t>& ptr,
+                                                        const std::vector<int32_t>& ind,
+                                                        const std::vector<float>&   val)
 {
     host_csr_matrix<float> hA(
         ptr.size() - 1, ptr.size() - 1, val.size(), rocsparse_index_base_zero);
@@ -1762,7 +1764,10 @@ static void sptrsm_csr_reuse_spsv(rocsparse_operation         trans,
     }
 }
 
-static void testing_sptrsm_csr_extra3(const Arguments& arg)
+// rocsparse_sptrsm with rocsparse_analysis_policy_reuse after a rocsparse_spsv analysis of
+// the same CSR matrix, for every operation, fill mode and diagonal type, with one and three
+// right-hand sides, on a matrix without and with a structural zero pivot.
+static void testing_sptrsm_csr_reuse_spsv_analysis()
 {
     // [ 2     3    ]
     // [ 1  4     2 ]
@@ -1785,8 +1790,10 @@ static void testing_sptrsm_csr_extra3(const Arguments& arg)
             {
                 for(auto diag : {rocsparse_diag_type_unit, rocsparse_diag_type_non_unit})
                 {
-                    sptrsm_csr_reuse_spsv(trans, uplo, nrhs, diag, ptr, ind, val);
-                    sptrsm_csr_reuse_spsv(trans, uplo, nrhs, diag, ptr_pivot, ind_pivot, val_pivot);
+                    testing_sptrsm_csr_reuse_spsv_analysis_case(
+                        trans, uplo, nrhs, diag, ptr, ind, val);
+                    testing_sptrsm_csr_reuse_spsv_analysis_case(
+                        trans, uplo, nrhs, diag, ptr_pivot, ind_pivot, val_pivot);
                 }
             }
         }
@@ -1798,5 +1805,5 @@ void testing_sptrsm_csr_extra(const Arguments& arg)
     testing_sptrsm_csr_extra0(arg);
     testing_sptrsm_csr_extra1(arg);
     testing_sptrsm_csr_extra2(arg);
-    testing_sptrsm_csr_extra3(arg);
+    testing_sptrsm_csr_reuse_spsv_analysis();
 }

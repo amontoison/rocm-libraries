@@ -493,17 +493,21 @@ enum class csrsm_reuse_source
     csric0
 };
 
-// Analysis of another routine on the same mat_info, then csrsm with
-// rocsparse_analysis_policy_reuse, which must also reuse its zero pivot.
+// One case of testing_csrsm_reuse_other_analysis: the analysis of `source` on a new
+// mat_info, csrsm_analysis with rocsparse_analysis_policy_reuse on the same mat_info, then
+// csrsm_solve. The zero pivots after the analysis and after the solve, and the solution
+// when there is no zero pivot, are compared with host_csrsm. Forced analyses of `source`,
+// then of csrsm, must not free the analysis they share: csrsm_solve and, for csrsv,
+// csrsv_solve are checked again.
 template <typename T>
-static void testing_csrsm_reuse(csrsm_reuse_source          source,
-                                rocsparse_operation         trans,
-                                rocsparse_fill_mode         uplo,
-                                rocsparse_int               nrhs,
-                                rocsparse_diag_type         diag,
-                                host_vector<rocsparse_int>& hcsr_row_ptr,
-                                host_vector<rocsparse_int>& hcsr_col_ind,
-                                host_vector<T>&             hcsr_val)
+static void testing_csrsm_reuse_other_analysis_case(csrsm_reuse_source          source,
+                                                    rocsparse_operation         trans,
+                                                    rocsparse_fill_mode         uplo,
+                                                    rocsparse_int               nrhs,
+                                                    rocsparse_diag_type         diag,
+                                                    host_vector<rocsparse_int>& hcsr_row_ptr,
+                                                    host_vector<rocsparse_int>& hcsr_col_ind,
+                                                    host_vector<T>&             hcsr_val)
 {
     rocsparse_local_handle    handle;
     rocsparse_local_mat_descr descr;
@@ -519,11 +523,13 @@ static void testing_csrsm_reuse(csrsm_reuse_source          source,
     const T                      alpha   = static_cast<T>(1);
 
     host_dense_matrix<T> hB(M, nrhs);
+    host_dense_matrix<T> hB_rhs(M, nrhs);
     for(rocsparse_int j = 0; j < nrhs; ++j)
     {
         for(rocsparse_int i = 0; i < M; ++i)
         {
-            hB[i + hB.ld * j] = static_cast<T>(i + 1 + j);
+            hB[i + hB.ld * j]         = static_cast<T>(i + 1 + j);
+            hB_rhs[i + hB_rhs.ld * j] = static_cast<T>(i + 1 + j);
         }
     }
 
@@ -531,6 +537,28 @@ static void testing_csrsm_reuse(csrsm_reuse_source          source,
     device_vector<rocsparse_int> dcsr_col_ind(hcsr_col_ind);
     device_vector<T>             dcsr_val(hcsr_val);
     device_dense_matrix<T>       dB(hB);
+
+    // Host reference, computed first: the expected zero pivots are needed to check the
+    // status of rocsparse_csrsm_zero_pivot.
+    host_scalar<rocsparse_int> h_analysis_pivot;
+    host_scalar<rocsparse_int> h_solve_pivot;
+    host_csrsm<rocsparse_int, rocsparse_int, T>(M,
+                                                nrhs,
+                                                nnz,
+                                                trans,
+                                                trans_B,
+                                                alpha,
+                                                hcsr_row_ptr,
+                                                hcsr_col_ind,
+                                                hcsr_val,
+                                                hB,
+                                                hB.ld,
+                                                rocsparse_order_column,
+                                                diag,
+                                                uplo,
+                                                rocsparse_index_base_zero,
+                                                h_analysis_pivot,
+                                                h_solve_pivot);
 
     size_t buffer_size = 0;
     size_t size;
@@ -564,55 +592,60 @@ static void testing_csrsm_reuse(csrsm_reuse_source          source,
     void* dbuffer;
     CHECK_HIP_ERROR(rocsparse_hipMalloc(&dbuffer, buffer_size));
 
-    switch(source)
-    {
-    case csrsm_reuse_source::csrsv:
-    {
-        CHECK_ROCSPARSE_ERROR(rocsparse_csrsv_analysis<T>(handle,
-                                                          trans,
-                                                          M,
-                                                          nnz,
-                                                          descr,
-                                                          dcsr_val,
-                                                          dcsr_row_ptr,
-                                                          dcsr_col_ind,
-                                                          info,
-                                                          rocsparse_analysis_policy_force,
-                                                          spol,
-                                                          dbuffer));
-        break;
-    }
-    case csrsm_reuse_source::csrilu0:
-    {
-        CHECK_ROCSPARSE_ERROR(rocsparse_csrilu0_analysis<T>(handle,
-                                                            M,
-                                                            nnz,
-                                                            descr,
-                                                            dcsr_val,
-                                                            dcsr_row_ptr,
-                                                            dcsr_col_ind,
-                                                            info,
-                                                            rocsparse_analysis_policy_force,
-                                                            spol,
-                                                            dbuffer));
-        break;
-    }
-    case csrsm_reuse_source::csric0:
-    {
-        CHECK_ROCSPARSE_ERROR(rocsparse_csric0_analysis<T>(handle,
-                                                           M,
-                                                           nnz,
-                                                           descr,
-                                                           dcsr_val,
-                                                           dcsr_row_ptr,
-                                                           dcsr_col_ind,
-                                                           info,
-                                                           rocsparse_analysis_policy_force,
-                                                           spol,
-                                                           dbuffer));
-        break;
-    }
-    }
+    // Forced analysis of the routine whose analysis csrsm reuses.
+    auto analyze_source = [&]() {
+        switch(source)
+        {
+        case csrsm_reuse_source::csrsv:
+        {
+            CHECK_ROCSPARSE_ERROR(rocsparse_csrsv_analysis<T>(handle,
+                                                              trans,
+                                                              M,
+                                                              nnz,
+                                                              descr,
+                                                              dcsr_val,
+                                                              dcsr_row_ptr,
+                                                              dcsr_col_ind,
+                                                              info,
+                                                              rocsparse_analysis_policy_force,
+                                                              spol,
+                                                              dbuffer));
+            break;
+        }
+        case csrsm_reuse_source::csrilu0:
+        {
+            CHECK_ROCSPARSE_ERROR(rocsparse_csrilu0_analysis<T>(handle,
+                                                                M,
+                                                                nnz,
+                                                                descr,
+                                                                dcsr_val,
+                                                                dcsr_row_ptr,
+                                                                dcsr_col_ind,
+                                                                info,
+                                                                rocsparse_analysis_policy_force,
+                                                                spol,
+                                                                dbuffer));
+            break;
+        }
+        case csrsm_reuse_source::csric0:
+        {
+            CHECK_ROCSPARSE_ERROR(rocsparse_csric0_analysis<T>(handle,
+                                                               M,
+                                                               nnz,
+                                                               descr,
+                                                               dcsr_val,
+                                                               dcsr_row_ptr,
+                                                               dcsr_col_ind,
+                                                               info,
+                                                               rocsparse_analysis_policy_force,
+                                                               spol,
+                                                               dbuffer));
+            break;
+        }
+        }
+    };
+
+    analyze_source();
 
     CHECK_ROCSPARSE_ERROR(rocsparse_csrsm_analysis<T>(handle,
                                                       trans,
@@ -634,8 +667,9 @@ static void testing_csrsm_reuse(csrsm_reuse_source          source,
 
     host_scalar<rocsparse_int> analysis_pivot;
     EXPECT_ROCSPARSE_STATUS(rocsparse_csrsm_zero_pivot(handle, info, analysis_pivot),
-                            (*analysis_pivot != -1) ? rocsparse_status_zero_pivot
-                                                    : rocsparse_status_success);
+                            (*h_analysis_pivot != -1) ? rocsparse_status_zero_pivot
+                                                      : rocsparse_status_success);
+    h_analysis_pivot.unit_check(analysis_pivot);
 
     CHECK_ROCSPARSE_ERROR(rocsparse_csrsm_solve<T>(handle,
                                                    trans,
@@ -656,41 +690,116 @@ static void testing_csrsm_reuse(csrsm_reuse_source          source,
 
     host_scalar<rocsparse_int> solve_pivot;
     EXPECT_ROCSPARSE_STATUS(rocsparse_csrsm_zero_pivot(handle, info, solve_pivot),
-                            (*solve_pivot != -1) ? rocsparse_status_zero_pivot
-                                                 : rocsparse_status_success);
-
-    host_scalar<rocsparse_int> h_analysis_pivot;
-    host_scalar<rocsparse_int> h_solve_pivot;
-    host_csrsm<rocsparse_int, rocsparse_int, T>(M,
-                                                nrhs,
-                                                nnz,
-                                                trans,
-                                                trans_B,
-                                                alpha,
-                                                hcsr_row_ptr,
-                                                hcsr_col_ind,
-                                                hcsr_val,
-                                                hB,
-                                                hB.ld,
-                                                rocsparse_order_column,
-                                                diag,
-                                                uplo,
-                                                rocsparse_index_base_zero,
-                                                h_analysis_pivot,
-                                                h_solve_pivot);
-
-    h_analysis_pivot.unit_check(analysis_pivot);
+                            (*h_solve_pivot != -1) ? rocsparse_status_zero_pivot
+                                                   : rocsparse_status_success);
     h_solve_pivot.unit_check(solve_pivot);
+
     if(*h_analysis_pivot == -1 && *h_solve_pivot == -1)
     {
         hB.near_check(dB);
     }
 
+    // A new analysis of the source must not free the analysis that csrsm still uses.
+    analyze_source();
+    if(*h_analysis_pivot == -1 && *h_solve_pivot == -1)
+    {
+        device_dense_matrix<T> dB_source(hB_rhs);
+        CHECK_ROCSPARSE_ERROR(rocsparse_csrsm_solve<T>(handle,
+                                                       trans,
+                                                       trans_B,
+                                                       M,
+                                                       nrhs,
+                                                       nnz,
+                                                       &alpha,
+                                                       descr,
+                                                       dcsr_val,
+                                                       dcsr_row_ptr,
+                                                       dcsr_col_ind,
+                                                       dB_source,
+                                                       dB_source.ld,
+                                                       info,
+                                                       spol,
+                                                       dbuffer));
+        hB.near_check(dB_source);
+    }
+
+    device_dense_matrix<T> dB_force(hB_rhs);
+    CHECK_ROCSPARSE_ERROR(rocsparse_csrsm_analysis<T>(handle,
+                                                      trans,
+                                                      trans_B,
+                                                      M,
+                                                      nrhs,
+                                                      nnz,
+                                                      &alpha,
+                                                      descr,
+                                                      dcsr_val,
+                                                      dcsr_row_ptr,
+                                                      dcsr_col_ind,
+                                                      dB_force,
+                                                      dB_force.ld,
+                                                      info,
+                                                      rocsparse_analysis_policy_force,
+                                                      spol,
+                                                      dbuffer));
+
+    if(*h_analysis_pivot == -1 && *h_solve_pivot == -1)
+    {
+        CHECK_ROCSPARSE_ERROR(rocsparse_csrsm_solve<T>(handle,
+                                                       trans,
+                                                       trans_B,
+                                                       M,
+                                                       nrhs,
+                                                       nnz,
+                                                       &alpha,
+                                                       descr,
+                                                       dcsr_val,
+                                                       dcsr_row_ptr,
+                                                       dcsr_col_ind,
+                                                       dB_force,
+                                                       dB_force.ld,
+                                                       info,
+                                                       spol,
+                                                       dbuffer));
+        hB.near_check(dB_force);
+
+        if(source == csrsm_reuse_source::csrsv)
+        {
+            host_dense_matrix<T> hx(M, 1);
+            host_dense_matrix<T> hy(M, 1);
+            for(rocsparse_int i = 0; i < M; ++i)
+            {
+                hx[i] = hB_rhs[i];
+                hy[i] = hB[i];
+            }
+
+            device_dense_matrix<T> dx(hx);
+            device_dense_matrix<T> dy(M, 1);
+            CHECK_ROCSPARSE_ERROR(rocsparse_csrsv_solve<T>(handle,
+                                                           trans,
+                                                           M,
+                                                           nnz,
+                                                           &alpha,
+                                                           descr,
+                                                           dcsr_val,
+                                                           dcsr_row_ptr,
+                                                           dcsr_col_ind,
+                                                           info,
+                                                           dx,
+                                                           dy,
+                                                           spol,
+                                                           dbuffer));
+            hy.near_check(dy);
+        }
+    }
+
     CHECK_HIP_ERROR(rocsparse_hipFree(dbuffer));
 }
 
+// csrsm_analysis with rocsparse_analysis_policy_reuse after a csrsv, csrilu0 or csric0
+// analysis on the same mat_info, for every operation, fill mode and diagonal type, with one
+// and three right-hand sides, on a matrix without and with a structural zero pivot.
 template <typename T>
-static void testing_csrsm_extra_template(const Arguments& arg)
+static void testing_csrsm_reuse_other_analysis()
 {
     // [ 2     3    ]
     // [ 1  4     2 ]
@@ -720,16 +829,16 @@ static void testing_csrsm_extra_template(const Arguments& arg)
                 {
                     for(auto diag : {rocsparse_diag_type_unit, rocsparse_diag_type_non_unit})
                     {
-                        testing_csrsm_reuse<T>(
+                        testing_csrsm_reuse_other_analysis_case<T>(
                             source, trans, uplo, nrhs, diag, hcsr_row_ptr, hcsr_col_ind, hcsr_val);
-                        testing_csrsm_reuse<T>(source,
-                                               trans,
-                                               uplo,
-                                               nrhs,
-                                               diag,
-                                               hcsr_row_ptr_pivot,
-                                               hcsr_col_ind_pivot,
-                                               hcsr_val_pivot);
+                        testing_csrsm_reuse_other_analysis_case<T>(source,
+                                                                   trans,
+                                                                   uplo,
+                                                                   nrhs,
+                                                                   diag,
+                                                                   hcsr_row_ptr_pivot,
+                                                                   hcsr_col_ind_pivot,
+                                                                   hcsr_val_pivot);
                     }
                 }
             }
@@ -739,8 +848,8 @@ static void testing_csrsm_extra_template(const Arguments& arg)
 
 void testing_csrsm_extra(const Arguments& arg)
 {
-    testing_csrsm_extra_template<float>(arg);
-    testing_csrsm_extra_template<double>(arg);
-    testing_csrsm_extra_template<rocsparse_float_complex>(arg);
-    testing_csrsm_extra_template<rocsparse_double_complex>(arg);
+    testing_csrsm_reuse_other_analysis<float>();
+    testing_csrsm_reuse_other_analysis<double>();
+    testing_csrsm_reuse_other_analysis<rocsparse_float_complex>();
+    testing_csrsm_reuse_other_analysis<rocsparse_double_complex>();
 }

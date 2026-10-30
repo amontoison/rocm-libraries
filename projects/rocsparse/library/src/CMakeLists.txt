@@ -195,6 +195,7 @@ set(rocsparse_source
   src/level3/rocsparse_bellmm_impl.cpp
   src/level3/rocsparse_bellmm.cpp
   src/level3/rocsparse_bellmm_template_general.cpp
+  src/level3/rocsparse_csrsm_analysis_reuse.cpp
   # csrmm row split
   src/level3/csrmm/row_split/csrmm_device_row_split_256_16_8_2_1.cpp
   src/level3/csrmm/row_split/csrmm_device_row_split_256_16_8_2_2.cpp

@@ -25,7 +25,7 @@
 #include "../../level2/rocsparse_csrsv.hpp"
 #include "rocsparse_csrsm.hpp"
 
-#include "rocsparse_assign_async.hpp"
+#include "../rocsparse_csrsm_analysis_reuse.hpp"
 #include "rocsparse_enum_utils.hpp"
 #include "rocsparse_trm_uncouple_slot.hpp"
 #include "rocsparse_utility.hpp"
@@ -57,35 +57,16 @@ rocsparse_status rocsparse::csrsm_analysis(rocsparse_handle            handle,
     // Differentiate the analysis policies
     if(analysis == rocsparse_analysis_policy_reuse)
     {
-        // Reuse an analysis from csrsm, csrilu0, csric0 or csrsv, together with its zero pivot.
-        rocsparse_csrsm_info dst = info->get_csrsm_info();
-        const bool           lower_none
-            = (descr->fill_mode == rocsparse_fill_mode_lower) && (op_A == rocsparse_operation_none);
-        rocsparse::trm_data_t* candidates[] = {dst,
-                                               lower_none ? info->get_csrilu0_info() : nullptr,
-                                               lower_none ? info->get_csric0_info() : nullptr,
-                                               info->get_csrsv_info()};
-        for(rocsparse::trm_data_t* src_data : candidates)
+        bool reused;
+        RETURN_IF_ROCSPARSE_ERROR(
+            rocsparse::csrsm_analysis_reuse(handle, op_A, descr, info, &reused));
+        if(reused)
         {
-            rocsparse::trm_info_t* src_info
-                = (src_data != nullptr) ? src_data->get(op_A, descr->fill_mode) : nullptr;
-            if(src_info != nullptr)
-            {
-                if(src_data != dst)
-                {
-                    dst->set(op_A, descr->fill_mode, src_info);
-                    RETURN_IF_ROCSPARSE_ERROR(dst->copy_pivot_info_async(src_data, handle->stream));
-                }
-                // A unit diagonal has no structural zero pivot.
-                if(descr->diag_type == rocsparse_diag_type_unit)
-                {
-                    RETURN_IF_ROCSPARSE_ERROR(rocsparse::assign_max_async(
-                        1, dst->get_indextype(), dst->get_position(), handle->stream));
-                }
-                return rocsparse_status_success;
-            }
+            return rocsparse_status_success;
         }
     }
+
+    rocsparse::trm_uncouple_slot(info, csrsm_info, op_A, descr->fill_mode);
 
     if(nrhs == 1)
     {
@@ -104,8 +85,6 @@ rocsparse_status rocsparse::csrsm_analysis(rocsparse_handle            handle,
         csrsm_info      = new _rocsparse_csrsm_info();
         p_csrsm_info[0] = csrsm_info;
     }
-
-    rocsparse::trm_uncouple_slot(info, csrsm_info, op_A, descr->fill_mode);
 
     // Perform analysis
     RETURN_IF_ROCSPARSE_ERROR(csrsm_info->recreate(handle,
