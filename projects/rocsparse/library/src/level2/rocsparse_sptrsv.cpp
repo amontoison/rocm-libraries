@@ -26,6 +26,7 @@
 #include "rocsparse_enum_utils.hpp"
 #include "rocsparse_handle.hpp"
 #include "rocsparse_utility.hpp"
+#include <cstdlib>
 
 #include "../conversion/rocsparse_convert_array.hpp"
 #include "../conversion/rocsparse_convert_scalar.hpp"
@@ -458,6 +459,12 @@ namespace rocsparse
     static bool use_cscsv_columns(const _rocsparse_sptrsv_descr* sptrsv_descr,
                                   rocsparse_const_spmat_descr    A)
     {
+        // Benchmark hook (not for merge): ROCSPARSE_SPTRSV_CSC_COLUMNS=0 forces the transposed solve.
+        const char* env = getenv("ROCSPARSE_SPTRSV_CSC_COLUMNS");
+        if(env != nullptr && env[0] == '0')
+        {
+            return false;
+        }
         return sptrsv_descr->get_operation() == rocsparse_operation_none
                && sptrsv_descr->get_compute_datatype() == A->data_type;
     }
