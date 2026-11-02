@@ -174,6 +174,7 @@ namespace rocsparse
     }
 }
 
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
 namespace rocsparse
 {
     // CSC triangular solve without transpose, on the columns of the matrix.
@@ -208,3 +209,4 @@ namespace rocsparse
                                              rocsparse_indextype  indextype,
                                              void*                position);
 }
+#endif

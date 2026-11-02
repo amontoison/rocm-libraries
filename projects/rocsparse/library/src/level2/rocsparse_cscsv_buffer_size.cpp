@@ -25,6 +25,8 @@
 #include "rocsparse_cscsv.hpp"
 #include "rocsparse_cscsv_common.hpp"
 
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
+
 size_t rocsparse::cscsv_column_analysis_buffer_size()
 {
     // Longest column only
@@ -41,3 +43,5 @@ size_t rocsparse::cscsv_column_solve_buffer_size(rocsparse_const_spmat_descr A, 
            + rocsparse::cscsv_aligned(sizeof_J * m * batch_count)
            + rocsparse::cscsv_aligned(sizeof_T * m * batch_count);
 }
+
+#endif

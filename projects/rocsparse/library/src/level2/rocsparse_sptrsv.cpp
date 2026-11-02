@@ -403,6 +403,7 @@ try
         case rocsparse_format_coo:
         case rocsparse_format_csc:
         {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
             auto cscsv_info = sptrsv_descr->get_cscsv_info();
             if(cscsv_info != nullptr)
             {
@@ -410,6 +411,7 @@ try
                     handle, cscsv_info, rocsparse_indextype_i64, data);
                 break;
             }
+#endif
             auto csrsv_info = sptrsv_descr->get_csrsv_info();
             status = rocsparse::csrsv_zero_pivot(handle, csrsv_info, rocsparse_indextype_i64, data);
             break;
@@ -451,6 +453,7 @@ catch(...)
 
 namespace rocsparse
 {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
     // Column solve for CSC without transpose when the compute datatype is the matrix datatype.
     static bool use_cscsv_columns(const _rocsparse_sptrsv_descr* sptrsv_descr,
                                   rocsparse_const_spmat_descr    A)
@@ -458,6 +461,7 @@ namespace rocsparse
         return sptrsv_descr->get_operation() == rocsparse_operation_none
                && sptrsv_descr->get_compute_datatype() == A->data_type;
     }
+#endif
 
     static rocsparse_status sptrsv_buffer_size(rocsparse_handle            handle,
                                                rocsparse_sptrsv_descr      sptrsv_descr,
@@ -492,11 +496,13 @@ namespace rocsparse
 
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
                 if(rocsparse::use_cscsv_columns(sptrsv_descr, A))
                 {
                     buffer_size_in_bytes[0] = rocsparse::cscsv_column_analysis_buffer_size();
                     return rocsparse_status_success;
                 }
+#endif
                 RETURN_IF_ROCSPARSE_ERROR(rocsparse::cscsv_analysis_buffer_size(
                     handle, operation, A, buffer_size_in_bytes));
                 return rocsparse_status_success;
@@ -542,12 +548,14 @@ namespace rocsparse
 
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
                 if(rocsparse::use_cscsv_columns(sptrsv_descr, A))
                 {
                     buffer_size_in_bytes[0]
                         = rocsparse::cscsv_column_solve_buffer_size(A, y->batch_count);
                     return rocsparse_status_success;
                 }
+#endif
                 RETURN_IF_ROCSPARSE_ERROR(rocsparse::cscsv_solve_buffer_size(
                     handle, operation, A, x, y, buffer_size_in_bytes));
                 return rocsparse_status_success;
@@ -774,6 +782,7 @@ namespace rocsparse
             }
             case rocsparse_format_csc:
             {
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
                 if(rocsparse::use_cscsv_columns(sptrsv_descr, A))
                 {
                     // The column analysis is not shared through the matrix info.
@@ -783,6 +792,7 @@ namespace rocsparse
                     sptrsv_descr->set_stage(rocsparse_sptrsv_stage_analysis);
                     return rocsparse_status_success;
                 }
+#endif
                 rocsparse_csrsv_info csrsv_info{};
                 switch(analysis_policy)
                 {
@@ -897,6 +907,7 @@ namespace rocsparse
             const rocsparse_datatype alpha_datatype = sptrsv_descr->get_compute_datatype();
             sptrsv_descr->m_batch_count             = dnvec_descr_y->batch_count;
 
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
             if(sptrsv_descr->get_cscsv_info() != nullptr)
             {
                 if(sptrsv_descr->get_solve_mode() != rocsparse_solve_mode_triangular)
@@ -925,6 +936,7 @@ namespace rocsparse
                 sptrsv_descr->set_stage(rocsparse_sptrsv_stage_compute);
                 return rocsparse_status_success;
             }
+#endif
 
             if(sptrsv_descr->get_solve_mode() != rocsparse_solve_mode_triangular)
             {

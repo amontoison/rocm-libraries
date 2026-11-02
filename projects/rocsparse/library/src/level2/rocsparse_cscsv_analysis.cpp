@@ -26,6 +26,8 @@
 #include "rocsparse_cscsv.hpp"
 #include "rocsparse_cscsv_common.hpp"
 
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
+
 #include "cscsv_device.h"
 
 rocsparse_status rocsparse::cscsv_column_analysis(rocsparse_handle            handle,
@@ -109,3 +111,5 @@ rocsparse_status rocsparse::cscsv_column_analysis(rocsparse_handle            ha
     info->set(rocsparse_operation_none, descr->fill_mode, trm_info.release());
     return rocsparse_status_success;
 }
+
+#endif

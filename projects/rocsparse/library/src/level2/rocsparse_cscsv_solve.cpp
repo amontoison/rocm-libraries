@@ -30,6 +30,8 @@
 #include "rocsparse_scalar.hpp"
 #include "rocsparse_singularity.hpp"
 
+#if defined(ROCSPARSE_WITH_SPTRSV_CSC)
+
 #include "cscsv_device.h"
 
 namespace rocsparse
@@ -380,3 +382,5 @@ rocsparse_status rocsparse::cscsv_column_zero_pivot(rocsparse_handle     handle,
     }
     return (p != -1) ? rocsparse_status_zero_pivot : rocsparse_status_success;
 }
+
+#endif
